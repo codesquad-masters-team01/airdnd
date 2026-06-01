@@ -23,6 +23,8 @@ dist/
 build/
 coverage/
 .vite/
+test-results/
+playwright-report/
 
 # Java / Gradle / 백엔드
 .gradle/
