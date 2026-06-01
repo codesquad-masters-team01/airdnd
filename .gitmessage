@@ -1,0 +1,17 @@
+<type>(<scope>): <subject>
+
+이유:
+- 
+
+변경 내용:
+- 
+
+검증:
+- 
+
+참고:
+- 
+
+# 타입: feat, fix, docs, style, refactor, test, chore, build, ci
+# 범위: backend, frontend, docs, infra, repo
+# 제목: 명령형으로 작성하고 72자 이내로 유지
