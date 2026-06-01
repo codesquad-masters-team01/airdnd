@@ -1,8 +1,8 @@
 ---
 name: 프론트엔드 작업
 about: React UI, 라우팅, 상태 또는 API 연동 작업을 추적합니다
-title: "[FE] "
-labels: frontend
+title: "[프론트엔드] "
+labels: 프론트엔드
 assignees: ""
 ---
 

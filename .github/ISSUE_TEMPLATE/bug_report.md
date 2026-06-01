@@ -2,7 +2,7 @@
 name: 버그 제보
 about: 재현 가능한 결함을 보고합니다
 title: "[버그] "
-labels: bug
+labels: 버그
 assignees: ""
 ---
 

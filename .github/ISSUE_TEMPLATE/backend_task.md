@@ -1,8 +1,8 @@
 ---
 name: 백엔드 작업
 about: Spring Boot API, 도메인, 인증 또는 인프라 작업을 추적합니다
-title: "[BE] "
-labels: backend
+title: "[백엔드] "
+labels: 백엔드
 assignees: ""
 ---
 
