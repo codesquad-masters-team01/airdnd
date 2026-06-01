@@ -1,17 +1,8 @@
-<type>(<scope>): <subject>
+<type>: <title>
 
-이유:
-- 
-
-변경 내용:
-- 
-
-검증:
-- 
-
-참고:
-- 
-
+# 예시:
+# feat: 숙소 검색 API 추가
+# fix: 예약 취소 오류 수정
+# chore: 모노레포 기본 설정 정리
+#
 # 타입: feat, fix, docs, style, refactor, test, chore, build, ci
-# 범위: backend, frontend, docs, infra, repo
-# 제목: 명령형으로 작성하고 72자 이내로 유지
