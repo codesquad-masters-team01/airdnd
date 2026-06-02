@@ -10,6 +10,11 @@ export async function getReservations() {
   return reservationSchema.array().parse(data);
 }
 
+export async function getReservation(reservationId: number) {
+  const data = await request<Reservation>(`/api/reservations/${reservationId}`);
+  return reservationSchema.parse(data);
+}
+
 export async function createReservation(input: CreateReservationInput) {
   const data = await request<Reservation>('/api/reservations', {
     method: 'POST',

@@ -56,15 +56,22 @@ VITE_ENABLE_MOCKS=true
 ## 라우트
 
 - `/`: 숙소 목록 및 검색
+- `/rooms/map`: 지도 기반 숙소 탐색
 - `/rooms/:roomId`: 숙소 상세 및 예약
 - `/login`: OAuth 진입 및 개발용 mock 로그인
 - `/auth/callback`: OAuth 콜백 placeholder
 - `/reservations`: 내 예약 목록 및 취소
+- `/reservations/:reservationId`: 예약 확인 상세
 - `/my`: 마이페이지
+- `/notifications`: 알림 목록
 - `/host/rooms`: 호스트 숙소 관리
 - `/host/rooms/new`: 호스트 숙소 등록
 - `/host/rooms/:roomId/edit`: 호스트 숙소 수정
 - `/admin`: 관리자 대시보드
+- `/admin/rooms/pending`: 관리자 숙소 승인
+- `/admin/users`: 사용자 관리
+- `/admin/reservations`: 예약 현황 대시보드
+- `/admin/waitlist`: 대기 시스템 상태
 
 ## 디렉터리 구조
 

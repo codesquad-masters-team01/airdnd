@@ -6,11 +6,17 @@ export const roomHandlers = [
     const url = new URL(request.url);
     const region = url.searchParams.get('region')?.trim();
     const guests = Number(url.searchParams.get('guests') ?? '0');
+    const minPrice = Number(url.searchParams.get('minPrice') ?? '0');
+    const maxPrice = Number(url.searchParams.get('maxPrice') ?? '0');
+    const allowsPets = url.searchParams.get('allowsPets') === 'true';
 
     const rooms = mockRooms
       .filter((room) => room.status === 'ACTIVE')
       .filter((room) => (region ? room.region.includes(region) || room.address.includes(region) : true))
-      .filter((room) => (guests > 0 ? room.maxGuests >= guests : true));
+      .filter((room) => (guests > 0 ? room.maxGuests >= guests : true))
+      .filter((room) => (minPrice > 0 ? room.pricePerNight >= minPrice : true))
+      .filter((room) => (maxPrice > 0 ? room.pricePerNight <= maxPrice : true))
+      .filter((room) => (allowsPets ? room.allowsPets : true));
 
     return HttpResponse.json(rooms);
   }),
