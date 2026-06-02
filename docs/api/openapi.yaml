@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: AirDnD API
   version: 0.1.0
-  description: AirDnD 프론트엔드가 기대하는 초기 백엔드 API 계약입니다.
+  description: AirDnD 프론트엔드와 백엔드가 공유하는 API 계약입니다.
 servers:
   - url: http://localhost:8080
     description: 로컬 백엔드 서버
@@ -19,14 +19,38 @@ paths:
               schema:
                 oneOf:
                   - $ref: "#/components/schemas/User"
-                  - nullable: true
+                  - type: object
+                    nullable: true
+                    description: 비로그인 상태에서는 JSON null을 반환합니다.
   /api/auth/logout:
     post:
       tags: [Auth]
       summary: 로그아웃
+      security:
+        - cookieAuth: []
       responses:
         "204":
           description: 로그아웃 완료
+  /api/auth/mock-login:
+    post:
+      tags: [Auth]
+      summary: 개발용 mock 로그인
+      description: 프론트엔드 MSW 개발 환경에서만 사용하는 엔드포인트입니다. 운영 백엔드 구현 대상이 아닙니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MockLoginRequest"
+      responses:
+        "200":
+          description: mock 로그인 사용자
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /oauth2/authorization/{provider}:
     get:
       tags: [Auth]
@@ -70,16 +94,19 @@ paths:
           schema:
             type: integer
             minimum: 1
+            maximum: 8
         - name: children
           in: query
           schema:
             type: integer
             minimum: 0
+            maximum: 8
         - name: infants
           in: query
           schema:
             type: integer
             minimum: 0
+            maximum: 8
         - name: minPrice
           in: query
           schema:
@@ -122,6 +149,8 @@ paths:
     get:
       tags: [Reservations]
       summary: 내 예약 목록 조회
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 예약 목록
@@ -136,6 +165,8 @@ paths:
     post:
       tags: [Reservations]
       summary: 예약 생성
+      security:
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -151,12 +182,16 @@ paths:
                 $ref: "#/components/schemas/Reservation"
         "401":
           $ref: "#/components/responses/Unauthenticated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "409":
           $ref: "#/components/responses/Conflict"
   /api/reservations/{reservationId}:
     get:
       tags: [Reservations]
       summary: 예약 상세 조회
+      security:
+        - cookieAuth: []
       parameters:
         - name: reservationId
           in: path
@@ -177,6 +212,8 @@ paths:
     delete:
       tags: [Reservations]
       summary: 예약 취소
+      security:
+        - cookieAuth: []
       parameters:
         - name: reservationId
           in: path
@@ -194,6 +231,8 @@ paths:
     get:
       tags: [Host]
       summary: 호스트 숙소 목록 조회
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 호스트 숙소 목록
@@ -210,6 +249,8 @@ paths:
     post:
       tags: [Host]
       summary: 호스트 숙소 등록
+      security:
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -227,10 +268,14 @@ paths:
           $ref: "#/components/responses/Unauthenticated"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/host/rooms/{roomId}:
     get:
       tags: [Host]
       summary: 호스트 숙소 상세 조회
+      security:
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/RoomId"
       responses:
@@ -240,9 +285,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HostRoom"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     put:
       tags: [Host]
       summary: 호스트 숙소 수정
+      security:
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/RoomId"
       requestBody:
@@ -258,10 +311,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HostRoom"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/host/rooms/{roomId}/status:
     patch:
       tags: [Host]
       summary: 호스트 숙소 상태 변경
+      security:
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/RoomId"
       requestBody:
@@ -282,10 +345,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HostRoom"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /api/admin/dashboard:
     get:
       tags: [Admin]
       summary: 관리자 대시보드 지표 조회
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 관리자 대시보드 지표
@@ -301,6 +374,8 @@ paths:
     get:
       tags: [Admin]
       summary: 승인 대기 숙소 목록
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 승인 대기 숙소 목록
@@ -310,10 +385,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/HostRoom"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/rooms/{roomId}/approve:
     post:
       tags: [Admin]
       summary: 숙소 승인
+      security:
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/RoomId"
       responses:
@@ -323,10 +404,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HostRoom"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/rooms/{roomId}/reject:
     post:
       tags: [Admin]
       summary: 숙소 반려
+      security:
+        - cookieAuth: []
       parameters:
         - $ref: "#/components/parameters/RoomId"
       responses:
@@ -336,10 +425,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HostRoom"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /api/admin/users:
     get:
       tags: [Admin]
       summary: 사용자 관리 목록
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 사용자 목록
@@ -349,10 +446,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/reservations:
     get:
       tags: [Admin]
       summary: 관리자 예약 현황
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 예약 목록
@@ -362,10 +465,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Reservation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/admin/waitlist:
     get:
       tags: [Admin]
       summary: 대기 시스템 상태
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 대기열 스냅샷
@@ -373,10 +482,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WaitlistSnapshot"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/notifications:
     get:
       tags: [Notifications]
       summary: 알림 목록
+      security:
+        - cookieAuth: []
       responses:
         "200":
           description: 알림 목록
@@ -386,7 +501,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
   parameters:
     RoomId:
       name: roomId
@@ -395,6 +517,12 @@ components:
       schema:
         type: integer
   responses:
+    BadRequest:
+      description: 요청 형식 오류
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     Unauthenticated:
       description: 로그인 필요
       content:
@@ -437,10 +565,17 @@ components:
         avatarUrl:
           type: string
           format: uri
+    MockLoginRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [GUEST, HOST, ADMIN]
     RoomSummary:
       type: object
       required:
-        [id, name, region, address, pricePerNight, rating, reviewCount, maxGuests, imageUrl, isAvailable]
+        [id, name, region, address, pricePerNight, rating, reviewCount, maxGuests, imageUrl, isAvailable, allowsPets]
       properties:
         id:
           type: integer
@@ -561,6 +696,9 @@ components:
         imageUrl:
           type: string
           format: uri
+        allowsPets:
+          type: boolean
+          default: false
         amenities:
           type: array
           items:
@@ -585,7 +723,7 @@ components:
           type: string
         message:
           type: string
-        details:
+        detail:
           type: object
           additionalProperties: true
     AdminUser:

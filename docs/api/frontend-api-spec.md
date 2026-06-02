@@ -9,7 +9,7 @@
 - 날짜는 `YYYY-MM-DD` 형식을 사용합니다.
 - 금액은 원화 정수 값으로 주고받습니다.
 - 인원 수는 1 이상의 정수입니다.
-- 오류 응답은 `{ "code": string, "message": string, "details"?: object }` 형식을 사용합니다.
+- 오류 응답은 백엔드 공통 응답 형식인 `{ "code": string, "message": string, "detail"?: object }` 형식을 사용합니다.
 
 ## 인증
 
@@ -137,6 +137,7 @@
   "pricePerNight": 145000,
   "maxGuests": 4,
   "imageUrl": "https://example.com/room.jpg",
+  "allowsPets": false,
   "amenities": ["와이파이", "주방"]
 }
 ```
