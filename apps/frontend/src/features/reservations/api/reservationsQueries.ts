@@ -1,15 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createReservation, cancelReservation, getReservations } from './reservationsApi';
+import {
+  createReservation,
+  cancelReservation,
+  getReservation,
+  getReservations,
+} from './reservationsApi';
 import { roomQueryKeys } from '../../rooms/api/roomsQueries';
 
 export const reservationQueryKeys = {
   list: ['reservations', 'list'] as const,
+  detail: (reservationId: number) => ['reservations', 'detail', reservationId] as const,
 };
 
 export function useReservationsQuery() {
   return useQuery({
     queryKey: reservationQueryKeys.list,
     queryFn: getReservations,
+  });
+}
+
+export function useReservationQuery(reservationId: number) {
+  return useQuery({
+    queryKey: reservationQueryKeys.detail(reservationId),
+    queryFn: () => getReservation(reservationId),
+    enabled: Number.isFinite(reservationId),
   });
 }
 

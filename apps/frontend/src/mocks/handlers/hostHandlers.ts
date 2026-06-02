@@ -58,6 +58,7 @@ export const hostHandlers = [
       pricePerNight: number;
       maxGuests: number;
       imageUrl: string;
+      allowsPets?: boolean;
       amenities?: string[];
     };
 
@@ -67,6 +68,7 @@ export const hostHandlers = [
       rating: 0,
       reviewCount: 0,
       isAvailable: true,
+      allowsPets: body.allowsPets ?? false,
       hostName: user.name,
       latitude: 37.5665,
       longitude: 126.978,

@@ -7,11 +7,14 @@ export const reservationSchema = z.object({
   roomId: z.number(),
   roomName: z.string(),
   roomImageUrl: z.string().url(),
+  region: z.string().optional(),
   checkIn: z.string(),
   checkOut: z.string(),
   guests: z.number(),
   totalPrice: z.number(),
   status: reservationStatusSchema,
+  guestName: z.string().optional(),
+  createdAt: z.string().optional(),
 });
 
 export const createReservationSchema = z

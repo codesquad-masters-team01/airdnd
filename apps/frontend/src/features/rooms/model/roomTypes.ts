@@ -11,6 +11,7 @@ export const roomSummarySchema = z.object({
   maxGuests: z.number(),
   imageUrl: z.string().url(),
   isAvailable: z.boolean(),
+  allowsPets: z.boolean(),
 });
 
 export const roomDetailSchema = roomSummarySchema.extend({
@@ -26,6 +27,12 @@ export const roomSearchParamsSchema = z.object({
   checkIn: z.string().optional(),
   checkOut: z.string().optional(),
   guests: z.number().optional(),
+  adults: z.number().optional(),
+  children: z.number().optional(),
+  infants: z.number().optional(),
+  minPrice: z.number().optional(),
+  maxPrice: z.number().optional(),
+  allowsPets: z.boolean().optional(),
 });
 
 export type RoomSummary = z.infer<typeof roomSummarySchema>;

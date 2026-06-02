@@ -4,7 +4,7 @@ AirDnD는 숙소 예약 서비스를 만드는 모노레포 프로젝트입니�
 
 ## 작업 공간 구조
 
-```text
+```
 apps/
   backend/      Spring Boot 3 API 서버
   frontend/     React + Vite 클라이언트 및 디자인 자료

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAdminDashboardQuery } from '../../features/admin/api/adminQueries';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
@@ -15,24 +16,26 @@ export function AdminPage() {
       {dashboardQuery.isLoading ? <Loading message="관리자 지표를 불러오는 중입니다." /> : null}
       {dashboardQuery.error ? <ErrorMessage error={dashboardQuery.error} /> : null}
       {dashboardQuery.data ? (
-        <div className="metric-grid">
-          <article className="metric-card">
-            <span>승인 대기 숙소</span>
-            <strong>{dashboardQuery.data.pendingRooms}</strong>
-          </article>
-          <article className="metric-card">
-            <span>활성 사용자</span>
-            <strong>{dashboardQuery.data.activeUsers}</strong>
-          </article>
-          <article className="metric-card">
-            <span>오늘 예약</span>
-            <strong>{dashboardQuery.data.reservationsToday}</strong>
-          </article>
-          <article className="metric-card">
-            <span>대기열</span>
-            <strong>{dashboardQuery.data.waitQueueSize}</strong>
-          </article>
-        </div>
+        <>
+          <div className="metric-grid">
+            <Link className="metric-card" to="/admin/rooms/pending">
+              <span>승인 대기 숙소</span>
+              <strong>{dashboardQuery.data.pendingRooms}</strong>
+            </Link>
+            <Link className="metric-card" to="/admin/users">
+              <span>활성 사용자</span>
+              <strong>{dashboardQuery.data.activeUsers}</strong>
+            </Link>
+            <Link className="metric-card" to="/admin/reservations">
+              <span>오늘 예약</span>
+              <strong>{dashboardQuery.data.reservationsToday}</strong>
+            </Link>
+            <Link className="metric-card" to="/admin/waitlist">
+              <span>대기열</span>
+              <strong>{dashboardQuery.data.waitQueueSize}</strong>
+            </Link>
+          </div>
+        </>
       ) : null}
     </section>
   );

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../../../shared/lib/format';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
@@ -31,7 +32,9 @@ export function ReservationList({
           <img src={reservation.roomImageUrl} alt={`${reservation.roomName} 대표 이미지`} />
           <div className="reservation-content">
             <div className="row-between">
-              <h2>{reservation.roomName}</h2>
+              <Link to={`/reservations/${reservation.id}`}>
+                <h2>{reservation.roomName}</h2>
+              </Link>
               <StatusBadge>{statusText[reservation.status]}</StatusBadge>
             </div>
             <p className="muted">

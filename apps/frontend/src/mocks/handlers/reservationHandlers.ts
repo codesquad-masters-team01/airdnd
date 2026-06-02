@@ -11,6 +11,22 @@ export const reservationHandlers = [
 
     return HttpResponse.json(mockReservations);
   }),
+  http.get('/api/reservations/:reservationId', ({ params }) => {
+    if (!getMockUser()) {
+      return unauthorized();
+    }
+
+    const reservation = mockReservations.find((item) => item.id === Number(params.reservationId));
+
+    if (!reservation) {
+      return HttpResponse.json(
+        { code: 'RESERVATION_NOT_FOUND', message: '예약을 찾을 수 없습니다.' },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json(reservation);
+  }),
   http.post('/api/reservations', async ({ request }) => {
     if (!getMockUser()) {
       return unauthorized();
@@ -44,11 +60,14 @@ export const reservationHandlers = [
       roomId: room.id,
       roomName: room.name,
       roomImageUrl: room.imageUrl,
+      region: room.region,
       checkIn: body.checkIn,
       checkOut: body.checkOut,
       guests: body.guests,
       totalPrice: nights * room.pricePerNight,
       status: 'CONFIRMED' as const,
+      guestName: getMockUser()?.name,
+      createdAt: new Date().toISOString(),
     };
 
     mockReservations.unshift(reservation);

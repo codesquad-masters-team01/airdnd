@@ -30,6 +30,7 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
       pricePerNight: 100000,
       maxGuests: 2,
       imageUrl: '',
+      allowsPets: false,
       amenitiesText: '',
     },
   });
@@ -80,6 +81,13 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
       <label className="full-row">
         편의시설
         <input placeholder="와이파이, 주차, 주방" {...register('amenitiesText')} />
+      </label>
+      <label className="checkbox-row full-row">
+        <input type="checkbox" {...register('allowsPets')} />
+        <span>
+          <strong>반려동물 동반 허용</strong>
+          <small>검색 필터에서 반려동물 가능 숙소로 노출됩니다.</small>
+        </span>
       </label>
       <label className="full-row">
         설명
