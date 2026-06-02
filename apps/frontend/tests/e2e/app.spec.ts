@@ -11,7 +11,7 @@ test('검색바에서 가격 범위와 인원을 조정할 수 있다', async ({
   await page.goto('/');
 
   await page.getByRole('button', { name: '가격 범위' }).click();
-  await expect(page.getByText('1박 요금 범위')).toBeVisible();
+  await expect(page.getByText('평균 1박 요금은')).toBeVisible();
 
   const sliderBox = await page.locator('.range-slider').boundingBox();
   expect(sliderBox).not.toBeNull();
@@ -29,6 +29,22 @@ test('검색바에서 가격 범위와 인원을 조정할 수 있다', async ({
   await expect(page).toHaveURL(/minPrice=/);
   await expect(page).toHaveURL(/children=1/);
   await expect(page).toHaveURL(/guests=2/);
+});
+
+test('검색바 캘린더 드롭다운에서 체크인과 체크아웃을 선택할 수 있다', async ({ page }) => {
+  await page.goto('/');
+
+  await page.getByRole('button', { name: '날짜 선택' }).first().click();
+  await expect(page.getByText('체크인 날짜 선택')).toBeVisible();
+
+  await page.locator('.calendar-day:not([disabled])').first().click();
+  await expect(page.getByText('체크아웃 날짜 선택')).toBeVisible();
+
+  await page.locator('.calendar-day:not([disabled])').first().click();
+  await page.getByRole('button', { name: /검색/ }).click();
+
+  await expect(page).toHaveURL(/checkIn=/);
+  await expect(page).toHaveURL(/checkOut=/);
 });
 
 test('인원 필터는 각 항목이 8명에서 증가 버튼이 비활성화된다', async ({ page }) => {
@@ -57,7 +73,7 @@ test('인원 필터는 각 항목이 8명에서 증가 버튼이 비활성화된
 test('호스트 mock 로그인 후 숙소 관리 화면에 접근할 수 있다', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: '호스트로 mock 로그인' }).click();
-  await expect(page.getByRole('link', { name: /호스트 사용자/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /호스트 사용자 계정 메뉴/ })).toBeVisible();
   await page.goto('/host/rooms');
   await expect(page.getByRole('heading', { name: '호스트 숙소 관리' })).toBeVisible();
 });
@@ -65,7 +81,7 @@ test('호스트 mock 로그인 후 숙소 관리 화면에 접근할 수 있다'
 test('관리자 mock 로그인 후 누락 페이지에 접근할 수 있다', async ({ page }) => {
   await page.goto('/login');
   await page.getByRole('button', { name: '관리자로 mock 로그인' }).click();
-  await expect(page.getByRole('link', { name: /관리자 사용자/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /관리자 사용자 계정 메뉴/ })).toBeVisible();
 
   await page.goto('/admin/rooms/pending');
   await expect(page.getByRole('heading', { name: '숙소 승인 관리' })).toBeVisible();

@@ -45,3 +45,4 @@ scripts/        로컬 자동화 스크립트
 ## 참고 문서
 
 - [디렉터리 가이드](docs/DIRECTORY_GUIDE.md)
+- [프론트엔드 디자인 시스템](docs/design/frontend-design-system.md)

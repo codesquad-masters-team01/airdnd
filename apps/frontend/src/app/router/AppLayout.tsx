@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { Bell, Home, Map, Menu, ShieldCheck, UserRound } from 'lucide-react';
+import { Bell, Home, LogOut, Map, Menu, ShieldCheck, UserRound } from 'lucide-react';
 import { useCurrentUserQuery, useLogoutMutation } from '../../features/auth/api/authQueries';
 
 export function AppLayout() {
   const { data: user } = useCurrentUserQuery();
   const logoutMutation = useLogoutMutation();
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
   return (
     <div className="app-shell">
@@ -30,25 +32,51 @@ export function AppLayout() {
           </NavLink>
         </nav>
         <div className="header-actions">
-          {user ? (
-            <>
-              <Link className="user-chip" to="/my">
-                <UserRound size={16} />
-                {user.name}
-              </Link>
-              <Link className="icon-button" to="/notifications" aria-label="알림">
-                <Bell size={16} />
-              </Link>
-              <button type="button" className="ghost-button" onClick={() => logoutMutation.mutate()}>
-                로그아웃
-              </button>
-            </>
-          ) : (
-            <Link className="secondary-button" to="/login">
+          <div className={`account-menu ${isAccountMenuOpen ? 'open' : ''}`}>
+            <button
+              className="account-menu-trigger"
+              type="button"
+              aria-expanded={isAccountMenuOpen}
+              aria-label={user ? `${user.name} 계정 메뉴` : '계정 메뉴'}
+              onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
+            >
               <Menu size={16} />
-              로그인
-            </Link>
-          )}
+              <UserRound size={18} />
+              {user ? <span className="sr-only">{user.name}</span> : null}
+            </button>
+            {isAccountMenuOpen ? (
+              <div className="account-menu-panel">
+                {user ? (
+                  <>
+                    <Link to="/my">
+                      <UserRound size={16} />
+                      마이페이지
+                    </Link>
+                    <Link to="/reservations">예약</Link>
+                    <Link to="/notifications">
+                      <Bell size={16} />
+                      알림
+                    </Link>
+                    <Link to="/host/rooms">호스트</Link>
+                    <Link to="/admin">
+                      <ShieldCheck size={16} />
+                      관리자
+                    </Link>
+                    <button type="button" onClick={() => logoutMutation.mutate()}>
+                      <LogOut size={16} />
+                      로그아웃
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login">로그인</Link>
+                    <Link to="/rooms/map">지도에서 찾기</Link>
+                    <Link to="/host/rooms">호스팅하기</Link>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
       <main className="page-container">

@@ -65,6 +65,35 @@ paths:
           schema:
             type: integer
             minimum: 1
+        - name: adults
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: children
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: infants
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: minPrice
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: maxPrice
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: allowsPets
+          in: query
+          schema:
+            type: boolean
       responses:
         "200":
           description: 숙소 목록
@@ -125,6 +154,26 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
   /api/reservations/{reservationId}:
+    get:
+      tags: [Reservations]
+      summary: 예약 상세 조회
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 예약 상세
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
       tags: [Reservations]
       summary: 예약 취소
@@ -248,6 +297,95 @@ paths:
           $ref: "#/components/responses/Unauthenticated"
         "403":
           $ref: "#/components/responses/Forbidden"
+  /api/admin/rooms/pending:
+    get:
+      tags: [Admin]
+      summary: 승인 대기 숙소 목록
+      responses:
+        "200":
+          description: 승인 대기 숙소 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HostRoom"
+  /api/admin/rooms/{roomId}/approve:
+    post:
+      tags: [Admin]
+      summary: 숙소 승인
+      parameters:
+        - $ref: "#/components/parameters/RoomId"
+      responses:
+        "200":
+          description: 승인된 숙소
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostRoom"
+  /api/admin/rooms/{roomId}/reject:
+    post:
+      tags: [Admin]
+      summary: 숙소 반려
+      parameters:
+        - $ref: "#/components/parameters/RoomId"
+      responses:
+        "200":
+          description: 반려된 숙소
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostRoom"
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: 사용자 관리 목록
+      responses:
+        "200":
+          description: 사용자 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+  /api/admin/reservations:
+    get:
+      tags: [Admin]
+      summary: 관리자 예약 현황
+      responses:
+        "200":
+          description: 예약 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reservation"
+  /api/admin/waitlist:
+    get:
+      tags: [Admin]
+      summary: 대기 시스템 상태
+      responses:
+        "200":
+          description: 대기열 스냅샷
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WaitlistSnapshot"
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: 알림 목록
+      responses:
+        "200":
+          description: 알림 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
 components:
   parameters:
     RoomId:
@@ -325,6 +463,8 @@ components:
           format: uri
         isAvailable:
           type: boolean
+        allowsPets:
+          type: boolean
     RoomDetail:
       allOf:
         - $ref: "#/components/schemas/RoomSummary"
@@ -356,6 +496,8 @@ components:
         roomImageUrl:
           type: string
           format: uri
+        region:
+          type: string
         checkIn:
           type: string
           format: date
@@ -369,6 +511,11 @@ components:
         status:
           type: string
           enum: [PENDING, CONFIRMED, CANCELED]
+        guestName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     CreateReservationRequest:
       type: object
       required: [roomId, checkIn, checkOut, guests]
@@ -441,3 +588,51 @@ components:
         details:
           type: object
           additionalProperties: true
+    AdminUser:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          required: [reservationCount, joinedAt, status]
+          properties:
+            reservationCount:
+              type: integer
+            joinedAt:
+              type: string
+              format: date
+            status:
+              type: string
+              enum: [ACTIVE, BLOCKED]
+    WaitlistSnapshot:
+      type: object
+      required: [status, waitingUsers, averageWaitMinutes, admissionRatePerMinute, updatedAt]
+      properties:
+        status:
+          type: string
+          enum: [OPEN, PAUSED, CLOSED]
+        waitingUsers:
+          type: integer
+        averageWaitMinutes:
+          type: integer
+        admissionRatePerMinute:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+    Notification:
+      type: object
+      required: [id, type, title, message, read, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [RESERVATION, HOST, SYSTEM]
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time

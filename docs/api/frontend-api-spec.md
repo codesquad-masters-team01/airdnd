@@ -43,6 +43,19 @@
 
 응답은 `RoomSummary[]`입니다.
 
+검색 파라미터:
+
+- `region`: 지역 또는 주소 검색어
+- `checkIn`: 체크인 날짜
+- `checkOut`: 체크아웃 날짜
+- `adults`: 성인 수
+- `children`: 아동 수
+- `infants`: 유아 수
+- `guests`: 숙소 수용 인원 필터용 합산 값. 기본은 `adults + children`입니다.
+- `minPrice`: 1박 최소 가격
+- `maxPrice`: 1박 최대 가격
+- `allowsPets`: `true`이면 반려동물 동반 가능 숙소만 조회합니다.
+
 프론트엔드는 다음 상태를 처리합니다.
 
 - 로딩
@@ -64,6 +77,13 @@
 
 - 로그인 필요
 - 응답은 `Reservation[]`입니다.
+
+### 예약 상세 조회
+
+`GET /api/reservations/{reservationId}`
+
+- 로그인 필요
+- 예약 확인 화면에서 사용합니다.
 
 ### 예약 생성
 
@@ -154,6 +174,46 @@
 - 로그인 필요
 - `ADMIN` 권한 필요
 - 승인 대기 숙소, 활성 사용자, 오늘 예약 수, 대기열 크기를 반환합니다.
+
+### 관리자 숙소 승인 목록
+
+`GET /api/admin/rooms/pending`
+
+- `ADMIN` 권한 필요
+- 승인 대기 상태의 호스트 숙소 목록을 반환합니다.
+
+### 관리자 숙소 승인/반려
+
+`POST /api/admin/rooms/{roomId}/approve`
+
+`POST /api/admin/rooms/{roomId}/reject`
+
+### 사용자 관리
+
+`GET /api/admin/users`
+
+- 사용자 역할, 가입일, 예약 수, 상태를 반환합니다.
+
+### 예약 현황 대시보드
+
+`GET /api/admin/reservations`
+
+- 전체 예약 목록과 상태별 집계를 위한 데이터를 반환합니다.
+
+### 대기 시스템 상태
+
+`GET /api/admin/waitlist`
+
+- 대기열 상태, 대기 사용자 수, 평균 대기 시간, 분당 입장 수를 반환합니다.
+
+## 알림
+
+### 알림 목록
+
+`GET /api/notifications`
+
+- 로그인 필요
+- 예약, 호스트, 시스템 알림 목록을 반환합니다.
 
 ## 프론트엔드 mock API
 
