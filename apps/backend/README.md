@@ -8,6 +8,7 @@ AirDnD를 위한 Spring Boot 3 API 서버입니다.
 - Spring Security OAuth2
 - JPA
 - QueryDSL
+- Flyway
 - 주어진 조건/실행 시점/기대 결과 구조의 BDD 스타일 테스트
 
 ## 초기 도메인
@@ -70,3 +71,41 @@ SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 ```
 
 `prod` profile의 기본 DDL 정책은 `validate`입니다. 운영 배포에서 `update`를 기본값으로 두지 않습니다.
+
+## 데이터베이스 마이그레이션
+
+DB 스키마 변경은 Flyway migration으로 관리합니다. JPA/Hibernate는 운영 환경에서 schema를 직접 수정하지 않고 migration 결과가 entity mapping과 맞는지 검증합니다.
+
+마이그레이션 파일 위치:
+
+```text
+src/main/resources/db/migration
+```
+
+파일 이름 규칙:
+
+```text
+V{버전}__{설명}.sql
+```
+
+예시:
+
+```text
+V2__create_users_table.sql
+V3__create_rooms_table.sql
+```
+
+현재 로컬 개발 profile은 프로젝트 초기 속도를 위해 `spring.jpa.hibernate.ddl-auto=none`을 사용합니다. 이 설정은 애플리케이션 시작 시 entity와 DB schema를 검증하지 않기 때문에, migration이 아직 없는 entity를 추가해도 서버가 바로 실패하지 않습니다.
+
+배포 profile은 `spring.jpa.hibernate.ddl-auto=validate`를 사용합니다. 따라서 배포 전에 새 entity에 대응하는 migration SQL을 반드시 추가해야 합니다. migration이 없거나 DB schema와 entity가 다르면 배포 환경에서 애플리케이션이 시작되지 않습니다.
+
+기능 개발이 안정화되면 로컬 profile도 `validate`로 되돌려 팀원 PC에서도 migration 누락을 빠르게 잡는 것을 권장합니다.
+
+기존 로컬 MySQL volume에 Hibernate `update`로 만들어진 테이블이 있다면 Flyway가 실패할 수 있습니다. 개발 초기 데이터가 필요 없다면 다음 명령으로 로컬 DB를 초기화합니다.
+
+```bash
+docker compose down -v
+docker compose up -d mysql
+```
+
+`down -v`는 로컬 MySQL volume을 삭제하므로 운영이나 공유 DB에서는 사용하지 않습니다.
