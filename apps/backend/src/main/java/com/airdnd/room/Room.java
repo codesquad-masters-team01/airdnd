@@ -26,6 +26,9 @@ public class Room {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false, length = 100)
+    private String region;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -53,6 +56,11 @@ public class Room {
     @Column(nullable = false)
     private Boolean allowsPets;
 
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "room_amenities", joinColumns = @JoinColumn(name = "room_id"))
+    @Column(name = "amenity")
+    private List<String> amenities = new ArrayList<>();
+
     @Column(nullable = false)
     private Boolean isActive;
 
@@ -63,11 +71,12 @@ public class Room {
     private List<RoomImage> images = new ArrayList<>();
 
     @Builder
-    public Room(Long hostId, String name, String description, String address, String countryCode,
+    public Room(Long hostId, String name, String region, String description, String address, String countryCode,
                 BigDecimal latitude, BigDecimal longitude, Integer pricePerNight, Integer maxCapacity,
-                Boolean allowsInfants, Boolean allowsPets) {
+                Boolean allowsInfants, Boolean allowsPets, List<String> amenities) {
         this.hostId = hostId;
         this.name = name;
+        this.region = region;
         this.description = description;
         this.address = address;
         this.countryCode = countryCode;
@@ -77,6 +86,9 @@ public class Room {
         this.maxCapacity = maxCapacity;
         this.allowsInfants = allowsInfants;
         this.allowsPets = allowsPets;
+        if (amenities != null) {
+            this.amenities.addAll(amenities);
+        }
         this.isActive = true;
         this.isDeleted = false;
     }

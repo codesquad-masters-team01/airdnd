@@ -1,4 +1,4 @@
-package com.airdnd.room;
+package com.airdnd.room.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -7,12 +7,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
 public class HostRoomRequest {
     @NotBlank(message = "숙소 이름은 필수입니다.")
     private String name;
+
+    @NotBlank(message = "지역은 필수입니다.")
+    private String region;
 
     @NotBlank(message = "상세 주소는 필수입니다.")
     private String address;
@@ -29,6 +33,10 @@ public class HostRoomRequest {
 
     @NotBlank(message = "대표 이미지 URL은 필수입니다.")
     private String imageUrl;
+
+    private List<String> imageUrls;
+
+    private List<String> amenities;
 
     @NotNull(message = "유아 동반 가능 여부를 선택해주세요.")
     private Boolean allowsInfants;
