@@ -612,6 +612,11 @@ components:
               type: array
               items:
                 type: string
+            imageUrls:
+              type: array
+              items:
+                type: string
+                format: uri
             hostName:
               type: string
             latitude:
@@ -696,6 +701,11 @@ components:
         imageUrl:
           type: string
           format: uri
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
         allowsPets:
           type: boolean
           default: false

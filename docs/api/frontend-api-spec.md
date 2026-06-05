@@ -137,6 +137,7 @@
   "pricePerNight": 145000,
   "maxGuests": 4,
   "imageUrl": "https://example.com/room.jpg",
+  "imageUrls": ["https://example.com/room-2.jpg", "https://example.com/room-3.jpg"],
   "allowsPets": false,
   "amenities": ["와이파이", "주방"]
 }
