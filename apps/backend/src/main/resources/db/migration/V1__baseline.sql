@@ -12,6 +12,7 @@ CREATE TABLE rooms (
                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
                        host_id BIGINT NOT NULL,
                        name VARCHAR(255) NOT NULL,
+                       region VARCHAR(100) NOT NULL COMMENT '지역 (검색 및 필터링용)',
                        description TEXT,
                        address VARCHAR(500) NOT NULL COMMENT '전체 주소 텍스트',
                        country_code VARCHAR(5) NOT NULL COMMENT 'ISO 국가 코드 (예: KR, US, FR)',
@@ -24,6 +25,12 @@ CREATE TABLE rooms (
                        is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'true: 노출, false: 숨김',
                        is_deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Soft Delete',
                        FOREIGN KEY (host_id) REFERENCES members(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE room_amenities (
+                                room_id BIGINT NOT NULL,
+                                amenity VARCHAR(255) NOT NULL,
+                                FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE room_images (
