@@ -6,7 +6,7 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
 };
 
 const defaultHeaders = {
-  'Content-Type': 'application/json',
+  'Content-Type': 'application/json; charset=utf-8',
 };
 
 export async function request<TResponse>(path: string, options: RequestOptions = {}) {

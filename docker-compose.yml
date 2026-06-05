@@ -9,9 +9,11 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-airdnd}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       TZ: Asia/Seoul
+    # 🟢 command 설정을 아래와 같이 세션 동기화 옵션까지 추가하여 변경합니다.
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
+      - --init-connect=SET NAMES utf8mb4
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
