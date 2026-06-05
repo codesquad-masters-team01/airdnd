@@ -58,6 +58,7 @@ export const hostHandlers = [
       pricePerNight: number;
       maxGuests: number;
       imageUrl: string;
+      imageUrls?: string[];
       allowsPets?: boolean;
       amenities?: string[];
     };
@@ -72,6 +73,7 @@ export const hostHandlers = [
       hostName: user.name,
       latitude: 37.5665,
       longitude: 126.978,
+      imageUrls: body.imageUrls ?? [],
       amenities: body.amenities ?? [],
       status: 'PENDING_APPROVAL' as const,
     };

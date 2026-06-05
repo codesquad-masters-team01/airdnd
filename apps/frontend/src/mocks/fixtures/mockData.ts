@@ -38,6 +38,10 @@ export const mockRooms: HostRoom[] = [
     maxGuests: 4,
     imageUrl:
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
+    imageUrls: [
+      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1f552a0a20?auto=format&fit=crop&w=1200&q=80',
+    ],
     isAvailable: true,
     allowsPets: false,
     description:
