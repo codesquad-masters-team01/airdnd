@@ -17,11 +17,11 @@ export async function getHostRoom(roomId: number) {
 }
 
 export async function createHostRoom(input: HostRoomFormInput) {
-  const data = await request<HostRoom>('/api/host/rooms', {
+  const data = await request<number>('/api/host/rooms', {
     method: 'POST',
     body: normalizeHostRoomPayload(input),
   });
-  return hostRoomSchema.parse(data);
+  return data;
 }
 
 export async function updateHostRoom(roomId: number, input: HostRoomFormInput) {
@@ -47,5 +47,12 @@ function normalizeHostRoomPayload(input: HostRoomFormInput) {
       ?.split(',')
       .map((amenity) => amenity.trim())
       .filter(Boolean),
+    imageUrls: input.imageUrlsText
+      ?.split(',')
+      .map((url) => url.trim())
+      .filter(Boolean),
+    countryCode: 'KR',
+    latitude: 37.5665,
+    longitude: 126.978,
   };
 }

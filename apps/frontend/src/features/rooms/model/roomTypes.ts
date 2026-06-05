@@ -17,6 +17,7 @@ export const roomSummarySchema = z.object({
 export const roomDetailSchema = roomSummarySchema.extend({
   description: z.string(),
   amenities: z.array(z.string()),
+  imageUrls: z.array(z.string().url()).optional(),
   hostName: z.string(),
   latitude: z.number(),
   longitude: z.number(),
