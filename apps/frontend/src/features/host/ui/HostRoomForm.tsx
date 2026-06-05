@@ -30,6 +30,8 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
       pricePerNight: 100000,
       maxGuests: 2,
       imageUrl: '',
+      imageUrlsText: '',
+      allowsInfants: false,
       allowsPets: false,
       amenitiesText: '',
     },
@@ -39,6 +41,7 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
     if (initialValue) {
       reset({
         ...initialValue,
+        imageUrlsText: initialValue.imageUrls?.join(', ') || '',
         amenitiesText: initialValue.amenities.join(', '),
       });
     }
@@ -74,13 +77,24 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
         {errors.maxGuests ? <span className="field-error">{errors.maxGuests.message}</span> : null}
       </label>
       <label className="full-row">
-        이미지 URL
+        대표 이미지 URL
         <input {...register('imageUrl')} />
         {errors.imageUrl ? <span className="field-error">{errors.imageUrl.message}</span> : null}
       </label>
       <label className="full-row">
+        추가 이미지 URL 목록 (쉼표로 구분)
+        <textarea rows={3} placeholder="https://..., https://..." {...register('imageUrlsText')} />
+      </label>
+      <label className="full-row">
         편의시설
         <input placeholder="와이파이, 주차, 주방" {...register('amenitiesText')} />
+      </label>
+      <label className="checkbox-row full-row">
+        <input type="checkbox" {...register('allowsInfants')} />
+        <span>
+          <strong>유아 동반 허용</strong>
+          <small>유아 동반이 가능한 숙소인지 여부를 선택합니다.</small>
+        </span>
       </label>
       <label className="checkbox-row full-row">
         <input type="checkbox" {...register('allowsPets')} />
@@ -90,7 +104,7 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
         </span>
       </label>
       <label className="full-row">
-        설명
+        설명 (선택)
         <textarea rows={6} {...register('description')} />
         {errors.description ? (
           <span className="field-error">{errors.description.message}</span>

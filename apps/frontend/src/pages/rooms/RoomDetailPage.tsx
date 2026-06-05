@@ -31,8 +31,21 @@ export function RoomDetailPage() {
         <div className="detail-gallery">
           <img className="detail-hero" src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
           <div className="detail-gallery-side" aria-hidden="true">
-            <img className="detail-gallery-tile tint" src={room.imageUrl} alt="" />
-            <img className="detail-gallery-tile" src={room.imageUrl} alt="" />
+            {room.imageUrls && room.imageUrls.length > 0 ? (
+              <>
+                <img className="detail-gallery-tile" src={room.imageUrls[0]} alt="" />
+                {room.imageUrls[1] ? (
+                  <img className="detail-gallery-tile" src={room.imageUrls[1]} alt="" />
+                ) : (
+                  <img className="detail-gallery-tile" src={room.imageUrl} alt="" />
+                )}
+              </>
+            ) : (
+              <>
+                <img className="detail-gallery-tile tint" src={room.imageUrl} alt="" />
+                <img className="detail-gallery-tile" src={room.imageUrl} alt="" />
+              </>
+            )}
           </div>
         </div>
         <div className="detail-header">
