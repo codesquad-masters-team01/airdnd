@@ -1,5 +1,6 @@
 package com.airdnd.room;
 
+import com.airdnd.room.dto.HostRoomRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,11 +31,14 @@ class RoomServiceTest {
         // given
         HostRoomRequest request = new HostRoomRequest();
         ReflectionTestUtils.setField(request, "name", "테스트 오션뷰 숙소");
+        ReflectionTestUtils.setField(request, "region", "제주");
         ReflectionTestUtils.setField(request, "address", "제주도 서귀포시");
         ReflectionTestUtils.setField(request, "description", "뷰가 아주 좋습니다.");
         ReflectionTestUtils.setField(request, "pricePerNight", 100000);
         ReflectionTestUtils.setField(request, "maxGuests", 4);
         ReflectionTestUtils.setField(request, "imageUrl", "http://example.com/image.jpg");
+        ReflectionTestUtils.setField(request, "imageUrls", java.util.Arrays.asList("http://example.com/image2.jpg"));
+        ReflectionTestUtils.setField(request, "amenities", java.util.Arrays.asList("와이파이", "주차"));
         ReflectionTestUtils.setField(request, "allowsInfants", true);
         ReflectionTestUtils.setField(request, "allowsPets", false);
         ReflectionTestUtils.setField(request, "countryCode", "KR");
@@ -44,6 +48,7 @@ class RoomServiceTest {
         Room savedRoom = Room.builder()
                 .hostId(1L)
                 .name("테스트 오션뷰 숙소")
+                .region("제주")
                 .address("제주도 서귀포시")
                 .description("뷰가 아주 좋습니다.")
                 .pricePerNight(100000)
@@ -53,6 +58,7 @@ class RoomServiceTest {
                 .countryCode("KR")
                 .latitude(new BigDecimal("33.2511"))
                 .longitude(new BigDecimal("126.5611"))
+                .amenities(java.util.Arrays.asList("와이파이", "주차"))
                 .build();
         ReflectionTestUtils.setField(savedRoom, "id", 100L); // 저장된 엔티티의 ID 모킹
 
