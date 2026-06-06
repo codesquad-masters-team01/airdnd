@@ -10,6 +10,17 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            scope:
+              - openid
+              - profile
+              - email
   sql:
     init:
       mode: never

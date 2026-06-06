@@ -4,7 +4,7 @@ info:
   version: 0.1.0
   description: AirDnD 프론트엔드와 백엔드가 공유하는 API 계약입니다.
 servers:
-  - url: http://localhost:8080
+  - url: http://127.0.0.1:8080
     description: 로컬 백엔드 서버
 paths:
   /api/auth/me:
@@ -31,26 +31,6 @@ paths:
       responses:
         "204":
           description: 로그아웃 완료
-  /api/auth/mock-login:
-    post:
-      tags: [Auth]
-      summary: 개발용 mock 로그인
-      description: 프론트엔드 MSW 개발 환경에서만 사용하는 엔드포인트입니다. 운영 백엔드 구현 대상이 아닙니다.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/MockLoginRequest"
-      responses:
-        "200":
-          description: mock 로그인 사용자
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "400":
-          $ref: "#/components/responses/BadRequest"
   /oauth2/authorization/{provider}:
     get:
       tags: [Auth]
@@ -61,7 +41,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [github, google]
+            enum: [google]
       responses:
         "302":
           description: OAuth provider로 리다이렉트
@@ -565,13 +545,6 @@ components:
         avatarUrl:
           type: string
           format: uri
-    MockLoginRequest:
-      type: object
-      required: [role]
-      properties:
-        role:
-          type: string
-          enum: [GUEST, HOST, ADMIN]
     RoomSummary:
       type: object
       required:

@@ -1,33 +1,38 @@
 package com.airdnd.auth;
 
+import com.airdnd.user.MemberRoles;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 
 import java.util.Collection;
-import java.util.Map;
 
 @Getter
-public class AuthUserPrincipal extends DefaultOAuth2User {
+public class AuthMemberPrincipal extends DefaultOidcUser {
     private final Long memberId;
     private final String email;
     private final String nickname;
-    private final String role;
+    private final MemberRoles role;
+    private final String avatarUrl;
 
-    public AuthUserPrincipal(
+    public AuthMemberPrincipal(
             Collection<? extends GrantedAuthority> authorities,
-            Map<String, Object> attributes,
-            String nameAttributeKey,
+            OidcIdToken idToken,
+            OidcUserInfo userInfo,
             Long memberId,
             String email,
             String nickname,
-            String role
+            MemberRoles role,
+            String avatarUrl
     ){
-        super(authorities,attributes,nameAttributeKey);
+        super(authorities, idToken, userInfo, "sub");
         this.memberId = memberId;
         this.email = email;
         this.nickname = nickname;
         this.role = role;
+        this.avatarUrl = avatarUrl;
     }
 
 }

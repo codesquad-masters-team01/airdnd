@@ -5,6 +5,8 @@
 ## 공통 규칙
 
 - 기본 URL은 `VITE_API_BASE_URL` 환경 변수로 주입합니다.
+- OAuth 시작 URL의 백엔드 주소는 `VITE_OAUTH_BASE_URL` 환경 변수로 주입합니다.
+- 로컬 OAuth 테스트 기본 URL은 `http://127.0.0.1:8080`이며 Google Console 등록 주소와 호스트를 일치시킵니다.
 - 인증은 우선 세션 쿠키 기반을 가정하고 `credentials: include`로 요청합니다.
 - 날짜는 `YYYY-MM-DD` 형식을 사용합니다.
 - 금액은 원화 정수 값으로 주고받습니다.
@@ -22,18 +24,27 @@
 
 ### OAuth 로그인 시작
 
-`GET /oauth2/authorization/github`
-
 `GET /oauth2/authorization/google`
 
 - 백엔드는 OAuth provider로 리다이렉트합니다.
-- 로그인 성공 후 프론트엔드의 `/auth/callback` 또는 합의된 URL로 돌아오게 합니다.
+- 로그인 성공 후 프론트엔드의 `/auth/callback`으로 돌아옵니다.
+- 프론트엔드는 `/api/auth/me`를 다시 조회하고 인증된 사용자를 로그인 전 내부 경로로 이동시킵니다.
+- 현재 구현 provider는 Google이며 GitHub는 추후 등록 및 별도 사용자 정보 매핑이 필요합니다.
 
 ### 로그아웃
 
 `POST /api/auth/logout`
 
 - 성공 시 `204 No Content`를 반환합니다.
+- 프론트엔드는 인증 상태와 사용자별 캐시를 제거하고 공개 홈으로 이동합니다.
+
+### 역할별 프론트엔드 접근
+
+- `GUEST`: 예약, 마이페이지, 알림
+- `HOST`: `GUEST` 기능과 호스트 숙소 관리
+- `ADMIN`: 모든 사용자 기능과 관리자 기능
+- 역할에 맞지 않는 메뉴는 렌더링하지 않으며 직접 URL 접근은 `/forbidden`으로 이동합니다.
+- 프론트엔드 접근 제어는 사용성 보조이며, 실제 권한은 백엔드가 각 API에서 검증해야 합니다.
 
 ## 숙소
 
@@ -219,13 +230,9 @@
 
 ## 프론트엔드 mock API
 
-현재 프론트엔드는 MSW를 사용해 위 API를 브라우저에서 mock 처리합니다.
+현재 프론트엔드는 공개 숙소 API와 일부 화면 개발을 위해 MSW를 사용할 수 있습니다.
 
 - mock 사용: `VITE_ENABLE_MOCKS=true`
-- 실제 백엔드 사용: `VITE_ENABLE_MOCKS=false`
+- 실제 백엔드 및 Google OAuth 사용: `VITE_ENABLE_MOCKS=false`
 
-개발용 mock 로그인만 다음 엔드포인트를 사용합니다.
-
-`POST /api/auth/mock-login`
-
-실제 운영 백엔드에는 이 엔드포인트를 만들 필요가 없습니다.
+mock 로그인 기능은 제거되었습니다. 인증이 필요한 기능은 실제 백엔드 OAuth 세션으로 확인합니다.

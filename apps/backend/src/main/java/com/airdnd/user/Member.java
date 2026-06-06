@@ -2,12 +2,16 @@ package com.airdnd.user;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 @Getter
 @Entity
 @Table(name = "members")
+@AllArgsConstructor
+@NoArgsConstructor
 public class Member {
 
     @Id
@@ -19,7 +23,8 @@ public class Member {
     @NotNull
     String nickname;
     @NotNull
-    String role;
+    @Enumerated(EnumType.STRING)
+    MemberRoles role;
     @NotNull
     String oauthProvider;
     @NotNull

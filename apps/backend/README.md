@@ -38,8 +38,34 @@ docker compose up -d mysql
 백엔드는 `local` profile로 실행합니다.
 
 ```bash
-SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+./gradlew bootRun
 ```
+
+`local` profile은 실행 위치에 따라 프로젝트 루트의 `.env` 또는 현재 디렉터리의 `.env`를 자동으로 읽습니다. `.env`에는 실제 값을 입력합니다.
+
+```text
+SPRING_PROFILES_ACTIVE=local
+APP_FRONTEND_BASE_URL=http://127.0.0.1:5173
+OAUTH2_GOOGLE_CLIENT_ID=실제-client-id.apps.googleusercontent.com
+OAUTH2_GOOGLE_CLIENT_SECRET=실제-client-secret
+```
+
+IntelliJ에서 실행할 때 Run Configuration의 Environment variables에 다음과 같은 값을 넣으면 안 됩니다.
+
+```text
+OAUTH2_GOOGLE_CLIENT_ID=${OAUTH2_GOOGLE_CLIENT_ID}
+OAUTH2_GOOGLE_CLIENT_SECRET=${OAUTH2_GOOGLE_CLIENT_SECRET}
+```
+
+IntelliJ는 이 값을 다른 환경 변수 참조로 확장하지 않고 문자 그대로 애플리케이션에 전달할 수 있습니다. 해당 항목을 제거하고 루트 `.env`를 사용하거나 실제 credential 값을 직접 설정한 뒤 백엔드를 재시작합니다.
+
+Google OAuth Console의 로컬 승인된 리디렉션 URI는 다음 주소를 사용합니다.
+
+```text
+http://127.0.0.1:8080/login/oauth2/code/google
+```
+
+OAuth 주소는 Google Console 등록값과 정확히 일치해야 하므로 로컬 OAuth 테스트에서는 `127.0.0.1`과 `localhost`를 섞어 사용하지 않습니다.
 
 로컬 기본값은 다음과 같습니다.
 
