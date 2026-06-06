@@ -1,10 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './app/App';
+import { env } from './shared/config/env';
 import './styles/global.css';
 
 async function enableMocks() {
-  if (import.meta.env.VITE_ENABLE_MOCKS === 'false') {
+  if (!env.enableMocks) {
     return;
   }
 

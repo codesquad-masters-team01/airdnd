@@ -1,12 +1,29 @@
 import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Bell, Home, LogOut, Map, Menu, ShieldCheck, UserRound } from 'lucide-react';
 import { useCurrentUserQuery, useLogoutMutation } from '../../features/auth/api/authQueries';
+import { canAccessAdmin, canAccessHost, getRoleLabel } from '../../features/auth/lib/authAccess';
 
 export function AppLayout() {
   const { data: user } = useCurrentUserQuery();
   const logoutMutation = useLogoutMutation();
+  const navigate = useNavigate();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const hasHostAccess = user ? canAccessHost(user.role) : false;
+  const hasAdminAccess = user ? canAccessAdmin(user.role) : false;
+
+  function closeAccountMenu() {
+    setIsAccountMenuOpen(false);
+  }
+
+  function handleLogout() {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        closeAccountMenu();
+        navigate('/', { replace: true });
+      },
+    });
+  }
 
   return (
     <div className="app-shell">
@@ -24,12 +41,14 @@ export function AppLayout() {
             <Map size={16} />
             지도
           </NavLink>
-          <NavLink to="/reservations">예약</NavLink>
-          <NavLink to="/host/rooms">호스트</NavLink>
-          <NavLink to="/admin">
-            <ShieldCheck size={16} />
-            관리자
-          </NavLink>
+          {user ? <NavLink to="/reservations">예약</NavLink> : null}
+          {hasHostAccess ? <NavLink to="/host/rooms">호스트</NavLink> : null}
+          {hasAdminAccess ? (
+            <NavLink to="/admin">
+              <ShieldCheck size={16} />
+              관리자
+            </NavLink>
+          ) : null}
         </nav>
         <div className="header-actions">
           <div className={`account-menu ${isAccountMenuOpen ? 'open' : ''}`}>
@@ -41,37 +60,56 @@ export function AppLayout() {
               onClick={() => setIsAccountMenuOpen((isOpen) => !isOpen)}
             >
               <Menu size={16} />
-              <UserRound size={18} />
+              {user?.avatarUrl ? (
+                <img className="account-avatar" src={user.avatarUrl} alt="" />
+              ) : (
+                <UserRound size={18} />
+              )}
               {user ? <span className="sr-only">{user.name}</span> : null}
             </button>
             {isAccountMenuOpen ? (
               <div className="account-menu-panel">
                 {user ? (
                   <>
-                    <Link to="/my">
+                    <div className="account-menu-summary">
+                      <strong>{user.name}</strong>
+                      <span>{getRoleLabel(user.role)}</span>
+                    </div>
+                    <Link to="/my" onClick={closeAccountMenu}>
                       <UserRound size={16} />
                       마이페이지
                     </Link>
-                    <Link to="/reservations">예약</Link>
-                    <Link to="/notifications">
+                    <Link to="/reservations" onClick={closeAccountMenu}>
+                      예약
+                    </Link>
+                    <Link to="/notifications" onClick={closeAccountMenu}>
                       <Bell size={16} />
                       알림
                     </Link>
-                    <Link to="/host/rooms">호스트</Link>
-                    <Link to="/admin">
-                      <ShieldCheck size={16} />
-                      관리자
-                    </Link>
-                    <button type="button" onClick={() => logoutMutation.mutate()}>
+                    {hasHostAccess ? (
+                      <Link to="/host/rooms" onClick={closeAccountMenu}>
+                        호스트 관리
+                      </Link>
+                    ) : null}
+                    {hasAdminAccess ? (
+                      <Link to="/admin" onClick={closeAccountMenu}>
+                        <ShieldCheck size={16} />
+                        관리자
+                      </Link>
+                    ) : null}
+                    <button type="button" disabled={logoutMutation.isPending} onClick={handleLogout}>
                       <LogOut size={16} />
-                      로그아웃
+                      {logoutMutation.isPending ? '로그아웃 중' : '로그아웃'}
                     </button>
                   </>
                 ) : (
                   <>
-                    <Link to="/login">로그인</Link>
-                    <Link to="/rooms/map">지도에서 찾기</Link>
-                    <Link to="/host/rooms">호스팅하기</Link>
+                    <Link to="/login" onClick={closeAccountMenu}>
+                      로그인
+                    </Link>
+                    <Link to="/rooms/map" onClick={closeAccountMenu}>
+                      지도에서 찾기
+                    </Link>
                   </>
                 )}
               </div>

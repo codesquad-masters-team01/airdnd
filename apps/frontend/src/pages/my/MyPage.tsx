@@ -1,4 +1,5 @@
 import { useCurrentUserQuery } from '../../features/auth/api/authQueries';
+import { getRoleLabel } from '../../features/auth/lib/authAccess';
 import { Loading } from '../../shared/ui/Loading';
 
 export function MyPage() {
@@ -27,7 +28,7 @@ export function MyPage() {
             </div>
             <div>
               <dt>역할</dt>
-              <dd>{user.role}</dd>
+              <dd>{getRoleLabel(user.role)}</dd>
             </div>
           </dl>
         </article>

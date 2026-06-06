@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCurrentUserQuery } from '../../auth/api/authQueries';
 import { RoomDetail } from '../../rooms/model/roomTypes';
 import { getStayNights } from '../../../shared/lib/date';
@@ -14,6 +14,7 @@ import {
 import { useCreateReservationMutation } from '../api/reservationsQueries';
 
 export function ReservationForm({ room }: { room: RoomDetail }) {
+  const location = useLocation();
   const { data: user } = useCurrentUserQuery();
   const createMutation = useCreateReservationMutation(room.id);
   const {
@@ -45,7 +46,7 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
       <aside className="reservation-panel">
         <h2>예약하기</h2>
         <p className="muted">예약하려면 로그인이 필요합니다.</p>
-        <Link className="primary-button full-width" to="/login">
+        <Link className="primary-button full-width" to="/login" state={{ from: location }}>
           로그인하고 예약하기
         </Link>
       </aside>
