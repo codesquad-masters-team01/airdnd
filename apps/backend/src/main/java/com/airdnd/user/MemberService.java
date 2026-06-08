@@ -1,17 +1,15 @@
 package com.airdnd.user;
 
-import com.airdnd.auth.AuthMemberPrincipal;
-import com.airdnd.user.dto.CurrentUserResponse;
+import com.airdnd.common.error.ErrorCode;
+import com.airdnd.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
     private final MemberRepository repository;
 
-    @Transactional
     public Member findOrCreateOAuthMember(String provider, String oauthId, String email, String nickname){
         return repository.findByOauthProviderAndOauthId(provider, oauthId)
                 .orElseGet(() -> repository.save(
@@ -19,17 +17,21 @@ public class MemberService {
                 ));
     }
 
-    public CurrentUserResponse getCurrentUserInfo(AuthMemberPrincipal principal) {
-        if (principal == null) {
-            return null;
+    public Member getCurrentMember(Long id) {
+        return repository.findById(id)
+                .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public Member getHostActivationById(Long memberId){
+
+        Member targetMember = repository.findById(memberId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if(targetMember.getRole() != MemberRoles.GUEST){
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
         }
 
-        return CurrentUserResponse.builder()
-                .id(principal.getMemberId())
-                .name(principal.getNickname())
-                .email(principal.getEmail())
-                .role(principal.getRole())
-                .avatarUrl(principal.getAvatarUrl())
-                .build();
+        targetMember.activateHost();
+        return repository.save(targetMember);
     }
 }

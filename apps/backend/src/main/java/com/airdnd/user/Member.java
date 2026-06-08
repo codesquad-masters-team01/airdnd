@@ -31,4 +31,11 @@ public class Member {
     String oauthId;
     @NotNull
     boolean isDeleted;
+
+
+    public void activateHost(){
+        if(this.role == MemberRoles.GUEST){
+            this.role = MemberRoles.HOST;
+        }
+    }
 }
