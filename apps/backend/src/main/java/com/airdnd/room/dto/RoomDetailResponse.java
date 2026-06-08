@@ -9,8 +9,6 @@ public record RoomDetailResponse (
         String region,
         String address,
         Integer pricePerNight,
-        Double rating,
-        Integer reviewCount,
         Integer maxGuests,
         String imageUrl,
         boolean isActivated,

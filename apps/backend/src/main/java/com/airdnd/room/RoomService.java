@@ -2,6 +2,7 @@ package com.airdnd.room;
 
 import com.airdnd.room.dto.HostRoomRequest;
 import com.airdnd.room.dto.HostRoomResponse;
+import com.airdnd.room.dto.RoomResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +91,28 @@ public class RoomService {
                     room.getLatitude(),
                     room.getLongitude(),
                     status
+            ));
+        }
+        return rooms;
+    }
+
+    @Transactional(readOnly = true)
+    public List<RoomResponse> getRooms() {
+
+        List<RoomResponse> rooms = new ArrayList<>();
+        for (Room room : roomRepository.findAllByIsActive()) {
+            String imageUrl = room.getImages().stream().findFirst().map(RoomImage::getImageUrl).orElse("");
+
+            rooms.add(new RoomResponse(
+                    room.getId(),
+                    room.getName(),
+                    room.getRegion(),
+                    room.getAddress(),
+                    room.getPricePerNight(),
+                    room.getMaxCapacity(),
+                    imageUrl,
+                    room.getIsActive(),
+                    room.getAllowsPets()
             ));
         }
         return rooms;
