@@ -16,3 +16,11 @@ export async function logout() {
     method: 'POST',
   });
 }
+
+export async function activateHost() {
+  const data = await request<User>('/api/members/me/host-activation', {
+    method: 'POST',
+  });
+
+  return userSchema.parse(data);
+}

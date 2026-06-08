@@ -1,5 +1,6 @@
 package com.airdnd.room;
 
+import com.airdnd.room.dto.HostRoomRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -70,10 +71,11 @@ public class Room {
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomImage> images = new ArrayList<>();
 
+
     @Builder
-    public Room(Long hostId, String name, String region, String description, String address, String countryCode,
-                BigDecimal latitude, BigDecimal longitude, Integer pricePerNight, Integer maxCapacity,
-                Boolean allowsInfants, Boolean allowsPets, List<String> amenities) {
+    private Room(Long hostId, String name, String region, String description, String address,
+                 String countryCode, BigDecimal latitude, BigDecimal longitude, Integer pricePerNight,
+                 Integer maxCapacity, Boolean allowsInfants, Boolean allowsPets, List<String> amenities) {
         this.hostId = hostId;
         this.name = name;
         this.region = region;
@@ -93,6 +95,23 @@ public class Room {
         this.isDeleted = false;
     }
 
+    public static Room fromRoomRequest(Long hostId, HostRoomRequest request) {
+        return Room.builder()
+                .hostId(hostId)
+                .name(request.getName())
+                .region(request.getRegion())
+                .description(request.getDescription())
+                .address(request.getAddress())
+                .countryCode(request.getCountryCode())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .pricePerNight(request.getPricePerNight())
+                .maxCapacity(request.getMaxGuests())
+                .allowsInfants(request.getAllowsInfants())
+                .allowsPets(request.getAllowsPets())
+                .amenities(request.getAmenities())
+                .build();
+    }
     public void addRoomImage(RoomImage roomImage) {
         this.images.add(roomImage);
         roomImage.assignRoom(this);

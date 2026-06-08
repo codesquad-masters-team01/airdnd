@@ -1,19 +1,39 @@
 import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Home, LogOut, Map, Menu, ShieldCheck, UserRound } from 'lucide-react';
-import { useCurrentUserQuery, useLogoutMutation } from '../../features/auth/api/authQueries';
+import {
+  useCurrentUserQuery,
+  useHostActivationMutation,
+  useLogoutMutation,
+} from '../../features/auth/api/authQueries';
 import { canAccessAdmin, canAccessHost, getRoleLabel } from '../../features/auth/lib/authAccess';
 
 export function AppLayout() {
   const { data: user } = useCurrentUserQuery();
   const logoutMutation = useLogoutMutation();
+  const hostActivationMutation = useHostActivationMutation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const hasHostAccess = user ? canAccessHost(user.role) : false;
   const hasAdminAccess = user ? canAccessAdmin(user.role) : false;
 
   function closeAccountMenu() {
     setIsAccountMenuOpen(false);
+  }
+
+  function handleStartHosting() {
+    // 비로그인: 로그인 페이지로 이동 (로그인 후 원래 위치로 복귀)
+    if (!user) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    // GUEST: 호스트로 승격 후 호스트 관리 페이지로 이동.
+    // 성공 시 캐시의 user.role이 HOST로 바뀌어 헤더에 호스트 메뉴가 노출됩니다.
+    hostActivationMutation.mutate(undefined, {
+      onSuccess: () => navigate('/host/rooms'),
+    });
   }
 
   function handleLogout() {
@@ -51,6 +71,16 @@ export function AppLayout() {
           ) : null}
         </nav>
         <div className="header-actions">
+          {!hasHostAccess ? (
+            <button
+              className="host-cta"
+              type="button"
+              onClick={handleStartHosting}
+              disabled={hostActivationMutation.isPending}
+            >
+              {hostActivationMutation.isPending ? '전환 중...' : '호스팅 시작하기'}
+            </button>
+          ) : null}
           <div className={`account-menu ${isAccountMenuOpen ? 'open' : ''}`}>
             <button
               className="account-menu-trigger"

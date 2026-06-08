@@ -1,12 +1,14 @@
 package com.airdnd.room;
 
 
+import com.airdnd.auth.AuthMemberPrincipal;
 import com.airdnd.room.dto.HostRoomRequest;
 import com.airdnd.room.dto.HostRoomResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,19 +22,18 @@ public class HostRoomController {
 
 
     @PostMapping
-    public ResponseEntity<Long> registerRoom(@RequestBody @Valid HostRoomRequest request) {
+    public ResponseEntity<Long> registerRoom(@AuthenticationPrincipal AuthMemberPrincipal principal, @RequestBody @Valid HostRoomRequest request) {
 
-        Long roomId = roomService.registerRoom(request);
+        Long roomId = roomService.registerRoom(principal.getMemberId() , request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(roomId);
     }
 
 
     @GetMapping
-    public ResponseEntity<List<HostRoomResponse>> getAllRooms() {
+    public ResponseEntity<List<HostRoomResponse>> getAllRooms(@AuthenticationPrincipal AuthMemberPrincipal principal) {
 
-        Long hostId = 1L; // TODO: 로그인 기능 구현시 교체
-        return ResponseEntity.status(HttpStatus.OK).body(roomService.getRoomsByHostId(hostId));
+        return ResponseEntity.status(HttpStatus.OK).body(roomService.getRoomsByHostId(principal.getMemberId()));
 
     }
 }
