@@ -33,8 +33,6 @@ export const mockRooms: HostRoom[] = [
     region: '서울',
     address: '서울특별시 성동구 성수동',
     pricePerNight: 145000,
-    rating: 4.8,
-    reviewCount: 128,
     maxGuests: 4,
     imageUrl:
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
@@ -58,8 +56,6 @@ export const mockRooms: HostRoom[] = [
     region: '부산',
     address: '부산광역시 해운대구 우동',
     pricePerNight: 220000,
-    rating: 4.9,
-    reviewCount: 86,
     maxGuests: 6,
     imageUrl:
       'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1200&q=80',
@@ -79,8 +75,6 @@ export const mockRooms: HostRoom[] = [
     region: '제주',
     address: '제주특별자치도 서귀포시 남원읍',
     pricePerNight: 180000,
-    rating: 4.7,
-    reviewCount: 54,
     maxGuests: 5,
     imageUrl:
       'https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=1200&q=80',

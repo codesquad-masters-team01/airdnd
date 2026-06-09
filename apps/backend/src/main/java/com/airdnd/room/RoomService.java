@@ -2,10 +2,13 @@ package com.airdnd.room;
 
 import com.airdnd.room.dto.HostRoomRequest;
 import com.airdnd.room.dto.HostRoomResponse;
+import com.airdnd.room.dto.RoomDetailResponse;
+import com.airdnd.room.dto.RoomResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -47,6 +50,64 @@ public class RoomService {
         return roomRepository.findByHostId(hostId).stream()
                 .map(HostRoomResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RoomResponse> getRooms() {
+
+        List<RoomResponse> rooms = new ArrayList<>();
+        for (Room room : roomRepository.findAllByIsActive()) {
+            String imageUrl = room.getRepresentativeImageUrl();
+
+            rooms.add(new RoomResponse(
+                    room.getId(),
+                    room.getName(),
+                    room.getRegion(),
+                    room.getAddress(),
+                    room.getPricePerNight(),
+                    room.getMaxCapacity(),
+                    imageUrl,
+                    room.getIsActive(),
+                    room.getAllowsPets()
+            ));
+        }
+        return rooms;
+    }
+
+    @Transactional(readOnly = true)
+    public RoomDetailResponse getRoomById(Long id) {
+
+        Room room = roomRepository.findById(id).orElseThrow(()
+                -> new IllegalStateException("Room with id " + id + " not found!"));
+
+        if (!room.getIsActive()) {
+            throw new IllegalStateException("Room with id " + id + " is not active!");
+        }
+        if (room.getIsDeleted()) {
+            throw new IllegalStateException("Room with id " + id + " is deleted!");
+        }
+
+        List<String> imageUrls = room.getImages().stream()
+                .map(RoomImage::getImageUrl)
+                .toList();
+
+        return new RoomDetailResponse(
+                room.getId(),
+                room.getName(),
+                room.getRegion(),
+                room.getAddress(),
+                room.getPricePerNight(),
+                room.getMaxCapacity(),
+                room.getRepresentativeImageUrl(),
+                room.getIsActive(),
+                room.getAllowsPets(),
+                room.getDescription(),
+                new ArrayList<>(room.getAmenities()),
+                imageUrls,
+                "이완자",
+                room.getLatitude(),
+                room.getLongitude()
+        );
     }
 
 }

@@ -1,7 +1,8 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { useRoomsQuery } from '../../features/rooms/api/roomsQueries';
 import { SearchBar } from '../../features/rooms/ui/SearchBar';
+import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
 import { RoomSearchParams } from '../../features/rooms/model/roomTypes';
 import { formatCurrency } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
@@ -53,7 +54,7 @@ export function MapSearchPage() {
                   <h2>{room.name}</h2>
                   <p className="muted">{room.address}</p>
                   <p className="card-meta">
-                    <Star size={14} fill="currentColor" /> {room.rating.toFixed(1)} ·{' '}
+                    <RoomReviewBadge roomId={room.id} showReviewCount={false} /> ·{' '}
                     {formatCurrency(room.pricePerNight)} / 박
                   </p>
                 </div>

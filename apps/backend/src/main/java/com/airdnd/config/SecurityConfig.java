@@ -8,7 +8,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.SecurityFilterChain;
@@ -46,6 +45,8 @@ public class SecurityConfig {
                         .requestMatchers("/", "/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/rooms/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/members/me/host-activation").hasRole("GUEST")
+                        .requestMatchers(HttpMethod.GET, "/api/rooms").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/host/**").hasAnyRole("HOST", "ADMIN")
                         .anyRequest().authenticated()

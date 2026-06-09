@@ -6,10 +6,8 @@ export const roomSummarySchema = z.object({
   region: z.string(),
   address: z.string(),
   pricePerNight: z.number(),
-  rating: z.number(),
-  reviewCount: z.number(),
   maxGuests: z.number(),
-  imageUrl: z.string().url(),
+  imageUrl: z.string().url().or(z.literal('')),
   isAvailable: z.boolean(),
   allowsPets: z.boolean(),
 });
