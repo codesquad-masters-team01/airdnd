@@ -63,6 +63,7 @@ CREATE TABLE reservations (
 
 CREATE TABLE reviews (
                          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                         member_id BIGINT NOT NULL,
                          reservation_id BIGINT NOT NULL,
                          rating INT NOT NULL COMMENT '1 ~ 5점',
                          comment TEXT,
