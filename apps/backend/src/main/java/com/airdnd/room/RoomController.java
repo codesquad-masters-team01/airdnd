@@ -29,8 +29,6 @@ public class RoomController {
     public ResponseEntity<RoomDetailResponse> getRoom(@PathVariable("roomId") Long roomId) {
         RoomDetailResponse room = roomService.getRoomById(roomId);
         return ResponseEntity.status(HttpStatus.OK).body(room);
-
-
     }
 
 }

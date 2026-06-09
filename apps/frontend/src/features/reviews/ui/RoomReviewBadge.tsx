@@ -1,6 +1,6 @@
 import { Star } from 'lucide-react';
-import { useRoomReviewsQuery } from '../api/reviewsQueries';
 import { useMemo } from 'react';
+import { useRoomReviewsQuery } from '../api/reviewsQueries';
 
 interface RoomReviewBadgeProps {
   roomId: number;
@@ -12,42 +12,32 @@ export function RoomReviewBadge({ roomId, showReviewCount = true }: RoomReviewBa
 
   const summary = useMemo(() => {
     if (!reviews || reviews.length === 0) return null;
-    
+
     const sum = reviews.reduce((acc, curr) => acc + curr.rating, 0);
-    const average = sum / reviews.length;
-    
     return {
-      rating: Math.round(average * 10) / 10,
-      reviewCount: reviews.length
+      rating: Math.round((sum / reviews.length) * 10) / 10,
+      reviewCount: reviews.length,
     };
   }, [reviews]);
 
   if (isLoading) {
     return (
-      <div className="card-meta" style={{ gap: '4px', opacity: 0.5 }}>
-        <Star size={14} fill="#ddd" color="#ddd" />
-        <span style={{ width: '24px', height: '14px', backgroundColor: '#eee', borderRadius: '4px' }}></span>
-      </div>
+      <span className="rating-inline" aria-hidden="true">
+        <Star size={14} fill="currentColor" />
+        <span className="rating-skeleton" />
+      </span>
     );
   }
 
-  if (isError || !summary || summary.reviewCount === 0) {
-    return (
-      <div className="card-meta">
-        <span className="muted" style={{ fontSize: '0.85rem' }}>신규 (리뷰 없음)</span>
-      </div>
-    );
+  if (isError || !summary) {
+    return <span className="rating-inline rating-empty">신규</span>;
   }
 
   return (
-    <>
-      <span className="card-meta">
-        <Star size={14} fill="currentColor" />
-        {summary.rating.toFixed(1)}
-      </span>
-      {showReviewCount && (
-        <p className="muted" style={{ fontSize: '0.85rem' }}>리뷰 {summary.reviewCount}개</p>
-      )}
-    </>
+    <span className="rating-inline">
+      <Star size={14} fill="currentColor" />
+      {summary.rating.toFixed(1)}
+      {showReviewCount ? <span className="review-count">· 리뷰 {summary.reviewCount}개</span> : null}
+    </span>
   );
 }

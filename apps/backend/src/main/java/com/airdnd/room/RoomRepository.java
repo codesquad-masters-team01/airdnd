@@ -15,5 +15,4 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Query("SELECT r FROM Room r WHERE r.isActive = true AND r.isDeleted = false")
     List<Room> findAllByIsActive();
 
-    
 }

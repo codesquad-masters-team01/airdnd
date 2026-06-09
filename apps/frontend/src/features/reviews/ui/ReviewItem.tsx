@@ -8,31 +8,27 @@ interface ReviewItemProps {
 
 export function ReviewItem({ review }: ReviewItemProps) {
   return (
-    <div className="review-item" style={{ borderBottom: '1px solid #eee', paddingBottom: '1rem', marginBottom: '1rem' }}>
-      <div className="review-header" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <UserCircle2 size={32} color="#aaa" />
+    <article className="review-item">
+      <div className="review-author">
+        <span className="avatar-fallback" aria-hidden="true">
+          <UserCircle2 size={22} />
+        </span>
         <div>
-          <div className="review-author" style={{ fontWeight: 'bold' }}>
-            {review.authorName || '익명'}
-          </div>
-          <div className="review-date" style={{ fontSize: '0.85rem', color: '#666' }}>
-            {formatDate(review.createdAt)}
-          </div>
+          <div className="review-author-name">{review.authorName || '익명'}</div>
+          <div className="review-date">{formatDate(review.createdAt)}</div>
         </div>
       </div>
-      <div className="review-rating" style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', marginBottom: '0.5rem' }}>
+      <div className="review-stars" aria-label={`별점 ${review.rating}점`}>
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            size={14}
-            fill={i < review.rating ? '#FF385C' : 'transparent'}
-            color={i < review.rating ? '#FF385C' : '#ccc'}
+            size={13}
+            className={i < review.rating ? 'is-on' : 'is-off'}
+            fill={i < review.rating ? 'currentColor' : 'none'}
           />
         ))}
       </div>
-      <div className="review-comment" style={{ lineHeight: '1.4' }}>
-        {review.comment}
-      </div>
-    </div>
+      <p className="review-comment">{review.comment}</p>
+    </article>
   );
 }
