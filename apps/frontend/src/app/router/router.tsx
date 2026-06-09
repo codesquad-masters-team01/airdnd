@@ -19,6 +19,8 @@ import { ReservationDetailPage } from '../../pages/reservations/ReservationDetai
 import { ReservationsPage } from '../../pages/reservations/ReservationsPage';
 import { HomePage } from '../../pages/rooms/HomePage';
 import { RoomDetailPage } from '../../pages/rooms/RoomDetailPage';
+import { WishlistsPage } from '../../pages/wishlist/WishlistsPage';
+import { WishlistDetailPage } from '../../pages/wishlist/WishlistDetailPage';
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +37,8 @@ export const router = createBrowserRouter([
         children: [
           { path: '/reservations', element: <ReservationsPage /> },
           { path: '/reservations/:reservationId', element: <ReservationDetailPage /> },
+          { path: '/wishlists', element: <WishlistsPage /> },
+          { path: '/wishlists/:wishlistId', element: <WishlistDetailPage /> },
           { path: '/my', element: <MyPage /> },
           { path: '/notifications', element: <NotificationsPage /> },
         ],

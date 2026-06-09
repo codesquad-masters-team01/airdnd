@@ -9,10 +9,6 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  // 임시: 백엔드 API 연동 테스트를 위해 로그인 검사 무력화
-  return <Outlet />;
-  
-  /* 기존 코드 주석 처리
   const location = useLocation();
   const { data: user, isLoading } = useCurrentUserQuery();
 
@@ -35,5 +31,4 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   return <Outlet />;
-  */
 }

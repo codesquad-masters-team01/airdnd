@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Home, LogOut, Map, Menu, ShieldCheck, UserRound } from 'lucide-react';
+import { Bell, Heart, Home, LogOut, Map, Menu, ShieldCheck, UserRound } from 'lucide-react';
 import {
   useCurrentUserQuery,
   useHostActivationMutation,
@@ -62,6 +62,12 @@ export function AppLayout() {
             지도
           </NavLink>
           {user ? <NavLink to="/reservations">예약</NavLink> : null}
+          {user ? (
+            <NavLink to="/wishlists">
+              <Heart size={16} />
+              위시리스트
+            </NavLink>
+          ) : null}
           {hasHostAccess ? <NavLink to="/host/rooms">호스트</NavLink> : null}
           {hasAdminAccess ? (
             <NavLink to="/admin">
@@ -111,6 +117,10 @@ export function AppLayout() {
                     </Link>
                     <Link to="/reservations" onClick={closeAccountMenu}>
                       예약
+                    </Link>
+                    <Link to="/wishlists" onClick={closeAccountMenu}>
+                      <Heart size={16} />
+                      위시리스트
                     </Link>
                     <Link to="/notifications" onClick={closeAccountMenu}>
                       <Bell size={16} />

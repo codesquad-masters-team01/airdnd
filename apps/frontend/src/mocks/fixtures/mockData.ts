@@ -96,6 +96,11 @@ export const mockRooms: HostRoom[] = [
   },
 ];
 
+export const mockWishlists = [
+  { id: 1, name: '가고 싶은 곳', rooms: [mockRooms[0], mockRooms[2]] },
+  { id: 2, name: '바다 근처 숙소', rooms: [mockRooms[1]] },
+];
+
 export const mockReservations: Reservation[] = [
   {
     id: 9001,

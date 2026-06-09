@@ -4,6 +4,7 @@ import { hostHandlers } from './hostHandlers';
 import { notificationHandlers } from './notificationHandlers';
 import { reservationHandlers } from './reservationHandlers';
 import { roomHandlers } from './roomHandlers';
+import { wishlistHandlers } from './wishlistHandlers';
 
 export const handlers = [
   ...authHandlers,
@@ -12,4 +13,5 @@ export const handlers = [
   ...hostHandlers,
   ...adminHandlers,
   ...notificationHandlers,
+  ...wishlistHandlers,
 ];
