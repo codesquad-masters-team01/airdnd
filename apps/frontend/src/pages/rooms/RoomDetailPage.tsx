@@ -1,7 +1,9 @@
 import { useParams } from 'react-router-dom';
-import { MapPin, Star, UserRound } from 'lucide-react';
+import { MapPin, UserRound } from 'lucide-react';
 import { ReservationForm } from '../../features/reservations/ui/ReservationForm';
 import { useRoomQuery } from '../../features/rooms/api/roomsQueries';
+import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
+import { ReviewList } from '../../features/reviews/ui/ReviewList';
 import { formatCurrency } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
@@ -60,10 +62,7 @@ export function RoomDetailPage() {
             <span>
               <UserRound size={16} /> 호스트 {room.hostName}
             </span>
-            <span>
-              <Star size={16} fill="currentColor" /> {room.rating.toFixed(1)}
-            </span>
-            <span>리뷰 {room.reviewCount}개</span>
+            <RoomReviewBadge roomId={parsedRoomId} showReviewCount={true} />
             <span>최대 {room.maxGuests}명</span>
           </div>
         </div>
@@ -84,6 +83,9 @@ export function RoomDetailPage() {
         <div className="content-section">
           <h2>요금</h2>
           <p className="room-price">{formatCurrency(room.pricePerNight)} / 박</p>
+        </div>
+        <div className="content-section" style={{ borderBottom: 'none' }}>
+          <ReviewList roomId={parsedRoomId} />
         </div>
       </article>
       <ReservationForm room={room} />

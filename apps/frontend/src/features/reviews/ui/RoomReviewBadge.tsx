@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react';
-import { useRoomReviewSummaryQuery } from '../api/reviewsQueries';
+import { useRoomReviewsQuery } from '../api/reviewsQueries';
+import { useMemo } from 'react';
 
 interface RoomReviewBadgeProps {
   roomId: number;
@@ -7,7 +8,19 @@ interface RoomReviewBadgeProps {
 }
 
 export function RoomReviewBadge({ roomId, showReviewCount = true }: RoomReviewBadgeProps) {
-  const { data: summary, isLoading, isError } = useRoomReviewSummaryQuery(roomId);
+  const { data: reviews, isLoading, isError } = useRoomReviewsQuery(roomId);
+
+  const summary = useMemo(() => {
+    if (!reviews || reviews.length === 0) return null;
+    
+    const sum = reviews.reduce((acc, curr) => acc + curr.rating, 0);
+    const average = sum / reviews.length;
+    
+    return {
+      rating: Math.round(average * 10) / 10,
+      reviewCount: reviews.length
+    };
+  }, [reviews]);
 
   if (isLoading) {
     return (
