@@ -16,21 +16,21 @@ public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
     @NotNull
     @Column(unique = true)
-    String email;
+    private String email;
     @NotNull
-    String nickname;
+    private String nickname;
     @NotNull
     @Enumerated(EnumType.STRING)
-    MemberRoles role;
+    private MemberRoles role;
     @NotNull
-    String oauthProvider;
+    private String oauthProvider;
     @NotNull
-    String oauthId;
+    private String oauthId;
     @NotNull
-    boolean isDeleted;
+    private boolean isDeleted;
 
 
     public void activateHost(){

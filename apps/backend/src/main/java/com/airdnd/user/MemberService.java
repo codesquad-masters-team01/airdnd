@@ -2,6 +2,7 @@ package com.airdnd.user;
 
 import com.airdnd.common.error.ErrorCode;
 import com.airdnd.common.exception.BusinessException;
+import com.airdnd.wishlist.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -9,12 +10,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MemberService {
     private final MemberRepository repository;
+    private final WishlistService wishlistService;
 
     public Member findOrCreateOAuthMember(String provider, String oauthId, String email, String nickname){
         return repository.findByOauthProviderAndOauthId(provider, oauthId)
-                .orElseGet(() -> repository.save(
+                .orElseGet(() -> wishlistService.createDefaultWishlist(repository.save(
                         new Member(null, email, nickname, MemberRoles.GUEST, provider, oauthId, false)
-                ));
+                )));
     }
 
     public Member getCurrentMember(Long id) {

@@ -65,7 +65,7 @@ class RoomServiceTest {
         given(roomRepository.save(any(Room.class))).willReturn(savedRoom);
 
         // when
-        Long roomId = roomService.registerRoom(request);
+        Long roomId = roomService.registerRoom(1L, request);
 
         // then
         assertThat(roomId).isEqualTo(100L);

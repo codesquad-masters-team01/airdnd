@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -68,6 +69,7 @@ public class Room {
     @Column(nullable = false)
     private Boolean isDeleted;
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RoomImage> images = new ArrayList<>();
 
