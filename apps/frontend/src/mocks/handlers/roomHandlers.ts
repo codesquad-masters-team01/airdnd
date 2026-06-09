@@ -33,4 +33,19 @@ export const roomHandlers = [
 
     return HttpResponse.json(toRoomDetail(room));
   }),
+  http.get('/api/rooms/:roomId/reviews/summary', ({ params }) => {
+    const roomId = Number(params.roomId);
+    
+    // 더미 데이터 생성
+    return HttpResponse.json({
+      rating: 4.8,
+      reviewCount: 125,
+      accuracyRating: 4.9,
+      cleanlinessRating: 4.7,
+      checkInRating: 4.9,
+      communicationRating: 4.8,
+      locationRating: 4.6,
+      valueRating: 4.5
+    });
+  }),
 ];
