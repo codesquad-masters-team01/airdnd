@@ -97,4 +97,9 @@ public class Room {
         this.images.add(roomImage);
         roomImage.assignRoom(this);
     }
+
+    public String getRepresentativeImageUrl() {
+        return getImages().stream().filter(RoomImage::getIsRepresentative).findFirst().
+                map(RoomImage::getImageUrl).orElse("");
+    }
 }

@@ -11,7 +11,7 @@ public record RoomDetailResponse (
         Integer pricePerNight,
         Integer maxGuests,
         String imageUrl,
-        boolean isActivated,
+        boolean isAvailable,
         boolean allowsPets,
         String description,
         List<String> amenities,
