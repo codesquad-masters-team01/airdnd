@@ -1235,8 +1235,13 @@ textarea:focus {
 
 .detail-gallery-side {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: var(--space-2);
+}
+
+.detail-gallery.single {
+  grid-template-columns: 1fr;
 }
 
 .detail-gallery-tile.tint {
@@ -1410,6 +1415,104 @@ textarea:focus {
 
 .content-section h2 {
   margin-bottom: 0;
+}
+
+.content-section.no-border {
+  border-bottom: 0;
+}
+
+/* 숙소 상세 */
+.room-detail {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.detail-title {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.detail-title h1 {
+  margin-bottom: 0;
+  font-size: var(--font-size-24);
+  line-height: var(--line-tight);
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-14);
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.content-section.detail-host {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.content-section.detail-location {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.detail-host h2,
+.detail-location h3 {
+  margin-bottom: var(--space-1);
+}
+
+.detail-host-avatar,
+.detail-location-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--surface-subtle);
+}
+
+.detail-host-avatar {
+  width: 56px;
+  height: 56px;
+  color: var(--text-tertiary);
+}
+
+.detail-location-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--text-primary);
+}
+
+.detail-description {
+  margin-bottom: 0;
+  color: var(--text-secondary);
+  line-height: var(--line-normal);
+  white-space: pre-line;
+}
+
+.amenity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+}
+
+.amenity-item {
+  color: var(--text-secondary);
+  font-size: var(--font-size-14);
 }
 
 .reservation-panel,
@@ -1838,6 +1941,10 @@ textarea:focus {
   }
 
   .review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .amenity-grid {
     grid-template-columns: 1fr;
   }
 
