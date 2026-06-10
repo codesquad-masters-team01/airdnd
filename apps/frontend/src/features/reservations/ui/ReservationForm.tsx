@@ -12,6 +12,7 @@ import {
   createReservationSchema,
 } from '../model/reservationTypes';
 import { useCreateReservationMutation } from '../api/reservationsQueries';
+import { GuestSelector } from './GuestSelector';
 
 export function ReservationForm({ room }: { room: RoomDetail }) {
   const location = useLocation();
@@ -21,14 +22,19 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateReservationFormValues, unknown, CreateReservationInput>({
     resolver: zodResolver(createReservationSchema),
     defaultValues: {
       roomId: room.id,
-      guests: 1,
       checkIn: '',
       checkOut: '',
+      adults: 1,
+      children: 0,
+      infants: 0,
+      pets: 0,
     },
   });
 
@@ -38,7 +44,19 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
   const totalPrice = nights * room.pricePerNight;
 
   function onSubmit(input: CreateReservationInput) {
-    createMutation.mutate(input);
+    if (!user) return;
+    
+    createMutation.mutate({
+      guestId: user.id,
+      roomId: room.id,
+      checkInDate: input.checkIn,
+      checkOutDate: input.checkOut,
+      totalPrice,
+      adultCount: input.adults,
+      childCount: input.children,
+      infantCount: input.infants,
+      hasPets: input.pets > 0,
+    });
   }
 
   if (!user) {
@@ -72,11 +90,15 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
           <input type="date" {...register('checkOut')} />
           {errors.checkOut ? <span className="field-error">{errors.checkOut.message}</span> : null}
         </label>
-        <label>
-          인원
-          <input type="number" min={1} max={room.maxGuests} {...register('guests')} />
-          {errors.guests ? <span className="field-error">{errors.guests.message}</span> : null}
-        </label>
+        
+        <GuestSelector 
+          maxGuests={room.maxGuests} 
+          allowsPets={room.allowsPets} 
+          setValue={setValue} 
+          watch={watch} 
+        />
+        {errors.adults ? <span className="field-error">{errors.adults.message}</span> : null}
+
         <div className="price-summary">
           <span>{nights}박 예상 금액</span>
           <strong>{formatCurrency(totalPrice)}</strong>

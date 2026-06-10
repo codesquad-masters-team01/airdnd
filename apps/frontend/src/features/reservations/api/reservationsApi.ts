@@ -1,6 +1,6 @@
 import { request } from '../../../shared/api/httpClient';
 import {
-  CreateReservationInput,
+  CreateReservationPayload,
   Reservation,
   reservationSchema,
 } from '../model/reservationTypes';
@@ -15,12 +15,12 @@ export async function getReservation(reservationId: number) {
   return reservationSchema.parse(data);
 }
 
-export async function createReservation(input: CreateReservationInput) {
-  const data = await request<Reservation>('/api/reservations', {
+export async function createReservation(input: CreateReservationPayload) {
+  const data = await request<number>('/api/reservations', {
     method: 'POST',
     body: input,
   });
-  return reservationSchema.parse(data);
+  return data;
 }
 
 export async function cancelReservation(reservationId: number) {

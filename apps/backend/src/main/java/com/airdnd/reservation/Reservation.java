@@ -3,12 +3,12 @@ package com.airdnd.reservation;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
+
 
 @Entity
 @Table(name = "reservations")
@@ -21,33 +21,54 @@ public class Reservation {
     private Long id;
 
     @Column(nullable = false)
-    Long guestId;
+    private Long guestId;
 
     @Column(nullable = false)
-    Long roomId;
+    private Long roomId;
 
     @Column(nullable = false)
-    Date checkInDate;
+    private LocalDate checkInDate;
     @Column(nullable = false)
-    Date checkOutDate;
-
-    @Column(nullable = false)
-    BigDecimal totalPrice;
+    private LocalDate checkOutDate;
 
     @Column(nullable = false)
-    int adultCount;
+    private Integer totalPrice;
 
     @Column(nullable = false)
-    int childCount;
+    private int adultCount;
 
     @Column(nullable = false)
-    int infantCount;
+    private  int childCount;
 
-    boolean hasPets;
+    @Column(nullable = false)
+    private  int infantCount;
 
-    String status;
+    private  boolean hasPets;
 
-    LocalDateTime createdAt;
-    LocalDateTime updatedAt;
-    LocalDateTime deletedAt;
+    private  String status;
+
+    private LocalDateTime createdAt;
+    private  LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
+
+    @Builder
+    private Reservation (Long id, Long guestId, Long roomId, LocalDate checkInDate, LocalDate checkOutDate, Integer totalPrice,
+                         int adultCount, int childCount, int infantCount,
+                         boolean hasPets, String status, LocalDateTime createdAt,
+                         LocalDateTime updatedAt, LocalDateTime deletedAt) {
+        this.id = id;
+        this.guestId = guestId;
+        this.roomId = roomId;
+        this.checkInDate = checkInDate;
+        this.checkOutDate = checkOutDate;
+        this.totalPrice = totalPrice;
+        this.adultCount = adultCount;
+        this.childCount = childCount;
+        this.infantCount = infantCount;
+        this.hasPets = hasPets;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.deletedAt = deletedAt;
+    }
 }

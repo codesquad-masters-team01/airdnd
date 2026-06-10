@@ -22,7 +22,10 @@ export const createReservationSchema = z
     roomId: z.number(),
     checkIn: z.string().min(1, '체크인 날짜를 선택하세요.'),
     checkOut: z.string().min(1, '체크아웃 날짜를 선택하세요.'),
-    guests: z.coerce.number().min(1, '인원은 1명 이상이어야 합니다.'),
+    adults: z.coerce.number().min(1, '성인은 1명 이상이어야 합니다.'),
+    children: z.coerce.number().min(0).default(0),
+    infants: z.coerce.number().min(0).default(0),
+    pets: z.coerce.number().min(0).default(0),
   })
   .refine((value) => value.checkIn < value.checkOut, {
     message: '체크아웃은 체크인보다 늦어야 합니다.',
@@ -33,3 +36,15 @@ export type Reservation = z.infer<typeof reservationSchema>;
 export type ReservationStatus = z.infer<typeof reservationStatusSchema>;
 export type CreateReservationInput = z.infer<typeof createReservationSchema>;
 export type CreateReservationFormValues = z.input<typeof createReservationSchema>;
+
+export type CreateReservationPayload = {
+  guestId: number;
+  roomId: number;
+  checkInDate: string;
+  checkOutDate: string;
+  totalPrice: number;
+  adultCount: number;
+  childCount: number;
+  infantCount: number;
+  hasPets: boolean;
+};
