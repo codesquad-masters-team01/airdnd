@@ -4,6 +4,7 @@ import { ReservationForm } from '../../features/reservations/ui/ReservationForm'
 import { useRoomQuery } from '../../features/rooms/api/roomsQueries';
 import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
 import { ReviewList } from '../../features/reviews/ui/ReviewList';
+import { AddToWishlistButton } from '../../features/wishlist/ui/AddToWishlistButton';
 import { formatCurrency } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
@@ -51,12 +52,15 @@ export function RoomDetailPage() {
           </div>
         </div>
         <div className="detail-header">
-          <div className="page-heading">
-            <p className="eyebrow">{room.region}</p>
-            <h1>{room.name}</h1>
-            <p className="muted">
-              <MapPin size={16} /> {room.address}
-            </p>
+          <div className="detail-header-top">
+            <div className="page-heading">
+              <p className="eyebrow">{room.region}</p>
+              <h1>{room.name}</h1>
+              <p className="muted">
+                <MapPin size={16} /> {room.address}
+              </p>
+            </div>
+            <AddToWishlistButton roomId={parsedRoomId} variant="text" />
           </div>
           <div className="info-row">
             <span>
