@@ -1,6 +1,7 @@
 package com.airdnd.reservation;
 
 import com.airdnd.reservation.dto.ReservationRequest;
+import com.airdnd.reservation.dto.ReservationResponse;
 import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Service
@@ -44,5 +47,31 @@ public class ReservationService {
 
         Reservation savedReservation = reservationRepository.save(reservation);
         return savedReservation.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservationResponse> getGuestReservations(Long guestId) {
+        List<Reservation> reservations = reservationRepository.findByGuestId(guestId);
+        List<ReservationResponse> responses = new ArrayList<>();
+        for(Reservation reservation : reservations) {
+            Room room = roomRepository.findById(reservation.getRoomId()).orElseThrow(
+                    () -> new IllegalArgumentException("Room Not Found"));
+
+            responses.add(new ReservationResponse(
+                    reservation.getId(),
+                    room.getId(),
+                    room.getName(),
+                    room.getRepresentativeImageUrl(),
+                    room.getRegion(),
+                    reservation.getCheckInDate(),
+                    reservation.getCheckOutDate(),
+                    reservation.getAdultCount() + reservation.getChildCount(),
+                    reservation.getTotalPrice(),
+                    reservation.getStatus(),
+                    reservation.getCreatedAt()
+
+            ));
+        }
+        return responses;
     }
 }
