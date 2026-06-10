@@ -29,7 +29,7 @@ export function ReservationList({
     <div className="list-stack">
       {reservations.map((reservation) => (
         <article className="reservation-item" key={reservation.id}>
-          <img src={reservation.roomImageUrl} alt={`${reservation.roomName} 대표 이미지`} />
+          <img src={reservation.roomUrl} alt={`${reservation.roomName} 대표 이미지`} />
           <div className="reservation-content">
             <div className="row-between">
               <Link to={`/reservations/${reservation.id}`}>
@@ -39,7 +39,7 @@ export function ReservationList({
             </div>
             <p className="muted">
               {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)} ·{' '}
-              {reservation.guests}명
+              {reservation.totalGuest}명
             </p>
             <strong>{formatCurrency(reservation.totalPrice)}</strong>
           </div>
