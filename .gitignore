@@ -3,7 +3,10 @@
 
 # IDE
 .idea/
+
 .vscode/
+
+.idea/modules.xml
 
 # 환경 변수 파일
 .env

@@ -2,7 +2,9 @@ package com.airdnd.wishlist;
 
 import com.airdnd.room.Room;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -10,6 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Table(name = "wishlist_rooms")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WishlistRoom {
 
     @Id
@@ -26,4 +29,10 @@ public class WishlistRoom {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    public WishlistRoom(Wishlist wishlist, Room room){
+        this.wishlist = wishlist;
+        this.room = room;
+    }
+
 }

@@ -30,4 +30,6 @@ public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
             """)
     Optional<Wishlist> findDetailByIdAndMemberId(@Param("wishlistId") Long wishlistId,
                                                  @Param("memberId") Long memberId);
+
+    boolean existsWishlistByMemberIdAndNameIgnoreCase(Long memberId,String name);
 }

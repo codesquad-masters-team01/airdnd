@@ -1,4 +1,9 @@
 package com.airdnd.wishlist.dto;
 
-public class WishlistRequest {
+import jakarta.validation.constraints.NotNull;
+
+public record WishlistRequest (
+        @NotNull
+        String name
+){
 }
