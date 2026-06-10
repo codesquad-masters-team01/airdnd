@@ -1,5 +1,6 @@
 package com.airdnd.wishlist;
 
+import com.airdnd.room.Room;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -43,5 +44,12 @@ public class Wishlist {
 
     public static Wishlist createDefault(Long memberId) {
         return new Wishlist(memberId, DEFAULT_WISHLIST_NAME);
+    }
+
+    public static Wishlist create(Long memberId, String name){ return new Wishlist(memberId, name);};
+
+    public void addRoom(Room room){
+        WishlistRoom newRoomInWishlist = new WishlistRoom(this, room);
+        this.rooms.add(newRoomInWishlist);
     }
 }

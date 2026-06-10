@@ -20,7 +20,6 @@ public record WishlistListResponse(
             int roomCount
     ) {
         public static WishlistSummary from(Wishlist wishlist) {
-            // findAllWithRoomsByMemberId가 rooms를 fetch join으로 로딩했으므로 size() 접근이 안전합니다.
             return new WishlistSummary(wishlist.getId(), wishlist.getName(), wishlist.getRooms().size());
         }
     }
