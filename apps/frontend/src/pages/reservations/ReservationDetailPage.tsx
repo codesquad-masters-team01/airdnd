@@ -51,7 +51,7 @@ export function ReservationDetailPage() {
               {formatDate(reservation.checkOut)}
             </span>
             <span>
-              <UsersRound size={16} /> {reservation.totalGuest}명
+              <UsersRound size={16} /> {reservation.guests}명
             </span>
           </div>
         </div>
