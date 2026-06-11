@@ -43,10 +43,6 @@ export async function updateHostRoomStatus(roomId: number, status: HostRoomStatu
 function normalizeHostRoomPayload(input: HostRoomFormInput) {
   return {
     ...input,
-    amenities: input.amenitiesText
-      ?.split(',')
-      .map((amenity) => amenity.trim())
-      .filter(Boolean),
     imageUrls: input.imageUrlsText
       ?.split(',')
       .map((url) => url.trim())

@@ -65,7 +65,6 @@ export function GuestSelector({ maxGuests, allowsPets, setValue, watch }: GuestS
 
   return (
     <div className="guest-selector-container" ref={containerRef} style={{ position: 'relative' }}>
-      <label>인원</label>
       <button
         type="button"
         className="guest-selector-button"
@@ -73,18 +72,24 @@ export function GuestSelector({ maxGuests, allowsPets, setValue, watch }: GuestS
         style={{
           width: '100%',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '0.75rem',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: '2px',
+          padding: '10px 12px',
+          border: '1px solid #b0b0b0',
+          borderRadius: '10px',
           background: 'white',
           cursor: 'pointer',
-          textAlign: 'left'
+          textAlign: 'left',
         }}
       >
-        <span>{formatSummary()}</span>
-        <ChevronDown size={16} />
+        <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em', color: '#222', textTransform: 'uppercase' }}>
+          인원
+        </span>
+        <span style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', color: '#222' }}>
+          {formatSummary()}
+          <ChevronDown size={16} />
+        </span>
       </button>
 
       {isOpen && (

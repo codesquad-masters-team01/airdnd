@@ -21,7 +21,7 @@ export function HostRoomFormPage() {
 
   function handleSubmit(input: HostRoomFormInput) {
     if (isEditMode) {
-      const amenities = input.amenitiesText?.split(',').map((a) => a.trim()).filter(Boolean) || [];
+      const amenities = input.amenities ?? [];
       const additionalImages = input.imageUrlsText?.split(',').map((url) => url.trim()).filter(Boolean) || [];
       const imageUrls = [input.imageUrl, ...additionalImages];
 

@@ -6,6 +6,7 @@ import { RoomGallery } from '../../features/rooms/ui/RoomGallery';
 import { RoomOverview } from '../../features/rooms/ui/RoomOverview';
 import { RoomDescription } from '../../features/rooms/ui/RoomDescription';
 import { RoomAmenities } from '../../features/rooms/ui/RoomAmenities';
+import { RoomLocation } from '../../features/rooms/ui/RoomLocation';
 import { ReviewList } from '../../features/reviews/ui/ReviewList';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
@@ -39,12 +40,15 @@ export function RoomDetailPage() {
         {/* B. 와이드 사진 갤러리 */}
         <RoomGallery room={room} />
 
-        {/* 메인 레이아웃 (좌: 정보 / 우: 예약창) */}
+        {/* 사진 영역과 본문을 구분하는 라인 */}
+        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '0 0 32px' }} />
+
+        {/* 메인 레이아웃 (좌: 정보 / 우: 예약창) — 예약 폼은 이 그리드 안에서만 따라온다 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 372px', gap: '80px', position: 'relative' }}>
 
           {/* 좌측: 숙소 정보 */}
           <article>
-            {/* C+F. 호스트 정보 + 숙소 위치 */}
+            {/* C. 호스트 정보 + 숙소 하이라이트 */}
             <RoomOverview room={room} />
 
             {/* D. 설명 */}
@@ -52,21 +56,27 @@ export function RoomDetailPage() {
 
             {/* E. 편의시설 */}
             <RoomAmenities room={room} />
-
-            {/* G. 후기 섹션 */}
-            <section id="reviews" style={{ paddingTop: '16px', paddingBottom: '48px' }}>
-              <ReviewList roomId={parsedRoomId} />
-            </section>
           </article>
 
           {/* H. 우측: 스티키 예약 폼 */}
           <aside style={{ position: 'relative' }}>
-            <div style={{ position: 'sticky', top: '100px', marginBottom: '48px' }}>
+            <div style={{ position: 'sticky', top: '100px' }}>
               <ReservationForm room={room} />
             </div>
           </aside>
 
         </div>
+
+        {/* 편의시설과 위치 사이 전체 너비 구분선 */}
+        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '48px 0' }} />
+
+        {/* F. 숙소 위치 (지도 영역 — 추후 지도 API 연동) — 전체 너비 */}
+        <RoomLocation room={room} />
+
+        {/* G. 후기 섹션 — 전체 너비 */}
+        <section id="reviews" style={{ paddingTop: '16px', paddingBottom: '48px' }}>
+          <ReviewList roomId={parsedRoomId} />
+        </section>
       </div>
     </div>
   );
