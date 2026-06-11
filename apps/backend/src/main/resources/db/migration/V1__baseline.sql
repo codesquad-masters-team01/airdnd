@@ -11,6 +11,7 @@ CREATE TABLE members (
 CREATE TABLE rooms (
                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
                        host_id BIGINT NOT NULL,
+                       host_name VARCHAR(255) NOT NULL,
                        name VARCHAR(255) NOT NULL,
                        region VARCHAR(100) NOT NULL COMMENT '지역 (검색 및 필터링용)',
                        description TEXT,

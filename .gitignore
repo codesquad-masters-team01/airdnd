@@ -6,6 +6,9 @@
 
 .vscode/
 
+# Claude Code 로컬 설정
+.claude/settings.local.json
+
 .idea/modules.xml
 
 # 환경 변수 파일

@@ -1,7 +1,13 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useCreateHostRoomMutation } from '../../features/host/api/hostQueries';
-import { useRoomQuery, useUpdateRoomMutation } from '../../features/rooms/api/roomsQueries';
-import { HostRoomFormInput } from '../../features/host/model/hostRoomTypes';
+import {
+  useCreateHostRoomMutation,
+  useHostRoomQuery,
+} from '../../features/host/api/hostQueries';
+import { useUpdateRoomMutation } from '../../features/rooms/api/roomsQueries';
+import {
+  HostRoomFormInput,
+  HostRoomUpdateFormInput,
+} from '../../features/host/model/hostRoomTypes';
 import { HostRoomForm } from '../../features/host/ui/HostRoomForm';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
@@ -12,39 +18,39 @@ export function HostRoomFormPage() {
   const parsedRoomId = roomId ? Number(roomId) : undefined;
   const isEditMode = typeof parsedRoomId === 'number' && Number.isFinite(parsedRoomId);
   
-  const hostRoomQuery = useRoomQuery(parsedRoomId ?? 0);
+  const hostRoomQuery = useHostRoomQuery(parsedRoomId);
   const createMutation = useCreateHostRoomMutation();
   const updateMutation = useUpdateRoomMutation(parsedRoomId ?? 0);
   
   const isPending = isEditMode ? updateMutation.isPending : createMutation.isPending;
   const error = isEditMode ? updateMutation.error : createMutation.error;
 
-  function handleSubmit(input: HostRoomFormInput) {
-    if (isEditMode) {
-      const amenities = input.amenities ?? [];
-      const additionalImages = input.imageUrlsText?.split(',').map((url) => url.trim()).filter(Boolean) || [];
-      const imageUrls = [input.imageUrl, ...additionalImages];
+  function handleCreate(input: HostRoomFormInput) {
+    createMutation.mutate(input, {
+      onSuccess: () => navigate('/host/rooms'),
+    });
+  }
 
-      updateMutation.mutate(
-        {
-          name: input.name,
-          description: input.description ?? '',
-          pricePerNight: input.pricePerNight,
-          maxGuests: input.maxGuests,
-          allowsInfants: input.allowsInfants ?? false,
-          allowsPets: input.allowsPets ?? false,
-          amenities,
-          imageUrls,
-        },
-        {
-          onSuccess: () => navigate('/host/rooms'),
-        }
-      );
-    } else {
-      createMutation.mutate(input, {
+  function handleUpdate(input: HostRoomUpdateFormInput) {
+    const amenities = input.amenities ?? [];
+    const additionalImages = input.imageUrlsText?.split(',').map((url) => url.trim()).filter(Boolean) || [];
+    const imageUrls = [input.imageUrl, ...additionalImages];
+
+    updateMutation.mutate(
+      {
+        name: input.name,
+        description: input.description ?? '',
+        pricePerNight: input.pricePerNight,
+        maxGuests: input.maxGuests,
+        allowsInfants: input.allowsInfants ?? false,
+        allowsPets: input.allowsPets ?? false,
+        amenities,
+        imageUrls,
+      },
+      {
         onSuccess: () => navigate('/host/rooms'),
-      });
-    }
+      },
+    );
   }
 
   if (isEditMode && hostRoomQuery.isLoading) {
@@ -59,11 +65,17 @@ export function HostRoomFormPage() {
       </div>
       {isEditMode && hostRoomQuery.error ? <ErrorMessage error={hostRoomQuery.error} /> : null}
       {error ? <ErrorMessage error={error} /> : null}
-      <HostRoomForm
-        initialValue={isEditMode && hostRoomQuery.data ? hostRoomQuery.data : undefined}
-        isSubmitting={isPending}
-        onSubmit={handleSubmit}
-      />
+      {isEditMode && hostRoomQuery.data ? (
+        <HostRoomForm
+          key={`edit-${parsedRoomId}`}
+          mode="edit"
+          initialValue={hostRoomQuery.data}
+          isSubmitting={isPending}
+          onSubmit={handleUpdate}
+        />
+      ) : !isEditMode ? (
+        <HostRoomForm key="create" mode="create" isSubmitting={isPending} onSubmit={handleCreate} />
+      ) : null}
     </section>
   );
 }

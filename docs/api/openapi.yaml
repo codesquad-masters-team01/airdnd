@@ -49,6 +49,21 @@ paths:
     get:
       tags: [Rooms]
       summary: 숙소 목록 검색
+      description: >
+        숙소 목록을 검색합니다. 텍스트/필터 조건(region, 날짜, 인원, 가격, 반려동물)에
+        더해, 지도 화면에서는 현재 보이는 영역(뷰포트)의 경계 좌표를 함께 전달해
+        해당 사각형 영역 안의 숙소만 받아올 수 있습니다.
+
+
+        지도 연동 동작:
+          - `south`/`west`/`north`/`east` 4개 경계 좌표는 **모두 함께** 전달해야 합니다.
+            하나라도 빠지면 경계 필터는 무시됩니다.
+          - 4개가 모두 있으면 `south <= latitude <= north` 이고
+            `west <= longitude <= east` 인 숙소만 반환합니다.
+          - 응답 개수는 `limit`(기본 200)으로 제한됩니다. 초과 시 잘리므로
+            클라이언트는 더 좁은 영역으로 다시 검색하도록 안내해야 합니다.
+          - 지도 마커를 찍으려면 응답의 각 숙소에 `latitude`/`longitude`가
+            포함되어야 합니다(아래 RoomSummary 참고).
       parameters:
         - name: region
           in: query
@@ -101,6 +116,50 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: south
+          in: query
+          description: >
+            지도 뷰포트 남쪽(최소) 위도. south/west/north/east 4개를 함께 보내면
+            그 사각형 영역 안의 숙소만 반환합니다. 프론트엔드 `MapBounds.south`와 1:1.
+          schema:
+            type: number
+            format: double
+            minimum: -90
+            maximum: 90
+        - name: west
+          in: query
+          description: 지도 뷰포트 서쪽(최소) 경도. `MapBounds.west`와 1:1.
+          schema:
+            type: number
+            format: double
+            minimum: -180
+            maximum: 180
+        - name: north
+          in: query
+          description: 지도 뷰포트 북쪽(최대) 위도. `MapBounds.north`와 1:1.
+          schema:
+            type: number
+            format: double
+            minimum: -90
+            maximum: 90
+        - name: east
+          in: query
+          description: 지도 뷰포트 동쪽(최대) 경도. `MapBounds.east`와 1:1.
+          schema:
+            type: number
+            format: double
+            minimum: -180
+            maximum: 180
+        - name: limit
+          in: query
+          description: >
+            한 번에 반환할 최대 숙소 수. 지도 마커 폭주와 페이로드 비대를 막기 위한
+            상한이며, 초과분은 잘립니다. 미지정 시 200.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 200
       responses:
         "200":
           description: 숙소 목록
@@ -573,6 +632,20 @@ components:
           type: boolean
         allowsPets:
           type: boolean
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: >
+            지도 마커 표시용 위도. 지도 검색을 지원하려면 목록 응답에도 포함해야 합니다.
+            (백엔드 RoomResponse가 추가하기 전까지는 누락될 수 있어 required 아님)
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: 지도 마커 표시용 경도. latitude와 함께 제공되어야 합니다.
     RoomDetail:
       allOf:
         - $ref: "#/components/schemas/RoomSummary"
@@ -648,14 +721,18 @@ components:
       allOf:
         - $ref: "#/components/schemas/RoomDetail"
         - type: object
-          required: [status]
+          required: [countryCode, status]
           properties:
+            countryCode:
+              type: string
+              pattern: "^[A-Z]{2}$"
             status:
               type: string
               enum: [ACTIVE, INACTIVE, PENDING_APPROVAL]
     HostRoomRequest:
       type: object
-      required: [name, region, address, description, pricePerNight, maxGuests, imageUrl]
+      required:
+        [name, region, address, pricePerNight, maxGuests, imageUrl, allowsInfants, allowsPets, countryCode, latitude, longitude]
       properties:
         name:
           type: string
@@ -682,6 +759,20 @@ components:
         allowsPets:
           type: boolean
           default: false
+        allowsInfants:
+          type: boolean
+          default: false
+        countryCode:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
         amenities:
           type: array
           items:

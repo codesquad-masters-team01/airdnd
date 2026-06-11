@@ -30,6 +30,11 @@ export function RoomDetailPage() {
 
   const room = roomQuery.data;
 
+  // 첫 번째 이미지를 대표로, 나머지를 사이드(최대 4개)로 사용합니다.
+  const allImages = room.imageUrls && room.imageUrls.length > 0 ? room.imageUrls : [room.imageUrl];
+  const heroImage = allImages[0];
+  const sideImages = allImages.slice(1, 5);
+
   return (
     <div style={{ backgroundColor: '#fff', minHeight: '100vh', paddingTop: '0', marginTop: '-40px' }}>
       <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px' }}>
@@ -70,7 +75,7 @@ export function RoomDetailPage() {
         {/* 편의시설과 위치 사이 전체 너비 구분선 */}
         <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '48px 0' }} />
 
-        {/* F. 숙소 위치 (지도 영역 — 추후 지도 API 연동) — 전체 너비 */}
+        {/* F. 숙소 위치 (실제 지도 연동) — 전체 너비 */}
         <RoomLocation room={room} />
 
         {/* G. 후기 섹션 — 전체 너비 */}

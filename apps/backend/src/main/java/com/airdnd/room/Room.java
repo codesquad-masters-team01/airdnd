@@ -26,6 +26,9 @@ public class Room {
     private Long hostId;
 
     @Column(nullable = false)
+    private String hostName;
+
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false, length = 100)
@@ -75,10 +78,11 @@ public class Room {
 
 
     @Builder
-    private Room(Long hostId, String name, String region, String description, String address,
+    private Room(Long hostId, String hostName, String name, String region, String description, String address,
                  String countryCode, BigDecimal latitude, BigDecimal longitude, Integer pricePerNight,
                  Integer maxCapacity, Boolean allowsInfants, Boolean allowsPets, List<String> amenities) {
         this.hostId = hostId;
+        this.hostName = hostName;
         this.name = name;
         this.region = region;
         this.description = description;
@@ -97,9 +101,10 @@ public class Room {
         this.isDeleted = false;
     }
 
-    public static Room fromRoomRequest(Long hostId, HostRoomRequest request) {
+    public static Room fromRoomRequest(Long hostId, String hostName,HostRoomRequest request) {
         return Room.builder()
                 .hostId(hostId)
+                .hostName(hostName)
                 .name(request.getName())
                 .region(request.getRegion())
                 .description(request.getDescription())
@@ -123,7 +128,6 @@ public class Room {
         return getImages().stream().filter(RoomImage::getIsRepresentative).findFirst().
                 map(RoomImage::getImageUrl).orElse("");
     }
-
     public void updateRoom(String name, String description, Integer pricePerNight,
                            Integer maxCapacity, Boolean allowsInfants, Boolean allowsPets,
                            List<String> newAmenities) {
@@ -141,7 +145,7 @@ public class Room {
         }
     }
 
-    public void updateImages(List<RoomImage> newImages ) {
+    public void updateImages(List<RoomImage> newImages) {
         this.images.clear();
         for (RoomImage roomImage : newImages) {
             this.addRoomImage(roomImage);

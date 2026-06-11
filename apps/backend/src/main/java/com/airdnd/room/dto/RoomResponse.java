@@ -1,5 +1,7 @@
 package com.airdnd.room.dto;
 
+import java.math.BigDecimal;
+
 public record RoomResponse (
 
         Long id,
@@ -9,6 +11,8 @@ public record RoomResponse (
         Integer pricePerNight,
         Integer maxGuests,
         String imageUrl,
+        BigDecimal latitude,
+        BigDecimal longitude,
         boolean isAvailable,
         boolean allowsPets
 )
