@@ -4,14 +4,13 @@ import { useForm, useWatch } from 'react-hook-form';
 import { SelectedLocation, selectedLocationSchema } from '../../maps/model/locationTypes';
 import { LocationPicker } from '../../maps/ui/LocationPicker';
 import {
-  HostRoom,
   HostRoomFormInput,
   HostRoomFormValues,
   hostRoomFormSchema,
 } from '../model/hostRoomTypes';
 
 type HostRoomFormProps = {
-  initialValue?: HostRoom;
+  initialValue?: RoomDetail;
   isSubmitting?: boolean;
   onSubmit: (input: HostRoomFormInput) => void;
 };
@@ -57,8 +56,9 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
     if (initialValue) {
       reset({
         ...initialValue,
-        imageUrlsText: initialValue.imageUrls?.join(', ') || '',
-        amenitiesText: initialValue.amenities.join(', '),
+        imageUrl: initialValue.imageUrl,
+        imageUrlsText: initialValue.imageUrls?.filter(url => url !== initialValue.imageUrl).join(', ') || '',
+        amenitiesText: initialValue.amenities?.join(', ') || '',
       });
     }
   }, [initialValue, reset]);

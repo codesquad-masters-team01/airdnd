@@ -31,7 +31,7 @@ export function ReservationDetailPage() {
   return (
     <section className="detail-layout">
       <article className="stack detail-content">
-        <img className="detail-hero" src={reservation.roomImageUrl} alt={`${reservation.roomName} 대표 이미지`} />
+        <img className="detail-hero" src={reservation.roomUrl} alt={`${reservation.roomName} 대표 이미지`} />
         <div className="detail-header">
           <div className="page-heading">
             <p className="eyebrow">Reservation</p>
@@ -51,7 +51,7 @@ export function ReservationDetailPage() {
               {formatDate(reservation.checkOut)}
             </span>
             <span>
-              <UsersRound size={16} /> {reservation.guests}명
+              <UsersRound size={16} /> {reservation.totalGuest}명
             </span>
           </div>
         </div>

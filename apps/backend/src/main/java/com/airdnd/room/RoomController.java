@@ -1,14 +1,14 @@
 package com.airdnd.room;
 
+import com.airdnd.auth.AuthMemberPrincipal;
 import com.airdnd.room.dto.RoomDetailResponse;
 import com.airdnd.room.dto.RoomResponse;
+import com.airdnd.room.dto.RoomUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -29,6 +29,14 @@ public class RoomController {
     public ResponseEntity<RoomDetailResponse> getRoom(@PathVariable Long roomId) {
         RoomDetailResponse room = roomService.getRoomById(roomId);
         return ResponseEntity.status(HttpStatus.OK).body(room);
+    }
+
+    @PatchMapping("/{roomId}")
+    public ResponseEntity<RoomDetailResponse> updateRoom(@PathVariable Long roomId,
+                                                         @AuthenticationPrincipal AuthMemberPrincipal principal,
+                                                         @RequestBody RoomUpdateRequest request) {
+        RoomDetailResponse updatedRoom = roomService.updateRoomDetails(principal.getMemberId(),roomId,request);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedRoom);
     }
 
 }
