@@ -8,6 +8,7 @@ import { RoomOverview } from '../../features/rooms/ui/RoomOverview';
 import { RoomDescription } from '../../features/rooms/ui/RoomDescription';
 import { RoomAmenities } from '../../features/rooms/ui/RoomAmenities';
 import { ReviewList } from '../../features/reviews/ui/ReviewList';
+import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
 import { AddToWishlistButton } from '../../features/wishlist/ui/AddToWishlistButton';
 import { RoomLocationMap } from '../../features/maps/ui/RoomLocationMap';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';

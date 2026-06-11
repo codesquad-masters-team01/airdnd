@@ -39,7 +39,7 @@ export function ReservationList({
             </div>
             <p className="muted">
               {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)} ·{' '}
-              {reservation.totalGuest}명
+              {reservation.guests}명
             </p>
             <strong>{formatCurrency(reservation.totalPrice)}</strong>
           </div>

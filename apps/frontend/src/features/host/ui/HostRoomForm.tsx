@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { SelectedLocation, selectedLocationSchema } from '../../maps/model/locationTypes';
 import { LocationPicker } from '../../maps/ui/LocationPicker';
+import { RoomDetail } from '../../rooms/model/roomTypes';
 import {
   HostRoomFormInput,
   HostRoomFormValues,
