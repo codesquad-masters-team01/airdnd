@@ -52,7 +52,7 @@ public class RoomService {
     }
 
     @Transactional(readOnly = true)
-    public List<RoomResponse> getRooms() {
+    public List<RoomResponse> getRooms(RoomSearchRequestDTO conditions) {
         List<RoomResponse> rooms = new ArrayList<>();
         for (Room room : roomRepository.findAllByIsActive()) {
             String imageUrl = room.getRepresentativeImageUrl();
