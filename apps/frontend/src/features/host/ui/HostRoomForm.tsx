@@ -1,105 +1,126 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { SelectedLocation, selectedLocationSchema } from '../../maps/model/locationTypes';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { SelectedLocation } from '../../maps/model/locationTypes';
 import { LocationPicker } from '../../maps/ui/LocationPicker';
+import { RoomLocationMap } from '../../maps/ui/RoomLocationMap';
 import { RoomDetail } from '../../rooms/model/roomTypes';
 import {
   HostRoomFormInput,
-  HostRoomFormValues,
-  hostRoomFormSchema,
+  HostRoomUpdateFormInput,
+  HostRoomUpdateFormValues,
+  hostRoomUpdateFormSchema,
 } from '../model/hostRoomTypes';
 
-type HostRoomFormProps = {
-  initialValue?: RoomDetail;
-  isSubmitting?: boolean;
-  onSubmit: (input: HostRoomFormInput) => void;
+type HostRoomFormProps =
+  | {
+      mode: 'create';
+      initialValue?: never;
+      isSubmitting?: boolean;
+      onSubmit: (input: HostRoomFormInput) => void;
+    }
+  | {
+      mode: 'edit';
+      initialValue: RoomDetail;
+      isSubmitting?: boolean;
+      onSubmit: (input: HostRoomUpdateFormInput) => void;
+    };
+
+const defaultValues: HostRoomUpdateFormValues = {
+  name: '',
+  description: '',
+  pricePerNight: 100000,
+  maxGuests: 2,
+  imageUrl: '',
+  imageUrlsText: '',
+  allowsInfants: false,
+  allowsPets: false,
+  amenitiesText: '',
 };
 
-export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: HostRoomFormProps) {
+export function HostRoomForm(props: HostRoomFormProps) {
+  const { mode, isSubmitting = false } = props;
+  const initialValue = props.mode === 'edit' ? props.initialValue : undefined;
+  const [selectedLocation, setSelectedLocation] = useState<SelectedLocation | null>(null);
   const {
     register,
     reset,
     handleSubmit,
-    control,
-    setValue,
     formState: { errors },
-  } = useForm<HostRoomFormValues, unknown, HostRoomFormInput>({
-    resolver: zodResolver(hostRoomFormSchema),
-    defaultValues: {
-      name: '',
-      region: '',
-      address: '',
-      description: '',
-      pricePerNight: 100000,
-      maxGuests: 2,
-      imageUrl: '',
-      imageUrlsText: '',
-      allowsInfants: false,
-      allowsPets: false,
-      amenitiesText: '',
-    },
+  } = useForm<HostRoomUpdateFormValues, unknown, HostRoomUpdateFormInput>({
+    resolver: zodResolver(hostRoomUpdateFormSchema),
+    defaultValues,
   });
-
-  const locationValues = useWatch({
-    control,
-    name: ['address', 'countryCode', 'latitude', 'longitude'],
-  });
-  const locationResult = selectedLocationSchema.safeParse({
-    address: locationValues[0],
-    countryCode: locationValues[1],
-    latitude: locationValues[2],
-    longitude: locationValues[3],
-  });
-  const selectedLocation = locationResult.success ? locationResult.data : null;
 
   useEffect(() => {
     if (initialValue) {
       reset({
-        ...initialValue,
+        name: initialValue.name,
+        description: initialValue.description,
+        pricePerNight: initialValue.pricePerNight,
+        maxGuests: initialValue.maxGuests,
         imageUrl: initialValue.imageUrl,
-        imageUrlsText: initialValue.imageUrls?.filter(url => url !== initialValue.imageUrl).join(', ') || '',
+        imageUrlsText:
+          initialValue.imageUrls?.filter((url) => url !== initialValue.imageUrl).join(', ') || '',
         amenitiesText: initialValue.amenities?.join(', ') || '',
+        allowsInfants: initialValue.allowsInfants,
+        allowsPets: initialValue.allowsPets,
       });
     }
   }, [initialValue, reset]);
 
-  function handleLocationChange(location: SelectedLocation) {
-    setValue('address', location.address, { shouldDirty: true, shouldValidate: true });
-    setValue('countryCode', location.countryCode, { shouldDirty: true, shouldValidate: true });
-    setValue('latitude', location.latitude, { shouldDirty: true, shouldValidate: true });
-    setValue('longitude', location.longitude, { shouldDirty: true, shouldValidate: true });
+  function submitForm(input: HostRoomUpdateFormInput) {
+    if (props.mode === 'edit') {
+      props.onSubmit(input);
+      return;
+    }
+
+    if (!selectedLocation) {
+      return;
+    }
+
+    props.onSubmit({
+      ...input,
+      ...selectedLocation,
+    });
   }
 
-  const locationError =
-    errors.address?.message ??
-    errors.countryCode?.message ??
-    errors.latitude?.message ??
-    errors.longitude?.message;
-
   return (
-    <form className="form-grid" onSubmit={handleSubmit(onSubmit)}>
+    <form className="form-grid" onSubmit={handleSubmit(submitForm)}>
       <label>
         숙소 이름
         <input {...register('name')} />
         {errors.name ? <span className="field-error">{errors.name.message}</span> : null}
       </label>
-      <label>
-        지역
-        <input {...register('region')} />
-        {errors.region ? <span className="field-error">{errors.region.message}</span> : null}
-      </label>
       <div className="host-location-field full-row">
         <div>
           <strong>숙소 위치</strong>
-          <p className="muted">주소 검색 결과를 선택한 뒤 지도에서 정확한 위치를 조정하세요.</p>
+          <p className="muted">
+            {mode === 'create'
+              ? '주소 검색 결과를 선택하면 지역과 위치가 자동으로 설정됩니다.'
+              : '숙소 위치는 등록 후 변경할 수 없습니다.'}
+          </p>
         </div>
-        <LocationPicker
-          value={selectedLocation}
-          onChange={handleLocationChange}
-          disabled={isSubmitting}
-        />
-        {locationError ? <span className="field-error">{locationError}</span> : null}
+        {mode === 'create' ? (
+          <LocationPicker
+            value={selectedLocation}
+            onChange={setSelectedLocation}
+            disabled={isSubmitting}
+          />
+        ) : (
+          <div className="host-location-readonly">
+            <div className="location-picker-details">
+              <strong>{props.initialValue.address}</strong>
+              <span>{props.initialValue.region}</span>
+              <small>위치가 변경되었다면 기존 숙소를 수정하지 말고 새 숙소로 등록해주세요.</small>
+            </div>
+            <RoomLocationMap
+              latitude={props.initialValue.latitude}
+              longitude={props.initialValue.longitude}
+              name={props.initialValue.name}
+            />
+          </div>
+        )}
       </div>
       <label>
         1박 가격
@@ -150,7 +171,7 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
       <button
         className="primary-button full-row"
         type="submit"
-        disabled={isSubmitting || !selectedLocation}
+        disabled={isSubmitting || (mode === 'create' && !selectedLocation)}
       >
         {isSubmitting ? '저장 중...' : '숙소 저장'}
       </button>

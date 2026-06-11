@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx vitest *)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Read(//private/tmp/design-v2/airdnd/project/**)",
+      "Bash(sed -n '/function DetailPin/,/^}/p' /tmp/design-v2/airdnd/project/markers.jsx)",
+      "Bash(git fetch *)",
+      "Bash(git merge-tree *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m 'wip: checkpoint before merging feat-room-details \\(map feature prep\\) *)",
+      "Bash(git branch *)",
+      "Bash(git switch *)",
+      "Bash(git commit -q -m 'feat: map viewport search fires bbox API call; track maps feature *)",
+      "Bash(git stash *)"
+    ]
+  }
+}

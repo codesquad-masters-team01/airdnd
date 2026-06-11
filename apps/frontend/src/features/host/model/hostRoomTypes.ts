@@ -13,13 +13,8 @@ export const hostRoomSchema = roomDetailSchema.extend({
   status: hostRoomStatusSchema,
 });
 
-export const hostRoomFormSchema = z.object({
+export const hostRoomUpdateFormSchema = z.object({
   name: z.string().min(1, '숙소 이름을 입력하세요.'),
-  region: z.string().min(1, '지역을 입력하세요.'),
-  address: z.string().min(1, '주소를 입력하세요.'),
-  countryCode: countryCodeSchema,
-  latitude: latitudeSchema,
-  longitude: longitudeSchema,
   description: z.string().optional(),
   pricePerNight: z.coerce
     .number()
@@ -37,7 +32,17 @@ export const hostRoomFormSchema = z.object({
   amenitiesText: z.string().optional(),
 });
 
+export const hostRoomFormSchema = hostRoomUpdateFormSchema.extend({
+  region: z.string().min(1, '지역을 입력하세요.'),
+  address: z.string().min(1, '주소를 입력하세요.'),
+  countryCode: countryCodeSchema,
+  latitude: latitudeSchema,
+  longitude: longitudeSchema,
+});
+
 export type HostRoomStatus = z.infer<typeof hostRoomStatusSchema>;
 export type HostRoom = z.infer<typeof hostRoomSchema>;
 export type HostRoomFormInput = z.infer<typeof hostRoomFormSchema>;
 export type HostRoomFormValues = z.input<typeof hostRoomFormSchema>;
+export type HostRoomUpdateFormInput = z.infer<typeof hostRoomUpdateFormSchema>;
+export type HostRoomUpdateFormValues = z.input<typeof hostRoomUpdateFormSchema>;
