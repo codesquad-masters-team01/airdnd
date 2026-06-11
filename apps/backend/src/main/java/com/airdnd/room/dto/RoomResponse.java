@@ -1,6 +1,9 @@
 package com.airdnd.room.dto;
 
+import com.airdnd.room.Room;
+
 import java.math.BigDecimal;
+import java.util.List;
 
 public record RoomResponse (
 
@@ -16,5 +19,24 @@ public record RoomResponse (
         boolean isAvailable,
         boolean allowsPets
 )
+{
+    public static RoomResponse from(Room room){
+        return new RoomResponse(
+                room.getId(),
+                room.getName(),
+                room.getRegion(),
+                room.getAddress(),
+                room.getPricePerNight(),
+                room.getMaxCapacity(),
+                room.getRepresentativeImageUrl(),
+                room.getLatitude(),
+                room.getLongitude(),
+                room.getIsActive(),
+                room.getAllowsPets()
+        );
+    }
 
-{ }
+    public static List<RoomResponse> fromList(List<Room> rooms){
+        return rooms.stream().map(RoomResponse::from).toList();
+    }
+}

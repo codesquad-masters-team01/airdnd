@@ -53,25 +53,8 @@ public class RoomService {
 
     @Transactional(readOnly = true)
     public List<RoomResponse> getRooms(RoomSearchRequestDTO conditions) {
-        List<RoomResponse> rooms = new ArrayList<>();
-        for (Room room : roomRepository.findAllByIsActive()) {
-            String imageUrl = room.getRepresentativeImageUrl();
-
-            rooms.add(new RoomResponse(
-                    room.getId(),
-                    room.getName(),
-                    room.getRegion(),
-                    room.getAddress(),
-                    room.getPricePerNight(),
-                    room.getMaxCapacity(),
-                    imageUrl,
-                    room.getLatitude(),
-                    room.getLongitude(),
-                    room.getIsActive(),
-                    room.getAllowsPets()
-            ));
-        }
-        return rooms;
+        List<Room> rooms = roomRepository.findByRoomSearchRequest(conditions);
+        return RoomResponse.fromList(rooms);
     }
 
     @Transactional(readOnly = true)
