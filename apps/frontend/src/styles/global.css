@@ -692,36 +692,33 @@ p {
   font-weight: 650;
 }
 
-.price-distribution {
-  height: 88px;
+.price-histogram {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 76px;
+  padding: 0 2px;
 }
 
-.price-distribution svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
+.price-histogram-bar {
+  flex: 1 1 0;
+  min-height: 6px;
+  border-radius: var(--radius-6) var(--radius-6) 0 0;
+  background: var(--color-gray-200);
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease;
+  transform-origin: bottom;
 }
 
-.price-distribution-muted {
-  fill: none;
-  stroke: #e5e5e7;
-  stroke-width: 3;
-}
-
-.price-distribution-active {
-  fill: #333333;
-}
-
-.price-distribution-line {
-  fill: none;
-  stroke: #e5e5e7;
-  stroke-width: 2;
+.price-histogram-bar.active {
+  background: var(--color-brand);
 }
 
 .range-slider {
   position: relative;
   height: 36px;
+  margin-top: calc(-1 * var(--space-1));
 }
 
 .range-slider::before,
@@ -1071,7 +1068,7 @@ textarea:focus {
 
 .room-card-body {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
   padding: 0 2px;
 }
 
@@ -1082,11 +1079,26 @@ textarea:focus {
   gap: var(--space-3);
 }
 
+.room-card-info {
+  display: grid;
+  gap: 2px;
+}
+
+.room-card-location {
+  margin-bottom: 0;
+}
+
 .room-card h2,
 .reservation-content h2 {
   margin-bottom: 0;
   font-size: var(--font-size-16);
   line-height: 1.25;
+}
+
+/* 룸카드 이름: 묵직한 볼드 대신 미디엄 무게로 가볍게 */
+.room-card-title-row h2 {
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .card-meta {
@@ -1095,14 +1107,22 @@ textarea:focus {
 }
 
 .room-price {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
   margin-bottom: 0;
-  font-size: var(--font-size-16);
-  font-weight: 850;
+  font-size: var(--font-size-15, var(--font-size-14));
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.room-price strong {
+  font-weight: 500;
 }
 
 .room-price span {
   color: var(--text-tertiary);
-  font-weight: 600;
+  font-weight: 400;
 }
 
 /* 평점 · 후기 */
@@ -1292,7 +1312,7 @@ textarea:focus {
   background: transparent;
   color: var(--text-primary);
   font-size: var(--font-size-14);
-  font-weight: 750;
+  font-weight: 400;
   cursor: pointer;
   text-decoration: underline;
   white-space: nowrap;

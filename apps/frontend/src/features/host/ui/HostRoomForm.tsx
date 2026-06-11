@@ -1,15 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { RoomDetail } from '../../rooms/model/roomTypes';
 import {
-  HostRoom,
   HostRoomFormInput,
   HostRoomFormValues,
   hostRoomFormSchema,
 } from '../model/hostRoomTypes';
 
 type HostRoomFormProps = {
-  initialValue?: HostRoom;
+  initialValue?: RoomDetail;
   isSubmitting?: boolean;
   onSubmit: (input: HostRoomFormInput) => void;
 };
@@ -41,8 +41,9 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
     if (initialValue) {
       reset({
         ...initialValue,
-        imageUrlsText: initialValue.imageUrls?.join(', ') || '',
-        amenitiesText: initialValue.amenities.join(', '),
+        imageUrl: initialValue.imageUrl,
+        imageUrlsText: initialValue.imageUrls?.filter(url => url !== initialValue.imageUrl).join(', ') || '',
+        amenitiesText: initialValue.amenities?.join(', ') || '',
       });
     }
   }, [initialValue, reset]);

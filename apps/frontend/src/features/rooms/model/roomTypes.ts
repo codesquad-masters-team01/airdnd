@@ -19,6 +19,7 @@ export const roomDetailSchema = roomSummarySchema.extend({
   hostName: z.string(),
   latitude: z.number(),
   longitude: z.number(),
+  allowsInfants: z.boolean().optional().default(false),
 });
 
 export const roomSearchParamsSchema = z.object({

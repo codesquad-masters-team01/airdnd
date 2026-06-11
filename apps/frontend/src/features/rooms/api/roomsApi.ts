@@ -25,3 +25,22 @@ export async function getRoom(roomId: number) {
   const data = await request<RoomDetail>(`/api/rooms/${roomId}`);
   return roomDetailSchema.parse(data);
 }
+
+export interface RoomUpdateRequest {
+  name: string;
+  description: string;
+  pricePerNight: number;
+  maxGuests: number;
+  allowsInfants: boolean;
+  allowsPets: boolean;
+  amenities: string[];
+  imageUrls: string[];
+}
+
+export async function updateRoom(roomId: number, input: RoomUpdateRequest) {
+  const data = await request<RoomDetail>(`/api/rooms/${roomId}`, {
+    method: 'PATCH',
+    body: input,
+  });
+  return roomDetailSchema.parse(data);
+}
