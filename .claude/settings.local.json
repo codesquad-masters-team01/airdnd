@@ -13,7 +13,11 @@
       "Bash(git branch *)",
       "Bash(git switch *)",
       "Bash(git commit -q -m 'feat: map viewport search fires bbox API call; track maps feature *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(git config *)",
+      "Bash(git ls-remote *)",
+      "Read(//Users/jongwoopark/.ssh/**)",
+      "Bash(git remote *)"
     ]
   }
 }

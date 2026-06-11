@@ -12,7 +12,7 @@ public record RoomSearchRequestDTO(
         LocalDate checkIn,
         LocalDate checkOut,
         @Min(1)
-        @Max(16)
+        @Max(8)
         Integer guests,
         @Min(1)
         @Max(8)
@@ -21,7 +21,7 @@ public record RoomSearchRequestDTO(
         Integer infants,
         Integer minPrice,
         Integer maxPrice,
-        Boolean allowedPets,
+        Boolean allowsPets,
         @DecimalMin("-90")
         @DecimalMax("90")
         BigDecimal south,

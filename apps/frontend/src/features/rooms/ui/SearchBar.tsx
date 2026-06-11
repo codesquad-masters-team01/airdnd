@@ -32,9 +32,13 @@ const PRICE_HISTOGRAM = Array.from({ length: PRICE_HISTOGRAM_BUCKETS }, (_, inde
 });
 const PRICE_HISTOGRAM_MAX = Math.max(...PRICE_HISTOGRAM);
 
+// 성인 + 아동 합계 상한 (백엔드 RoomSearchRequestDTO 의 guests @Max(8) 와 일치).
+// 유아(infants)는 인원 수에 포함되지 않고 별도 필터로만 사용됩니다.
+const MAX_STAY_GUESTS = 8;
+
 const occupancyLabels: Record<OccupancyKey, OccupancyRule> = {
-  adults: { title: '성인', description: '만 13세 이상, 최대 8명', min: 1, max: 8 },
-  children: { title: '아동', description: '만 2-12세, 최대 8명', min: 0, max: 8 },
+  adults: { title: '성인', description: '만 13세 이상 · 성인·아동 합산 최대 8명', min: 1, max: 8 },
+  children: { title: '아동', description: '만 2-12세 · 성인·아동 합산 최대 8명', min: 0, max: 8 },
   infants: { title: '유아', description: '만 2세 미만, 최대 8명', min: 0, max: 8 },
 };
 
@@ -103,10 +107,12 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
   const [calendarMonth, setCalendarMonth] = useState(
     getMonthStart(parseDateValue(defaultValue.checkIn ?? '') ?? new Date()),
   );
-  const [adults, setAdults] = useState(
-    clampOccupancyValue('adults', defaultValue.adults ?? defaultValue.guests ?? 1),
+  const initialAdults = clampOccupancyValue('adults', defaultValue.adults ?? defaultValue.guests ?? 1);
+  const [adults, setAdults] = useState(initialAdults);
+  // 성인 + 아동 합계가 8을 넘지 않도록 초기값(예: URL 파라미터)도 남은 인원으로 제한합니다.
+  const [children, setChildren] = useState(
+    Math.min(clampOccupancyValue('children', defaultValue.children ?? 0), MAX_STAY_GUESTS - initialAdults),
   );
-  const [children, setChildren] = useState(clampOccupancyValue('children', defaultValue.children ?? 0));
   const [infants, setInfants] = useState(clampOccupancyValue('infants', defaultValue.infants ?? 0));
   const [minPrice, setMinPrice] = useState(defaultValue.minPrice ?? PRICE_MIN);
   const [maxPrice, setMaxPrice] = useState(defaultValue.maxPrice ?? PRICE_MAX);
@@ -172,7 +178,23 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
     setOpenPanel(null);
   }
 
+  function canIncrementOccupancy(key: OccupancyKey) {
+    const rule = occupancyLabels[key];
+    const current = { adults, children, infants }[key];
+    if (rule.max !== undefined && current >= rule.max) {
+      return false;
+    }
+    // 성인 + 아동 합계는 8명을 넘을 수 없습니다(유아는 인원 수에 포함되지 않음).
+    if ((key === 'adults' || key === 'children') && stayGuests >= MAX_STAY_GUESTS) {
+      return false;
+    }
+    return true;
+  }
+
   function updateOccupancy(key: OccupancyKey, direction: 1 | -1) {
+    if (direction === 1 && !canIncrementOccupancy(key)) {
+      return;
+    }
     const setters = {
       adults: setAdults,
       children: setChildren,
@@ -463,10 +485,7 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
                     className="stepper-button"
                     aria-label={`${occupancyLabels[key].title} 증가`}
                     onClick={() => updateOccupancy(key, 1)}
-                    disabled={
-                      occupancyLabels[key].max !== undefined &&
-                      { adults, children, infants }[key] >= occupancyLabels[key].max
-                    }
+                    disabled={!canIncrementOccupancy(key)}
                   >
                     <Plus size={14} />
                   </button>
