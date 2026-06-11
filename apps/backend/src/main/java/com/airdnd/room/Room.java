@@ -123,4 +123,28 @@ public class Room {
         return getImages().stream().filter(RoomImage::getIsRepresentative).findFirst().
                 map(RoomImage::getImageUrl).orElse("");
     }
+
+    public void updateRoom(String name, String description, Integer pricePerNight,
+                           Integer maxCapacity, Boolean allowsInfants, Boolean allowsPets,
+                           List<String> newAmenities) {
+        this.name = name;
+        this.description = description;
+        this.pricePerNight = pricePerNight;
+        this.maxCapacity = maxCapacity;
+        this.allowsInfants = allowsInfants;
+        this.allowsPets = allowsPets;
+        if (this.amenities != null) {
+            this.amenities.clear();
+        }
+        if (newAmenities != null) {
+            this.amenities.addAll(newAmenities);
+        }
+    }
+
+    public void updateImages(List<RoomImage> newImages ) {
+        this.images.clear();
+        for (RoomImage roomImage : newImages) {
+            this.addRoomImage(roomImage);
+        }
+    }
 }

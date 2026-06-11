@@ -1,9 +1,6 @@
 package com.airdnd.room;
 
-import com.airdnd.room.dto.HostRoomRequest;
-import com.airdnd.room.dto.HostRoomResponse;
-import com.airdnd.room.dto.RoomDetailResponse;
-import com.airdnd.room.dto.RoomResponse;
+import com.airdnd.room.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,6 +82,50 @@ public class RoomService {
         if (room.getIsDeleted()) {
             throw new IllegalStateException("Room with id " + id + " is deleted!");
         }
+
+        List<String> imageUrls = room.getImages().stream()
+                .map(RoomImage::getImageUrl)
+                .toList();
+
+        return new RoomDetailResponse(
+                room.getId(),
+                room.getName(),
+                room.getRegion(),
+                room.getAddress(),
+                room.getPricePerNight(),
+                room.getMaxCapacity(),
+                room.getRepresentativeImageUrl(),
+                room.getIsActive(),
+                room.getAllowsPets(),
+                room.getDescription(),
+                new ArrayList<>(room.getAmenities()),
+                imageUrls,
+                "이완자",
+                room.getLatitude(),
+                room.getLongitude()
+        );
+    }
+
+    @Transactional
+    public RoomDetailResponse updateRoomDetails(Long hostId,Long roomId, RoomUpdateRequest request) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()
+                -> new IllegalStateException("Room with id " + roomId + " not found!"));
+
+        if (!room.getHostId().equals(hostId)) {
+            throw new IllegalStateException("Room with id " + hostId + " does not belong to this host!");
+        }
+        room.updateRoom(
+                request.name(),
+                request.description(),
+                request.pricePerNight(),
+                request.maxGuests(),
+                request.allowsInfants(),
+                request.allowsPets(),
+                request.amenities()
+        );
+
+
+
 
         List<String> imageUrls = room.getImages().stream()
                 .map(RoomImage::getImageUrl)

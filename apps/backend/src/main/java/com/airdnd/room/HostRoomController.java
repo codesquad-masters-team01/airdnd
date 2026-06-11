@@ -4,6 +4,7 @@ package com.airdnd.room;
 import com.airdnd.auth.AuthMemberPrincipal;
 import com.airdnd.room.dto.HostRoomRequest;
 import com.airdnd.room.dto.HostRoomResponse;
+import com.airdnd.room.dto.RoomDetailResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,17 +24,19 @@ public class HostRoomController {
 
     @PostMapping
     public ResponseEntity<Long> registerRoom(@AuthenticationPrincipal AuthMemberPrincipal principal, @RequestBody @Valid HostRoomRequest request) {
-
         Long roomId = roomService.registerRoom(principal.getMemberId() , request);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(roomId);
     }
 
 
     @GetMapping
     public ResponseEntity<List<HostRoomResponse>> getAllRooms(@AuthenticationPrincipal AuthMemberPrincipal principal) {
-
         return ResponseEntity.status(HttpStatus.OK).body(roomService.getRoomsByHostId(principal.getMemberId()));
+    }
 
+    @GetMapping("{roomId}")
+    public ResponseEntity<RoomDetailResponse> getRoom(@PathVariable Long roomId) {
+        RoomDetailResponse room = roomService.getRoomById(roomId);
+        return ResponseEntity.status(HttpStatus.OK).body(room);
     }
 }
