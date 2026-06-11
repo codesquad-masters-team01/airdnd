@@ -97,6 +97,7 @@ public class RoomService {
                 room.getRepresentativeImageUrl(),
                 room.getIsActive(),
                 room.getAllowsPets(),
+                room.getAllowsInfants(),
                 room.getDescription(),
                 new ArrayList<>(room.getAmenities()),
                 imageUrls,
@@ -124,8 +125,18 @@ public class RoomService {
                 request.amenities()
         );
 
-
-
+        // 이미지 갱신: imageUrls의 첫 번째가 대표 사진, 나머지는 추가 사진
+        if (request.imageUrls() != null && !request.imageUrls().isEmpty()) {
+            List<RoomImage> newImages = new ArrayList<>();
+            for (int i = 0; i < request.imageUrls().size(); i++) {
+                RoomImage image = RoomImage.builder()
+                        .imageUrl(request.imageUrls().get(i))
+                        .isRepresentative(i == 0)
+                        .build();
+                newImages.add(image);
+            }
+            room.updateImages(newImages);
+        }
 
         List<String> imageUrls = room.getImages().stream()
                 .map(RoomImage::getImageUrl)
@@ -141,6 +152,7 @@ public class RoomService {
                 room.getRepresentativeImageUrl(),
                 room.getIsActive(),
                 room.getAllowsPets(),
+                room.getAllowsInfants(),
                 room.getDescription(),
                 new ArrayList<>(room.getAmenities()),
                 imageUrls,
