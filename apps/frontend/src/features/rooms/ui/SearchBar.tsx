@@ -1,4 +1,4 @@
-import { FormEvent, MouseEvent, useState } from 'react';
+import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Minus, PawPrint, Plus, Search } from 'lucide-react';
 import { formatCurrency } from '../../../shared/lib/format';
 import { RoomSearchParams } from '../model/roomTypes';
@@ -21,6 +21,16 @@ const PRICE_MIN = 0;
 const PRICE_MAX = 500000;
 const PRICE_STEP = 10000;
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+
+// 가격 분포를 막대 히스토그램으로 표현하기 위한 더미 분포(우측으로 꼬리가 긴 형태)
+const PRICE_HISTOGRAM_BUCKETS = 34;
+const PRICE_HISTOGRAM = Array.from({ length: PRICE_HISTOGRAM_BUCKETS }, (_, index) => {
+  const position = index / (PRICE_HISTOGRAM_BUCKETS - 1);
+  const peak = Math.exp(-(((position - 0.26) / 0.16) ** 2));
+  const tail = Math.exp(-(((position - 0.58) / 0.36) ** 2)) * 0.32;
+  return peak + tail;
+});
+const PRICE_HISTOGRAM_MAX = Math.max(...PRICE_HISTOGRAM);
 
 const occupancyLabels: Record<OccupancyKey, OccupancyRule> = {
   adults: { title: '성인', description: '만 13세 이상, 최대 8명', min: 1, max: 8 },
@@ -102,6 +112,7 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
   const [maxPrice, setMaxPrice] = useState(defaultValue.maxPrice ?? PRICE_MAX);
   const [allowsPets, setAllowsPets] = useState(defaultValue.allowsPets ?? false);
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const stayGuests = adults + children;
   const hasPriceFilter = minPrice > PRICE_MIN || maxPrice < PRICE_MAX;
@@ -117,6 +128,32 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
   const priceSummary = hasPriceFilter
     ? `${formatCurrency(minPrice)} - ${formatCurrency(maxPrice)}`
     : '가격 범위';
+
+  useEffect(() => {
+    if (!openPanel) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (formRef.current && !formRef.current.contains(event.target as Node)) {
+        setOpenPanel(null);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpenPanel(null);
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openPanel]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -240,7 +277,7 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
   }
 
   return (
-    <form className="search-bar" onSubmit={handleSubmit}>
+    <form className="search-bar" onSubmit={handleSubmit} ref={formRef}>
       <label className="search-field">
         지역
         <input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="서울" />
@@ -312,12 +349,19 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
               </div>
               <span>{priceSummary}</span>
             </div>
-            <div className="price-distribution" aria-hidden="true">
-              <svg viewBox="0 0 390 132" role="presentation">
-                <path className="price-distribution-muted" d="M22 105 C54 105 69 101 92 100 C118 99 128 91 140 75 C150 60 158 76 171 57 C183 40 183 10 190 10 C197 10 199 45 210 58 C221 71 228 66 235 86 C243 108 260 108 282 103 C299 99 312 106 332 108 C354 111 369 112 379 112" />
-                <path className="price-distribution-active" d="M22 105 C54 105 69 101 92 100 C118 99 128 91 140 75 C150 60 158 76 171 57 C183 40 183 10 190 10 C197 10 199 45 210 58 C221 71 228 66 235 86 C243 108 260 108 282 103 C299 99 312 106 332 108 C354 111 369 112 379 112 L379 112 L22 112 Z" />
-                <path className="price-distribution-line" d="M22 112 H379" />
-              </svg>
+            <div className="price-histogram" aria-hidden="true">
+              {PRICE_HISTOGRAM.map((value, index) => {
+                const bucketPrice = (index / (PRICE_HISTOGRAM_BUCKETS - 1)) * PRICE_MAX;
+                const isActive = bucketPrice >= minPrice && bucketPrice <= maxPrice;
+
+                return (
+                  <span
+                    key={index}
+                    className={`price-histogram-bar${isActive ? ' active' : ''}`}
+                    style={{ height: `${Math.max((value / PRICE_HISTOGRAM_MAX) * 100, 8)}%` }}
+                  />
+                );
+              })}
             </div>
             <div
               className="range-slider"

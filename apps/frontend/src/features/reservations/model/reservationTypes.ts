@@ -6,7 +6,7 @@ export const reservationSchema = z.object({
   id: z.number(),
   roomId: z.number(),
   roomName: z.string(),
-  roomImageUrl: z.string().url(),
+  roomUrl: z.string(),
   region: z.string().optional(),
   checkIn: z.string(),
   checkOut: z.string(),
