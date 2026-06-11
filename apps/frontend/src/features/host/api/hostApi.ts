@@ -42,17 +42,26 @@ export async function updateHostRoomStatus(roomId: number, status: HostRoomStatu
 
 function normalizeHostRoomPayload(input: HostRoomFormInput) {
   return {
-    ...input,
-    amenities: input.amenitiesText
-      ?.split(',')
-      .map((amenity) => amenity.trim())
-      .filter(Boolean),
-    imageUrls: input.imageUrlsText
-      ?.split(',')
-      .map((url) => url.trim())
-      .filter(Boolean),
-    countryCode: 'KR',
-    latitude: 37.5665,
-    longitude: 126.978,
+    name: input.name,
+    region: input.region,
+    address: input.address,
+    description: input.description,
+    pricePerNight: input.pricePerNight,
+    maxGuests: input.maxGuests,
+    imageUrl: input.imageUrl,
+    imageUrls: splitCommaSeparatedValues(input.imageUrlsText),
+    amenities: splitCommaSeparatedValues(input.amenitiesText),
+    allowsInfants: input.allowsInfants ?? false,
+    allowsPets: input.allowsPets ?? false,
+    countryCode: input.countryCode,
+    latitude: input.latitude,
+    longitude: input.longitude,
   };
+}
+
+function splitCommaSeparatedValues(value?: string) {
+  return value
+    ?.split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

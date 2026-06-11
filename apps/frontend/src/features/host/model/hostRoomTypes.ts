@@ -1,9 +1,15 @@
 import { z } from 'zod';
+import {
+  countryCodeSchema,
+  latitudeSchema,
+  longitudeSchema,
+} from '../../maps/model/locationTypes';
 import { roomDetailSchema } from '../../rooms/model/roomTypes';
 
 export const hostRoomStatusSchema = z.enum(['ACTIVE', 'INACTIVE', 'PENDING_APPROVAL']);
 
 export const hostRoomSchema = roomDetailSchema.extend({
+  countryCode: countryCodeSchema,
   status: hostRoomStatusSchema,
 });
 
@@ -11,9 +17,19 @@ export const hostRoomFormSchema = z.object({
   name: z.string().min(1, '숙소 이름을 입력하세요.'),
   region: z.string().min(1, '지역을 입력하세요.'),
   address: z.string().min(1, '주소를 입력하세요.'),
+  countryCode: countryCodeSchema,
+  latitude: latitudeSchema,
+  longitude: longitudeSchema,
   description: z.string().optional(),
-  pricePerNight: z.coerce.number().min(1, '가격은 1원 이상이어야 합니다.'),
-  maxGuests: z.coerce.number().min(1, '최대 인원은 1명 이상이어야 합니다.'),
+  pricePerNight: z.coerce
+    .number()
+    .int('가격은 정수로 입력하세요.')
+    .min(1, '가격은 1원 이상이어야 합니다.')
+    .max(50_000_000, '가격은 50,000,000원 이하여야 합니다.'),
+  maxGuests: z.coerce
+    .number()
+    .int('최대 인원은 정수로 입력하세요.')
+    .min(1, '최대 인원은 1명 이상이어야 합니다.'),
   imageUrl: z.string().url('올바른 대표 이미지 URL을 입력하세요.'),
   imageUrlsText: z.string().optional(),
   allowsInfants: z.boolean().optional(),

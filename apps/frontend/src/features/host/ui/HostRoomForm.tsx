@@ -1,6 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
+import { SelectedLocation, selectedLocationSchema } from '../../maps/model/locationTypes';
+import { LocationPicker } from '../../maps/ui/LocationPicker';
 import {
   HostRoom,
   HostRoomFormInput,
@@ -19,6 +21,8 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
     register,
     reset,
     handleSubmit,
+    control,
+    setValue,
     formState: { errors },
   } = useForm<HostRoomFormValues, unknown, HostRoomFormInput>({
     resolver: zodResolver(hostRoomFormSchema),
@@ -37,6 +41,18 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
     },
   });
 
+  const locationValues = useWatch({
+    control,
+    name: ['address', 'countryCode', 'latitude', 'longitude'],
+  });
+  const locationResult = selectedLocationSchema.safeParse({
+    address: locationValues[0],
+    countryCode: locationValues[1],
+    latitude: locationValues[2],
+    longitude: locationValues[3],
+  });
+  const selectedLocation = locationResult.success ? locationResult.data : null;
+
   useEffect(() => {
     if (initialValue) {
       reset({
@@ -46,6 +62,19 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
       });
     }
   }, [initialValue, reset]);
+
+  function handleLocationChange(location: SelectedLocation) {
+    setValue('address', location.address, { shouldDirty: true, shouldValidate: true });
+    setValue('countryCode', location.countryCode, { shouldDirty: true, shouldValidate: true });
+    setValue('latitude', location.latitude, { shouldDirty: true, shouldValidate: true });
+    setValue('longitude', location.longitude, { shouldDirty: true, shouldValidate: true });
+  }
+
+  const locationError =
+    errors.address?.message ??
+    errors.countryCode?.message ??
+    errors.latitude?.message ??
+    errors.longitude?.message;
 
   return (
     <form className="form-grid" onSubmit={handleSubmit(onSubmit)}>
@@ -59,11 +88,18 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
         <input {...register('region')} />
         {errors.region ? <span className="field-error">{errors.region.message}</span> : null}
       </label>
-      <label className="full-row">
-        주소
-        <input {...register('address')} />
-        {errors.address ? <span className="field-error">{errors.address.message}</span> : null}
-      </label>
+      <div className="host-location-field full-row">
+        <div>
+          <strong>숙소 위치</strong>
+          <p className="muted">주소 검색 결과를 선택한 뒤 지도에서 정확한 위치를 조정하세요.</p>
+        </div>
+        <LocationPicker
+          value={selectedLocation}
+          onChange={handleLocationChange}
+          disabled={isSubmitting}
+        />
+        {locationError ? <span className="field-error">{locationError}</span> : null}
+      </div>
       <label>
         1박 가격
         <input type="number" min={1} {...register('pricePerNight')} />
@@ -110,7 +146,11 @@ export function HostRoomForm({ initialValue, isSubmitting = false, onSubmit }: H
           <span className="field-error">{errors.description.message}</span>
         ) : null}
       </label>
-      <button className="primary-button full-row" type="submit" disabled={isSubmitting}>
+      <button
+        className="primary-button full-row"
+        type="submit"
+        disabled={isSubmitting || !selectedLocation}
+      >
         {isSubmitting ? '저장 중...' : '숙소 저장'}
       </button>
     </form>

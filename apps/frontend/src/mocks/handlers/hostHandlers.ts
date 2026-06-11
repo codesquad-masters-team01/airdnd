@@ -61,6 +61,9 @@ export const hostHandlers = [
       imageUrls?: string[];
       allowsPets?: boolean;
       amenities?: string[];
+      countryCode: string;
+      latitude: number;
+      longitude: number;
     };
 
     const room = {
@@ -71,8 +74,6 @@ export const hostHandlers = [
       isAvailable: true,
       allowsPets: body.allowsPets ?? false,
       hostName: user.name,
-      latitude: 37.5665,
-      longitude: 126.978,
       imageUrls: body.imageUrls ?? [],
       amenities: body.amenities ?? [],
       status: 'PENDING_APPROVAL' as const,

@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
 import { useRoomsQuery } from '../../features/rooms/api/roomsQueries';
 import { SearchBar } from '../../features/rooms/ui/SearchBar';
 import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
+import { RoomResultsMap } from '../../features/maps/ui/RoomResultsMap';
 import { RoomSearchParams } from '../../features/rooms/model/roomTypes';
 import { formatCurrency } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
@@ -10,6 +11,11 @@ import { Loading } from '../../shared/ui/Loading';
 
 export function MapSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const [viewedIds, setViewedIds] = useState<Set<number>>(new Set());
+  const [visibleRoomIds, setVisibleRoomIds] = useState<Set<number> | null>(null);
+
   const params: RoomSearchParams = {
     region: searchParams.get('region') ?? '',
     checkIn: searchParams.get('checkIn') ?? '',
@@ -25,6 +31,7 @@ export function MapSearchPage() {
   const roomsQuery = useRoomsQuery(params);
 
   function handleSearch(nextParams: RoomSearchParams) {
+    setVisibleRoomIds(null);
     const next = new URLSearchParams();
     Object.entries(nextParams).forEach(([key, value]) => {
       if (value !== undefined && value !== '') {
@@ -34,12 +41,22 @@ export function MapSearchPage() {
     setSearchParams(next);
   }
 
+  function handleSelect(roomId: number | null) {
+    setSelectedId(roomId);
+    if (roomId != null) {
+      // 한 번 열어 본 숙소는 마커가 흐려집니다(viewed).
+      setViewedIds((prev) => new Set(prev).add(roomId));
+    }
+  }
+
+  const visibleRooms = roomsQuery.data?.filter((room) => visibleRoomIds == null || visibleRoomIds.has(room.id));
+
   return (
     <section className="stack">
       <div className="page-heading">
         <p className="eyebrow">Map Search</p>
-        <h1>지도 기반 숙소 탐색</h1>
-        <p className="muted">실제 지도 API 연동 전, 검색 결과와 지도 패널의 정보 구조를 검증합니다.</p>
+        <h1>지도에서 숙소 찾기</h1>
+        <p className="muted">검색 결과를 지도에서 함께 확인하세요.</p>
       </div>
       <SearchBar defaultValue={params} onSearch={handleSearch} />
       {roomsQuery.isLoading ? <Loading message="지도 검색 결과를 불러오는 중입니다." /> : null}
@@ -47,8 +64,16 @@ export function MapSearchPage() {
       {roomsQuery.data ? (
         <div className="map-layout">
           <div className="list-stack">
-            {roomsQuery.data.map((room) => (
-              <Link className="map-result-card" to={`/rooms/${room.id}`} key={room.id}>
+            {visibleRooms?.map((room) => (
+              <Link
+                className={`map-result-card ${
+                  selectedId === room.id || hoveredId === room.id ? 'is-active' : ''
+                }`}
+                to={`/rooms/${room.id}`}
+                key={room.id}
+                onMouseEnter={() => setHoveredId(room.id)}
+                onMouseLeave={() => setHoveredId(null)}
+              >
                 <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
                 <div>
                   <h2>{room.name}</h2>
@@ -60,19 +85,19 @@ export function MapSearchPage() {
                 </div>
               </Link>
             ))}
+            {visibleRooms?.length === 0 ? (
+              <p className="map-results-empty">현재 지도 영역에 검색 결과가 없습니다.</p>
+            ) : null}
           </div>
-          <div className="map-panel" aria-label="지도 placeholder">
-            {roomsQuery.data.map((room, index) => (
-              <span
-                className="map-marker"
-                style={{ left: `${24 + index * 23}%`, top: `${30 + index * 16}%` }}
-                key={room.id}
-              >
-                <MapPin size={16} />
-                {formatCurrency(room.pricePerNight)}
-              </span>
-            ))}
-          </div>
+          <RoomResultsMap
+            rooms={roomsQuery.data}
+            selectedId={selectedId}
+            hoveredId={hoveredId}
+            viewedIds={viewedIds}
+            onSelect={handleSelect}
+            onHover={setHoveredId}
+            onVisibleRoomsChange={setVisibleRoomIds}
+          />
         </div>
       ) : null}
     </section>

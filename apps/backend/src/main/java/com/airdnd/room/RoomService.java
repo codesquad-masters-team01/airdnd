@@ -1,9 +1,8 @@
 package com.airdnd.room;
 
-import com.airdnd.room.dto.HostRoomRequest;
-import com.airdnd.room.dto.HostRoomResponse;
-import com.airdnd.room.dto.RoomDetailResponse;
-import com.airdnd.room.dto.RoomResponse;
+import com.airdnd.common.error.ErrorCode;
+import com.airdnd.common.exception.BusinessException;
+import com.airdnd.room.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +18,9 @@ public class RoomService {
 
 
     @Transactional
-    public Long registerRoom(Long memberId ,HostRoomRequest request) {
+    public Long registerRoom(Long memberId, String hostName ,HostRoomRequest request) {
 
-        Room room = Room.fromRoomRequest(memberId,request);
+        Room room = Room.fromRoomRequest(memberId,hostName ,request);
 
         RoomImage representativeImage = RoomImage.builder()
                 .imageUrl(request.getImageUrl())
@@ -66,6 +65,8 @@ public class RoomService {
                     room.getPricePerNight(),
                     room.getMaxCapacity(),
                     imageUrl,
+                    room.getLatitude(),
+                    room.getLongitude(),
                     room.getIsActive(),
                     room.getAllowsPets()
             ));
@@ -86,27 +87,37 @@ public class RoomService {
             throw new IllegalStateException("Room with id " + id + " is deleted!");
         }
 
-        List<String> imageUrls = room.getImages().stream()
-                .map(RoomImage::getImageUrl)
-                .toList();
-
-        return new RoomDetailResponse(
-                room.getId(),
-                room.getName(),
-                room.getRegion(),
-                room.getAddress(),
-                room.getPricePerNight(),
-                room.getMaxCapacity(),
-                room.getRepresentativeImageUrl(),
-                room.getIsActive(),
-                room.getAllowsPets(),
-                room.getDescription(),
-                new ArrayList<>(room.getAmenities()),
-                imageUrls,
-                "이완자",
-                room.getLatitude(),
-                room.getLongitude()
-        );
+        return RoomDetailResponse.from(room);
     }
 
+
+    @Transactional
+    public RoomDetailResponse updateRoomDetails(Long hostId,Long roomId, RoomUpdateRequest request) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()
+                -> new IllegalStateException("Room with id " + roomId + " not found!"));
+
+        if (!room.getHostId().equals(hostId)) {
+            throw new IllegalStateException("Room with id " + hostId + " does not belong to this host!");
+        }
+        room.updateRoom(
+                request.name(),
+                request.description(),
+                request.pricePerNight(),
+                request.maxGuests(),
+                request.allowsInfants(),
+                request.allowsPets(),
+                request.amenities()
+        );
+
+        return RoomDetailResponse.from(room);
+    }
+
+    @Transactional
+    public HostRoomResponse getRoomForUpdateById(Long memberId, Long roomId){
+        Room room = roomRepository.findById(roomId).orElseThrow(()-> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        if(!room.getHostId().equals(memberId)){
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
+        }
+        return HostRoomResponse.from(room);
+    }
 }
