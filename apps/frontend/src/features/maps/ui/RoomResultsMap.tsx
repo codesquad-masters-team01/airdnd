@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AdvancedMarker, APILoadingStatus, Map, useApiLoadingStatus, useMap } from '@vis.gl/react-google-maps';
 import { Search } from 'lucide-react';
 import { DEFAULT_KOREA_CENTER, DEFAULT_KOREA_ZOOM, isMapsConfigured, mapsConfig } from '../config/mapsConfig';
+import { MapBounds } from '../model/locationTypes';
 import { RoomSummary } from '../../rooms/model/roomTypes';
 import { RoomPriceMarker } from './RoomPriceMarker';
 import { RoomClusterMarker } from './RoomClusterMarker';
@@ -14,7 +15,8 @@ interface RoomResultsMapProps {
   viewedIds: Set<number>;
   onSelect: (roomId: number | null) => void;
   onHover: (roomId: number | null) => void;
-  onVisibleRoomsChange: (roomIds: Set<number>) => void;
+  // 현재 지도 영역으로 검색을 요청합니다. 부모가 이 경계를 검색 파라미터에 넣어 백엔드에 재요청합니다.
+  onSearchArea: (bounds: MapBounds) => void;
 }
 
 type LocatedRoom = RoomSummary & { latitude: number; longitude: number };
@@ -23,13 +25,6 @@ interface Cluster {
   rooms: LocatedRoom[];
   lat: number;
   lng: number;
-}
-
-interface MapBounds {
-  north: number;
-  south: number;
-  east: number;
-  west: number;
 }
 
 // The d3 tail tip sits 16px from the left edge and 9px below the marker body.
@@ -87,7 +82,7 @@ function RoomResultsMapView({
   viewedIds,
   onSelect,
   onHover,
-  onVisibleRoomsChange,
+  onSearchArea,
 }: RoomResultsMapProps) {
   const status = useApiLoadingStatus();
   const [zoom, setZoom] = useState(DEFAULT_KOREA_ZOOM);
@@ -100,20 +95,8 @@ function RoomResultsMapView({
     const bounds = latestBounds.current;
     if (!bounds) return;
 
-    const visibleIds = new Set(
-      rooms
-        .filter(hasCoords)
-        .filter(
-          (room) =>
-            room.latitude >= bounds.south &&
-            room.latitude <= bounds.north &&
-            room.longitude >= bounds.west &&
-            room.longitude <= bounds.east,
-        )
-        .map((room) => room.id),
-    );
-
-    onVisibleRoomsChange(visibleIds);
+    // 현재 보이는 영역의 경계를 부모로 올려보내 백엔드에 bbox 검색을 재요청합니다.
+    onSearchArea(bounds);
     onSelect(null);
     setHasMoved(false);
   }
@@ -181,7 +164,7 @@ function RoomResultsMapView({
   );
 }
 
-interface MapContentProps extends Omit<RoomResultsMapProps, 'onVisibleRoomsChange'> {
+interface MapContentProps extends Omit<RoomResultsMapProps, 'onSearchArea'> {
   zoom: number;
 }
 
