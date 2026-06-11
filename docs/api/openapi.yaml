@@ -648,14 +648,18 @@ components:
       allOf:
         - $ref: "#/components/schemas/RoomDetail"
         - type: object
-          required: [status]
+          required: [countryCode, status]
           properties:
+            countryCode:
+              type: string
+              pattern: "^[A-Z]{2}$"
             status:
               type: string
               enum: [ACTIVE, INACTIVE, PENDING_APPROVAL]
     HostRoomRequest:
       type: object
-      required: [name, region, address, description, pricePerNight, maxGuests, imageUrl]
+      required:
+        [name, region, address, pricePerNight, maxGuests, imageUrl, allowsInfants, allowsPets, countryCode, latitude, longitude]
       properties:
         name:
           type: string
@@ -682,6 +686,20 @@ components:
         allowsPets:
           type: boolean
           default: false
+        allowsInfants:
+          type: boolean
+          default: false
+        countryCode:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
         amenities:
           type: array
           items:

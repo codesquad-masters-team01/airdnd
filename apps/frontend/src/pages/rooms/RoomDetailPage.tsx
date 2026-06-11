@@ -5,6 +5,7 @@ import { useRoomQuery } from '../../features/rooms/api/roomsQueries';
 import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
 import { ReviewList } from '../../features/reviews/ui/ReviewList';
 import { AddToWishlistButton } from '../../features/wishlist/ui/AddToWishlistButton';
+import { RoomLocationMap } from '../../features/maps/ui/RoomLocationMap';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
 
@@ -70,14 +71,12 @@ export function RoomDetailPage() {
             </span>
           </div>
 
-          <div className="content-section detail-location">
-            <span className="detail-location-icon" aria-hidden="true">
-              <MapPin size={20} />
-            </span>
-            <div>
-              <h3>숙소 위치</h3>
-              <p className="muted">{room.address}</p>
-            </div>
+          <div className="content-section">
+            <h2>숙소 위치</h2>
+            <p className="detail-address">
+              <MapPin size={16} /> {room.address}
+            </p>
+            <RoomLocationMap latitude={room.latitude} longitude={room.longitude} name={room.name} />
           </div>
 
           <div className="content-section">

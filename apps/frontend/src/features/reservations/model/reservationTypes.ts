@@ -11,6 +11,7 @@ export const reservationSchema = z.object({
   checkIn: z.string(),
   checkOut: z.string(),
   guests: z.number(),
+  pricePerNight: z.number(),
   totalPrice: z.number(),
   status: reservationStatusSchema,
   guestName: z.string().optional(),

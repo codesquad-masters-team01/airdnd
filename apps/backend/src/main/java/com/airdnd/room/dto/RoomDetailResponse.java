@@ -41,7 +41,7 @@ public record RoomDetailResponse(
                 room.getDescription() == null ? "" : room.getDescription(),
                 List.copyOf(room.getAmenities()),
                 imageUrls,
-                "테스트 호스트", // 임시 더미 데이터 (hostName)
+                room.getHostName(),
                 room.getLatitude(),
                 room.getLongitude()
         );

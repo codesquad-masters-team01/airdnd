@@ -10,6 +10,9 @@ export const roomSummarySchema = z.object({
   imageUrl: z.string().url().or(z.literal('')),
   isAvailable: z.boolean(),
   allowsPets: z.boolean(),
+  // 지도 검색용 좌표. 백엔드 목록 응답(RoomResponse)이 추가하기 전까지는 없을 수 있어 optional 입니다.
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 });
 
 export const roomDetailSchema = roomSummarySchema.extend({

@@ -64,6 +64,7 @@ export const reservationHandlers = [
       checkIn: body.checkIn,
       checkOut: body.checkOut,
       guests: body.guests,
+      pricePerNight: room.pricePerNight,
       totalPrice: nights * room.pricePerNight,
       status: 'CONFIRMED' as const,
       guestName: getMockUser()?.name,
