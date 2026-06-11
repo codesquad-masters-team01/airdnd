@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { CalendarDays, MapPin, UsersRound } from 'lucide-react';
 import { useReservationQuery } from '../../features/reservations/api/reservationsQueries';
+import { getStayNights } from '../../shared/lib/date';
 import { formatCurrency, formatDate } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
@@ -25,6 +26,8 @@ export function ReservationDetailPage() {
     return null;
   }
 
+  const nights = getStayNights(reservation.checkIn, reservation.checkOut);
+
   return (
     <section className="detail-layout">
       <article className="stack detail-content">
@@ -48,14 +51,22 @@ export function ReservationDetailPage() {
               {formatDate(reservation.checkOut)}
             </span>
             <span>
-              <UsersRound size={16} /> {reservation.totalGuest}명
+              <UsersRound size={16} /> {reservation.guests}명
             </span>
           </div>
         </div>
         <div className="content-section">
           <h2>결제 요약</h2>
           <div className="price-summary">
-            <span>총 예약 금액</span>
+            <span>1박 가격</span>
+            <strong>{formatCurrency(reservation.pricePerNight)}</strong>
+          </div>
+          <div className="price-summary">
+            <span>숙박 기간</span>
+            <strong>{nights}박</strong>
+          </div>
+          <div className="price-summary">
+            <span>합계</span>
             <strong>{formatCurrency(reservation.totalPrice)}</strong>
           </div>
         </div>

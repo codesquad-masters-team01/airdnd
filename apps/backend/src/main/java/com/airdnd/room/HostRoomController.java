@@ -5,6 +5,7 @@ import com.airdnd.auth.AuthMemberPrincipal;
 import com.airdnd.room.dto.HostRoomRequest;
 import com.airdnd.room.dto.HostRoomResponse;
 import com.airdnd.room.dto.RoomDetailResponse;
+import com.airdnd.room.dto.RoomUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,9 @@ public class HostRoomController {
 
     @PostMapping
     public ResponseEntity<Long> registerRoom(@AuthenticationPrincipal AuthMemberPrincipal principal, @RequestBody @Valid HostRoomRequest request) {
-        Long roomId = roomService.registerRoom(principal.getMemberId() , request);
+
+        Long roomId = roomService.registerRoom(principal.getMemberId() , principal.getNickname(), request);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(roomId);
     }
 
@@ -34,9 +37,19 @@ public class HostRoomController {
         return ResponseEntity.status(HttpStatus.OK).body(roomService.getRoomsByHostId(principal.getMemberId()));
     }
 
-    @GetMapping("{roomId}")
-    public ResponseEntity<RoomDetailResponse> getRoom(@PathVariable Long roomId) {
-        RoomDetailResponse room = roomService.getRoomById(roomId);
+    @PatchMapping("/{roomId}")
+    public ResponseEntity<RoomDetailResponse> updateRoom(@PathVariable Long roomId,
+                                                         @AuthenticationPrincipal AuthMemberPrincipal principal,
+                                                         @RequestBody RoomUpdateRequest request) {
+        RoomDetailResponse updatedRoom = roomService.updateRoomDetails(principal.getMemberId(),roomId,request);
+        return ResponseEntity.status(HttpStatus.OK).body(updatedRoom);
+    }
+
+    @GetMapping("/{roomId}")
+    public ResponseEntity<HostRoomResponse> getRoom(@AuthenticationPrincipal AuthMemberPrincipal principal,@PathVariable Long roomId) {
+
+        HostRoomResponse room = roomService.getRoomForUpdateById(principal.getMemberId(),roomId);
         return ResponseEntity.status(HttpStatus.OK).body(room);
     }
+
 }

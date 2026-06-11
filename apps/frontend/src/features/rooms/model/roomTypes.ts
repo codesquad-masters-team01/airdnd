@@ -10,6 +10,9 @@ export const roomSummarySchema = z.object({
   imageUrl: z.string().url().or(z.literal('')),
   isAvailable: z.boolean(),
   allowsPets: z.boolean(),
+  // 지도 검색용 좌표. 백엔드 목록 응답(RoomResponse)이 추가하기 전까지는 없을 수 있어 optional 입니다.
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
 });
 
 export const roomDetailSchema = roomSummarySchema.extend({
@@ -33,6 +36,14 @@ export const roomSearchParamsSchema = z.object({
   minPrice: z.number().optional(),
   maxPrice: z.number().optional(),
   allowsPets: z.boolean().optional(),
+  // 지도 뷰포트 검색용 경계 좌표. 4개를 함께 보내면 백엔드가 해당 영역 안의 숙소만 반환합니다.
+  // (GET /api/rooms 의 south/west/north/east 파라미터와 1:1)
+  south: z.number().min(-90).max(90).optional(),
+  west: z.number().min(-180).max(180).optional(),
+  north: z.number().min(-90).max(90).optional(),
+  east: z.number().min(-180).max(180).optional(),
+  // 지도 검색 시 마커/페이로드 폭주 방지를 위한 결과 상한.
+  limit: z.number().int().min(1).max(500).optional(),
 });
 
 export type RoomSummary = z.infer<typeof roomSummarySchema>;

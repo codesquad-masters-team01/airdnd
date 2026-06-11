@@ -1,6 +1,5 @@
 package com.airdnd.room.dto;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public record RoomUpdateRequest (
@@ -15,4 +14,3 @@ public record RoomUpdateRequest (
         List<String> imageUrls
 
 ){ }
-

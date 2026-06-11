@@ -1320,8 +1320,13 @@ textarea:focus {
 
 .detail-gallery-side {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: var(--space-2);
+}
+
+.detail-gallery.single {
+  grid-template-columns: 1fr;
 }
 
 .detail-gallery-tile.tint {
@@ -1495,6 +1500,609 @@ textarea:focus {
 
 .content-section h2 {
   margin-bottom: 0;
+}
+
+.content-section.no-border {
+  border-bottom: 0;
+}
+
+/* 숙소 상세 */
+.room-detail {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.detail-title {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.detail-title h1 {
+  margin-bottom: 0;
+  font-size: var(--font-size-24);
+  line-height: var(--line-tight);
+}
+
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-14);
+  font-weight: 750;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.content-section.detail-host {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.detail-host h2 {
+  margin-bottom: var(--space-1);
+}
+
+.detail-host-avatar {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  background: var(--surface-subtle);
+}
+
+.detail-address {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: 0;
+  color: var(--text-secondary);
+}
+
+/* 숙소 상세 위치 지도 */
+.room-map {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.room-map-canvas {
+  width: 100%;
+  height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-16);
+}
+
+.room-map-fallback {
+  display: grid;
+  gap: var(--space-2);
+  align-content: center;
+  justify-items: start;
+  width: 100%;
+  min-height: 160px;
+  padding: var(--space-6);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-16);
+  background: var(--surface-subtle);
+  color: var(--text-tertiary);
+}
+
+/* 호스트 숙소 주소 검색 및 위치 선택 */
+.location-picker {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.location-picker-search,
+.location-picker-search gmp-place-autocomplete {
+  width: 100%;
+}
+
+.location-picker-search {
+  min-height: 48px;
+}
+
+.location-picker-search gmp-place-autocomplete {
+  color-scheme: light;
+}
+
+.location-picker-map {
+  width: 100%;
+  height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-16);
+  background: var(--surface-subtle);
+}
+
+.location-picker-details {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-12);
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  font-size: var(--font-size-14);
+}
+
+.location-picker-details strong {
+  color: var(--text-primary);
+}
+
+.location-picker-details small {
+  color: var(--text-tertiary);
+}
+
+.location-picker-fallback {
+  width: 100%;
+  padding: var(--space-5);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-12);
+  background: var(--surface-subtle);
+  color: var(--text-tertiary);
+}
+
+.location-picker-marker {
+  cursor: default;
+}
+
+.host-location-field {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.host-location-field p {
+  margin: var(--space-1) 0 0;
+}
+
+.host-location-readonly {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* 숙소 상세 위치 핀 — teardrop 풍선 (Claude Design 핸드오프) */
+.detail-pin {
+  position: relative;
+  width: 48px;
+  height: 62px;
+}
+
+/* 끝점의 부드러운 지면 링 — 위치를 가리되 가리지 않음 */
+.detail-pin__pulse {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, 40%);
+  border-radius: 50%;
+  background: var(--am-accent, var(--color-brand));
+  opacity: 0.2;
+  animation: detailPulse 2.6s cubic-bezier(0.3, 0, 0.4, 1) infinite;
+}
+
+@keyframes detailPulse {
+  0% {
+    transform: translate(-50%, 40%) scale(0.6);
+    opacity: 0.26;
+  }
+  70% {
+    transform: translate(-50%, 40%) scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 40%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-pin__pulse {
+    animation: none;
+    opacity: 0.14;
+    transform: translate(-50%, 40%) scale(1.6);
+  }
+}
+
+/* teardrop 풍선 핀: 끝이 위치를 가리키고 머리에 글리프 */
+.detail-pin__shape {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 57px;
+  color: var(--am-accent, var(--color-brand));
+  filter: drop-shadow(0 5px 9px rgba(24, 24, 27, 0.26));
+}
+
+/* 지도 검색 — 실제 지도 + 마커 (Claude Design 핸드오프) */
+.results-map {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
+  height: calc(100vh - var(--header-height) - var(--space-12));
+  min-height: 480px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-20);
+  box-shadow: var(--shadow-md);
+}
+
+.results-map--fallback {
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  text-align: center;
+  background: var(--surface-subtle);
+  color: var(--text-tertiary);
+}
+
+.search-here {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  background: var(--text-primary);
+  color: var(--color-white);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  transform: translateX(-50%);
+}
+
+.search-here:hover {
+  background: #000;
+}
+
+.map-results-empty {
+  padding: var(--space-8);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-16);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.map-result-card {
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.map-result-card.is-active {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 1px var(--color-brand), var(--shadow-md);
+}
+
+/* 가격 핀 마커 (Classic / direction 1) */
+.am {
+  --am-accent: var(--color-brand);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(24, 24, 27, 0.1);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  color: var(--text-primary);
+  font-size: var(--font-size-13);
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow:
+    0 1px 2px rgba(24, 24, 27, 0.12),
+    0 4px 10px rgba(24, 24, 27, 0.14);
+  cursor: pointer;
+  transition:
+    transform 140ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.am.is-hover,
+.am:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 2px 4px rgba(24, 24, 27, 0.16),
+    0 10px 22px rgba(24, 24, 27, 0.2);
+  z-index: 5;
+}
+
+.am.is-selected {
+  transform: scale(1.12);
+  background: var(--text-primary);
+  color: var(--color-white);
+  border-color: var(--text-primary);
+}
+
+.am.is-viewed {
+  background: var(--color-gray-100);
+  color: var(--text-tertiary);
+  border-color: rgba(24, 24, 27, 0.08);
+  box-shadow: 0 1px 2px rgba(24, 24, 27, 0.08);
+}
+
+.am.is-viewed.is-selected {
+  background: var(--text-primary);
+  color: var(--color-white);
+}
+
+.am.is-soldout {
+  background: var(--color-gray-50);
+  color: var(--text-tertiary);
+  border-style: dashed;
+  border-color: var(--border-strong);
+  box-shadow: 0 1px 2px rgba(24, 24, 27, 0.06);
+}
+
+.am.is-soldout .am__price {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+.am__heart {
+  color: var(--am-accent);
+}
+
+.am.is-selected .am__heart {
+  color: var(--color-white);
+}
+
+/* Anchored teardrop (direction 3) — 꼬리로 위치를 가리킴 */
+.am--d3 {
+  border-radius: 18px 18px 18px 4px;
+  padding-left: 14px;
+  transform-origin: 16px calc(100% + 9px);
+}
+
+.am--d3::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  border-right: 1px solid rgba(24, 24, 27, 0.1);
+  border-bottom: 1px solid rgba(24, 24, 27, 0.1);
+  border-bottom-left-radius: 3px;
+  transform: rotate(45deg);
+  z-index: -1;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.am--d3.is-selected {
+  background: var(--am-accent);
+  border-color: var(--am-accent);
+  color: var(--color-white);
+}
+
+.am--d3.is-selected::after {
+  border-color: var(--am-accent);
+}
+
+.am--d3.is-hover:not(.is-selected),
+.am--d3:hover:not(.is-selected) {
+  background: var(--color-white);
+  border-color: var(--am-accent);
+  color: var(--color-brand-strong);
+}
+
+.am--d3.is-hover:not(.is-selected)::after,
+.am--d3:hover:not(.is-selected)::after {
+  border-color: var(--am-accent);
+}
+
+/* 클러스터 핀 */
+.cluster {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  border: 1px solid rgba(232, 76, 96, 0.3);
+  box-shadow:
+    0 2px 6px rgba(24, 24, 27, 0.14),
+    0 10px 24px rgba(232, 76, 96, 0.18);
+  cursor: pointer;
+  transition:
+    transform 150ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 150ms ease;
+}
+
+.cluster::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid rgba(232, 76, 96, 0.16);
+  opacity: 0;
+  transition:
+    opacity 150ms ease,
+    inset 150ms ease;
+}
+
+.cluster:hover {
+  transform: scale(1.06);
+}
+
+.cluster:hover::before {
+  opacity: 1;
+  inset: -8px;
+}
+
+.cluster__count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-size-15);
+  font-weight: 850;
+  color: var(--color-brand-strong);
+  line-height: 1;
+}
+
+.cluster__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--am-accent, var(--color-brand));
+}
+
+.cluster__range {
+  font-size: 11px;
+  font-weight: 750;
+  color: var(--text-tertiary);
+  line-height: 1;
+}
+
+/* 마커 클릭 미리보기 카드 */
+.map-infocard {
+  position: relative;
+  width: 280px;
+  border-radius: var(--radius-16);
+  background: var(--color-white);
+  box-shadow: var(--shadow-lg);
+}
+
+.map-infocard__arrow {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 16px;
+  height: 16px;
+  background: var(--color-white);
+  transform: translateX(-50%) rotate(45deg);
+  box-shadow: 4px 4px 8px rgba(24, 24, 27, 0.06);
+}
+
+.map-infocard__media {
+  position: relative;
+}
+
+.map-infocard__media img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--radius-16) var(--radius-16) 0 0;
+}
+
+.map-infocard__close {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.map-infocard__badge,
+.map-infocard__chip {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-12);
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.map-infocard__badge {
+  background: var(--text-primary);
+  color: var(--color-white);
+}
+
+.map-infocard__body {
+  display: block;
+  padding: 12px 14px 14px;
+  color: var(--text-primary);
+}
+
+.map-infocard__title {
+  margin: 0;
+  font-size: var(--font-size-15);
+  font-weight: 800;
+  line-height: 1.32;
+}
+
+.map-infocard__meta {
+  margin: 6px 0 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-13);
+  font-weight: 600;
+}
+
+.map-infocard__price {
+  margin: 10px 0 0;
+  font-size: var(--font-size-14);
+}
+
+.map-infocard__price strong {
+  font-weight: 850;
+}
+
+.map-infocard__price span {
+  color: var(--text-secondary);
+}
+
+.detail-description {
+  margin-bottom: 0;
+  color: var(--text-secondary);
+  line-height: var(--line-normal);
+  white-space: pre-line;
+}
+
+.amenity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+}
+
+.amenity-item {
+  color: var(--text-secondary);
+  font-size: var(--font-size-14);
 }
 
 .reservation-panel,
@@ -2136,6 +2744,13 @@ textarea:focus {
     min-height: 420px;
     top: auto;
   }
+
+  .results-map {
+    position: relative;
+    top: auto;
+    height: 520px;
+    min-height: 420px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2152,6 +2767,10 @@ textarea:focus {
   }
 
   .review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .amenity-grid {
     grid-template-columns: 1fr;
   }
 
