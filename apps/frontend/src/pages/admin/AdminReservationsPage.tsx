@@ -32,7 +32,7 @@ export function AdminReservationsPage() {
             <article className="metric-card">
               <span>취소 예약</span>
               <strong>
-                {reservationsQuery.data.filter((reservation) => reservation.status === 'CANCELED').length}
+                {reservationsQuery.data.filter((reservation) => reservation.status === 'CANCELLED').length}
               </strong>
             </article>
             <article className="metric-card">

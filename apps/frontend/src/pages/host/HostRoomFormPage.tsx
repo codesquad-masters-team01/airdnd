@@ -32,7 +32,7 @@ export function HostRoomFormPage() {
   }
 
   function handleUpdate(input: HostRoomUpdateFormInput) {
-    const amenities = input.amenitiesText?.split(',').map((a) => a.trim()).filter(Boolean) || [];
+    const amenities = input.amenities ?? [];
     const additionalImages = input.imageUrlsText?.split(',').map((url) => url.trim()).filter(Boolean) || [];
     const imageUrls = [input.imageUrl, ...additionalImages];
 

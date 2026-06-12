@@ -5,6 +5,7 @@ import { SelectedLocation } from '../../maps/model/locationTypes';
 import { LocationPicker } from '../../maps/ui/LocationPicker';
 import { RoomLocationMap } from '../../maps/ui/RoomLocationMap';
 import { RoomDetail } from '../../rooms/model/roomTypes';
+import { AMENITY_OPTIONS } from '../../rooms/model/amenities';
 import {
   HostRoomFormInput,
   HostRoomUpdateFormInput,
@@ -35,7 +36,7 @@ const defaultValues: HostRoomUpdateFormValues = {
   imageUrlsText: '',
   allowsInfants: false,
   allowsPets: false,
-  amenitiesText: '',
+  amenities: [],
 };
 
 export function HostRoomForm(props: HostRoomFormProps) {
@@ -62,7 +63,7 @@ export function HostRoomForm(props: HostRoomFormProps) {
         imageUrl: initialValue.imageUrl,
         imageUrlsText:
           initialValue.imageUrls?.filter((url) => url !== initialValue.imageUrl).join(', ') || '',
-        amenitiesText: initialValue.amenities?.join(', ') || '',
+        amenities: initialValue.amenities ?? [],
         allowsInfants: initialValue.allowsInfants,
         allowsPets: initialValue.allowsPets,
       });
@@ -143,10 +144,21 @@ export function HostRoomForm(props: HostRoomFormProps) {
         추가 이미지 URL 목록 (쉼표로 구분)
         <textarea rows={3} placeholder="https://..., https://..." {...register('imageUrlsText')} />
       </label>
-      <label className="full-row">
-        편의시설
-        <input placeholder="와이파이, 주차, 주방" {...register('amenitiesText')} />
-      </label>
+      <fieldset className="amenities-fieldset full-row">
+        <legend>편의시설</legend>
+        <div className="amenities-check-grid">
+          {AMENITY_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            return (
+              <label key={option.value} className="amenity-check">
+                <input type="checkbox" value={option.value} {...register('amenities')} />
+                <Icon size={18} strokeWidth={1.8} aria-hidden />
+                <span>{option.value}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
       <label className="checkbox-row full-row">
         <input type="checkbox" {...register('allowsInfants')} />
         <span>

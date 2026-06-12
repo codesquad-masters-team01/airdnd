@@ -1,5 +1,7 @@
 package com.airdnd.reservation;
 
+import com.airdnd.common.error.ErrorCode;
+import com.airdnd.common.exception.BusinessException;
 import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
 import com.airdnd.room.Room;
@@ -24,12 +26,12 @@ public class ReservationService {
     public Long createReservation(ReservationRequest request) {
 
         Room room = roomRepository.findById(request.roomId())
-                .orElseThrow(() -> new IllegalArgumentException("Room Not Found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         int totalGuests = request.adultCount() + request.childCount();
 
         if(totalGuests > room.getMaxCapacity()) {
-            throw new IllegalArgumentException("Room Capacity Exceeded");
+            throw new BusinessException(ErrorCode.ROOM_CAPACITY_EXCEEDED);
         }
         Reservation reservation = Reservation.builder()
                 .guestId(request.guestId())
@@ -55,7 +57,7 @@ public class ReservationService {
         List<ReservationResponse> responses = new ArrayList<>();
         for(Reservation reservation : reservations) {
             Room room = roomRepository.findById(reservation.getRoomId()).orElseThrow(
-                    () -> new IllegalArgumentException("Room Not Found"));
+                    () -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
             responses.add(new ReservationResponse(
                     reservation.getId(),
@@ -66,6 +68,7 @@ public class ReservationService {
                     reservation.getCheckInDate(),
                     reservation.getCheckOutDate(),
                     reservation.getAdultCount() + reservation.getChildCount(),
+                    room.getPricePerNight(),
                     reservation.getTotalPrice(),
                     reservation.getStatus(),
                     reservation.getCreatedAt()
@@ -74,4 +77,15 @@ public class ReservationService {
         }
         return responses;
     }
+
+    @Transactional
+    public void cancelReservation(Long reservationId, Long guestId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+        if (!reservation.getGuestId().equals(guestId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
+        }
+        reservation.cancel();
+    }
+
 }

@@ -11,7 +11,7 @@ const input: HostRoomFormInput = {
   maxGuests: 6,
   imageUrl: 'https://example.com/room.jpg',
   imageUrlsText: 'https://example.com/room-2.jpg, , https://example.com/room-3.jpg',
-  amenitiesText: '와이파이, 주차, ',
+  amenities: ['와이파이'],
   allowsInfants: true,
   allowsPets: false,
   countryCode: 'KR',
@@ -41,10 +41,9 @@ describe('createHostRoom location payload', () => {
       allowsInfants: true,
       allowsPets: false,
       imageUrls: ['https://example.com/room-2.jpg', 'https://example.com/room-3.jpg'],
-      amenities: ['와이파이', '주차'],
+      amenities: ['와이파이'],
     });
     expect(body).not.toHaveProperty('imageUrlsText');
-    expect(body).not.toHaveProperty('amenitiesText');
   });
 
   it('defaults optional backend-required booleans to false', async () => {

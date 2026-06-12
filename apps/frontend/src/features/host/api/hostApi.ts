@@ -50,7 +50,7 @@ function normalizeHostRoomPayload(input: HostRoomFormInput) {
     maxGuests: input.maxGuests,
     imageUrl: input.imageUrl,
     imageUrls: splitCommaSeparatedValues(input.imageUrlsText),
-    amenities: splitCommaSeparatedValues(input.amenitiesText),
+    amenities: input.amenities,
     allowsInfants: input.allowsInfants ?? false,
     allowsPets: input.allowsPets ?? false,
     countryCode: input.countryCode,

@@ -1,6 +1,8 @@
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Minus, PawPrint, Plus, Search } from 'lucide-react';
+import { Minus, PawPrint, Plus, Search } from 'lucide-react';
 import { formatCurrency } from '../../../shared/lib/format';
+import { formatDateSummary, getMonthStart, parseDateValue } from '../../../shared/lib/calendar';
+import { CalendarPopover } from '../../../shared/ui/CalendarPopover';
 import { RoomSearchParams } from '../model/roomTypes';
 
 type SearchBarProps = {
@@ -20,8 +22,6 @@ type OpenPanel = 'checkIn' | 'checkOut' | 'price' | 'occupancy' | null;
 const PRICE_MIN = 0;
 const PRICE_MAX = 500000;
 const PRICE_STEP = 10000;
-const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
-
 // 가격 분포를 막대 히스토그램으로 표현하기 위한 더미 분포(우측으로 꼬리가 긴 형태)
 const PRICE_HISTOGRAM_BUCKETS = 34;
 const PRICE_HISTOGRAM = Array.from({ length: PRICE_HISTOGRAM_BUCKETS }, (_, index) => {
@@ -45,59 +45,6 @@ const occupancyLabels: Record<OccupancyKey, OccupancyRule> = {
 function clampOccupancyValue(key: OccupancyKey, value: number) {
   const rule = occupancyLabels[key];
   return Math.min(rule.max ?? Number.POSITIVE_INFINITY, Math.max(rule.min, value));
-}
-
-function toDateValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function parseDateValue(value: string) {
-  if (!value) {
-    return null;
-  }
-
-  const [year, month, day] = value.split('-').map(Number);
-
-  if (!year || !month || !day) {
-    return null;
-  }
-
-  return new Date(year, month - 1, day);
-}
-
-function formatDateSummary(value: string, fallback: string) {
-  const date = parseDateValue(value);
-
-  if (!date) {
-    return fallback;
-  }
-
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'short',
-    day: 'numeric',
-  }).format(date);
-}
-
-function getMonthStart(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function addMonths(date: Date, amount: number) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
-}
-
-function getCalendarDays(monthStart: Date) {
-  const start = new Date(monthStart);
-  start.setDate(1 - start.getDay());
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    return date;
-  });
 }
 
 export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
@@ -512,95 +459,5 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
         검색
       </button>
     </form>
-  );
-}
-
-type CalendarPopoverProps = {
-  activePanel: 'checkIn' | 'checkOut';
-  month: Date;
-  selectedCheckIn: Date | null;
-  selectedCheckOut: Date | null;
-  onMonthChange: (date: Date) => void;
-  onSelectDate: (value: string) => void;
-  isDateDisabled: (value: string) => boolean;
-  isDateInRange: (value: string) => boolean;
-  isDateSelected: (value: string) => boolean;
-};
-
-function CalendarPopover({
-  activePanel,
-  month,
-  selectedCheckIn,
-  selectedCheckOut,
-  onMonthChange,
-  onSelectDate,
-  isDateDisabled,
-  isDateInRange,
-  isDateSelected,
-}: CalendarPopoverProps) {
-  const months = [month, addMonths(month, 1)];
-
-  return (
-    <div className="search-popover calendar-popover">
-      <div className="calendar-popover-header">
-        <div>
-          <strong>{activePanel === 'checkIn' ? '체크인 날짜 선택' : '체크아웃 날짜 선택'}</strong>
-          <span>
-            {selectedCheckIn ? formatDateSummary(toDateValue(selectedCheckIn), '체크인') : '체크인'} -{' '}
-            {selectedCheckOut ? formatDateSummary(toDateValue(selectedCheckOut), '체크아웃') : '체크아웃'}
-          </span>
-        </div>
-        <div className="calendar-nav">
-          <button type="button" aria-label="이전 달" onClick={() => onMonthChange(addMonths(month, -1))}>
-            <ChevronLeft size={18} />
-          </button>
-          <button type="button" aria-label="다음 달" onClick={() => onMonthChange(addMonths(month, 1))}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      </div>
-      <div className="calendar-months">
-        {months.map((monthStart) => (
-          <section className="calendar-month" key={toDateValue(monthStart)}>
-            <h3>
-              {new Intl.DateTimeFormat('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-              }).format(monthStart)}
-            </h3>
-            <div className="calendar-weekdays" aria-hidden="true">
-              {WEEKDAY_LABELS.map((label) => (
-                <span key={label}>{label}</span>
-              ))}
-            </div>
-            <div className="calendar-grid">
-              {getCalendarDays(monthStart).map((date) => {
-                const value = toDateValue(date);
-                const isOutsideMonth = date.getMonth() !== monthStart.getMonth();
-
-                return (
-                  <button
-                    type="button"
-                    className={[
-                      'calendar-day',
-                      isOutsideMonth ? 'outside' : '',
-                      isDateSelected(value) ? 'selected' : '',
-                      isDateInRange(value) ? 'in-range' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                    key={value}
-                    disabled={isOutsideMonth || isDateDisabled(value)}
-                    onClick={() => onSelectDate(value)}
-                  >
-                    {date.getDate()}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </div>
-    </div>
   );
 }
