@@ -71,4 +71,10 @@ public class Reservation {
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
     }
+
+    public void cancel() {
+        this.status = "CANCELLED";
+        this.deletedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 }

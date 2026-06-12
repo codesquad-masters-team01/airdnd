@@ -11,7 +11,8 @@ public record ReservationResponse (
         String region,
         LocalDate checkIn,
         LocalDate checkOut,
-        Integer totalGuest,
+        Integer guests,
+        Integer pricePerNight,
         Integer totalPrice,
         String status,
         LocalDateTime createdAt
