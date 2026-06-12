@@ -31,4 +31,11 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.OK).body(reservation);
     }
 
+    @DeleteMapping("/{reservationId}")
+    public ResponseEntity<Void> cancelReservation(@PathVariable Long reservationId,
+                                                  @AuthenticationPrincipal AuthMemberPrincipal principal) {
+        reservationService.cancelReservation(reservationId, principal.getMemberId());
+        return ResponseEntity.noContent().build();
+    }
+
 }

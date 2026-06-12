@@ -92,6 +92,18 @@ public class RoomService {
                 request.amenities()
         );
 
+        if (request.imageUrls() != null && !request.imageUrls().isEmpty()) {
+            List<RoomImage> newImages = new ArrayList<>();
+            for (int i = 0; i < request.imageUrls().size(); i++) {
+                RoomImage image = RoomImage.builder()
+                        .imageUrl(request.imageUrls().get(i))
+                        .isRepresentative(i == 0)
+                        .build();
+                newImages.add(image);
+            }
+            room.updateImages(newImages);
+        }
+
         return RoomDetailResponse.from(room);
     }
 

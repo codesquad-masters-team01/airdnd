@@ -144,4 +144,11 @@ public class Room {
             this.amenities.addAll(newAmenities);
         }
     }
+
+    public void updateImages(List<RoomImage> newImages) {
+        this.images.clear();
+        for (RoomImage roomImage : newImages) {
+            this.addRoomImage(roomImage);
+        }
+    }
 }

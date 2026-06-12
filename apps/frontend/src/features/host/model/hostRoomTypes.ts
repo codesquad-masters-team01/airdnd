@@ -29,7 +29,7 @@ export const hostRoomUpdateFormSchema = z.object({
   imageUrlsText: z.string().optional(),
   allowsInfants: z.boolean().optional(),
   allowsPets: z.boolean().optional(),
-  amenitiesText: z.string().optional(),
+  amenities: z.array(z.string()).default([]),
 });
 
 export const hostRoomFormSchema = hostRoomUpdateFormSchema.extend({
