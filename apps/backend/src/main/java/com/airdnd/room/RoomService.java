@@ -109,7 +109,6 @@ public class RoomService {
                 request.amenities()
         );
 
-        // 이미지 갱신: imageUrls의 첫 번째가 대표 사진, 나머지는 추가 사진
         if (request.imageUrls() != null && !request.imageUrls().isEmpty()) {
             List<RoomImage> newImages = new ArrayList<>();
             for (int i = 0; i < request.imageUrls().size(); i++) {
