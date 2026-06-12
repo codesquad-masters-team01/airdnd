@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -14,18 +14,6 @@ interface ModalProps {
   /** 접근성 라벨 */
   ariaLabel?: string;
 }
-
-const overlayStyle: CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  zIndex: 1000,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '24px',
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  animation: 'modal-overlay-in 160ms ease-out',
-};
 
 export function Modal({
   open,
@@ -55,47 +43,18 @@ export function Modal({
 
   if (!open) return null;
 
-  const cardStyle: CSSProperties = {
-    position: 'relative',
-    width: '100%',
-    maxWidth: `${maxWidth}px`,
-    backgroundColor: '#fff',
-    borderRadius: '16px',
-    boxShadow: '0 24px 70px rgba(24, 24, 27, 0.2)',
-    padding: '32px',
-    animation: 'modal-card-in 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-  };
-
   return createPortal(
-    <div style={overlayStyle} onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
-        style={cardStyle}
+        className="modal-card"
+        style={{ maxWidth: `${maxWidth}px` }}
         onClick={(event) => event.stopPropagation()}
       >
         {showCloseButton && (
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="닫기"
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              color: '#222',
-            }}
-          >
+          <button type="button" onClick={onClose} aria-label="닫기" className="modal-close">
             <X size={20} />
           </button>
         )}

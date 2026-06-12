@@ -1,0 +1,306 @@
+/* ?붿빟諛????ㅺ??ㅻ뒗 ??吏????痍⑥냼 ?쒖쑝濡??몃줈濡??볦씠???⑥씪 而щ읆. ?뱀뀡 媛꾧꺽(space-5)? 移대뱶 媛꾧꺽(space-3)蹂대떎 ?볤쾶 ??臾띠쓬???먮졆?섍쾶 援щ텇?섎룄濡?*/
+.list-stack {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.reservation-summary {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-16);
+  background: var(--color-white);
+}
+
+.reservation-summary__item {
+  display: grid;
+  flex: 1;
+  gap: var(--space-1);
+  justify-items: center;
+  text-align: center;
+}
+
+.reservation-summary__item + .reservation-summary__item {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.reservation-summary__value {
+  font-size: var(--font-size-24);
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.reservation-summary__label {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-13);
+  font-weight: 700;
+}
+
+.reservation-region {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-14);
+  font-weight: 700;
+}
+
+/* ?좎쭨쨌?몄썝 以꾩? 以꾨컮轅??놁씠 ??以꾨줈 怨좎젙??移대뱶 ?믪씠瑜??쇱젙?섍쾶 ?좎? */
+.reservation-dates,
+.reservation-meta {
+  margin: 0; /* p 湲곕낯 margin-bottom ?쒓굅 ????媛꾧꺽? content??grid gap留??곸슜 */
+  white-space: nowrap;
+}
+
+.reservation-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.reservation-item {
+  /* region ?좊Т쨌?곹깭(?뺤젙/痍⑥냼)? 愿怨꾩뾾??紐⑤뱺 移대뱶瑜??숈씪???믪씠濡??듭씪 */
+  min-height: 168px;
+  /* 怨듭쑀 洹쒖튃??center瑜???뼱???댁슜???몃줈 以묒븰???⑥? ?딅룄濡?*/
+  align-items: stretch;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-16);
+  background: var(--color-white);
+}
+
+.reservation-item img {
+  width: 132px;
+  aspect-ratio: 4 / 3;
+  align-self: center; /* 移대뱶媛 ?섏뼱?섎룄 ?대?吏??鍮꾩쑉 ?좎??섎ŉ ?몃줈 以묒븰 */
+  border-radius: var(--radius-12);
+  object-fit: cover;
+}
+
+.reservation-content {
+  display: grid;
+  flex: 1;
+  min-width: 0; /* grid ?먯떇???섏퀜 ?쒕ぉ ellipsis媛 源⑥?吏 ?딅룄濡?*/
+  align-content: start; /* 移대뱶媛 ?섏뼱?섎룄 ?댁슜? ?꾩뿉?쒕????볦씠?꾨줉 */
+  gap: var(--space-1);
+}
+
+/* ?숈냼紐낆? ??以꾨줈 怨좎젙??移대뱶 ?믪씠瑜??쇱젙?섍쾶 ?좎? */
+.reservation-content h2 {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.reservation-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between; /* ?곹깭 諭껋????? 痍⑥냼 踰꾪듉? ?꾨옒濡?*/
+  gap: var(--space-3);
+}
+
+/* ?덉빟 紐⑸줉 ???ㅺ??ㅻ뒗/吏??洹몃９ (移대뱶??洹몃９ ?대??먯꽌 媛濡?2媛쒖뵫 諛곗튂) */
+.reservation-group {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* 洹몃９ ?대? 移대뱶 ??媛濡?2媛쒖뵫, '?붾낫湲?瑜??꾨Ⅴ硫?媛숈? 洹몃━?쒖뿉 2以꾩뵫 ?댁뼱 遺숇뒗??*/
+.reservation-group__cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+/* 카드가 4개(2줄)를 넘으면 2줄 높이로 고정하고 내부 스크롤로 나머지를 본다 (취소 목록과 동일한 방식)
+   카드 min-height 168px × 2줄 + 줄 간격(space-3 0.75rem=12px) = 348px */
+.reservation-group__cards--scroll {
+  max-height: 348px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 스크롤바가 카드와 겹치지 않도록 우측 여백 */
+  padding-right: var(--space-2);
+}
+
+/* ?쒕ぉ ??嫄댁닔???쒕ぉ蹂대떎 ?쏀븯寃????쒕ぉ??移대뱶 臾띠쓬???쇰꺼泥섎읆 ?쏀엳?꾨줉 */
+.reservation-group__count {
+  color: var(--text-tertiary);
+  font-weight: 700;
+}
+
+.reservation-group__title {
+  margin: 0;
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+/* 痍⑥냼쨌吏???덉빟? ?먮━寃?泥섎━???쒖꽦 ?덉빟怨?援щ텇 */
+.reservation-item.is-cancelled {
+  opacity: 0.55;
+}
+
+.reservation-item.is-past {
+  opacity: 0.85;
+}
+
+/* 痍⑥냼 ?덉빟 ???꾩껜 ??쑝濡???移??꾨옒, 湲곕낯 ?묓옒 */
+.reservation-cancelled {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.reservation-cancelled__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-12);
+  background: var(--color-white);
+  color: var(--text-secondary);
+  font-size: var(--font-size-14);
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.reservation-cancelled__toggle:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.reservation-cancelled__chevron {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  transition: transform 200ms ease;
+}
+
+.reservation-cancelled__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.reservation-cancelled__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  /* 痍⑥냼媛 ?꾨Т由?留롮븘???곸뿭 ?믪씠瑜?怨좎젙?섍퀬 ?대??먯꽌留??ㅽ겕濡?(???移대뱶 3媛??믪씠) */
+  max-height: 540px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* ?ㅽ겕濡ㅻ컮? 移대뱶媛 寃뱀튂吏 ?딅룄濡??щ갚 */
+  padding-right: var(--space-2);
+}
+
+/* ?ㅽ겕濡??곸뿭 ?덉뿉??移대뱶媛 ?몃줈濡??뺤텞?섏? ?딅룄濡??댁슜??諛뽰쑝濡??섏튂吏 ?딅룄濡? 怨좎젙 */
+.reservation-cancelled__list > .reservation-item {
+  flex-shrink: 0;
+}
+
+/* 痍⑥냼 吏꾪뻾 以?踰꾪듉 ?덉뿉 ?ㅼ뼱媛???묒? ?ㅽ뵾??*/
+.button-spinner {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border: 2px solid var(--color-gray-200);
+  border-top-color: var(--text-secondary);
+  border-radius: 999px;
+  animation: spin 700ms linear infinite;
+}
+
+/* 痍⑥냼 ?꾨즺 紐⑤떖 */
+.cancel-success {
+  text-align: center;
+}
+
+.cancel-success__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-success);
+  color: var(--color-white);
+}
+
+.cancel-success__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-20);
+  font-weight: 850;
+}
+
+.cancel-success__desc {
+  margin: 0 0 var(--space-5);
+  color: var(--text-secondary);
+  font-size: var(--font-size-14);
+  line-height: 1.5;
+}
+
+/* 痍⑥냼 ?뺤씤 紐⑤떖 */
+.cancel-confirm__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-20);
+  font-weight: 850;
+}
+
+.cancel-confirm__desc {
+  margin: 0 0 var(--space-3);
+  line-height: 1.5;
+}
+
+.cancel-confirm__note {
+  margin: 0 0 var(--space-5);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-14);
+  line-height: 1.5;
+}
+
+.cancel-confirm__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.cancel-confirm__actions > * {
+  flex: 1;
+}
+
+/* ?꾪뿕 ?숈옉(痍⑥냼 ?뺤젙)??踰꾪듉 */
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-8);
+  color: var(--color-white);
+  background: var(--color-brand);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.danger-button:hover {
+  background: var(--color-brand-strong);
+}
+
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* 鍮??곹깭 CTA ?곸뿭 */
+.state-box__action {
+  margin-top: var(--space-2);
+}
+
+.row-between {
+  justify-content: space-between;
+}
+

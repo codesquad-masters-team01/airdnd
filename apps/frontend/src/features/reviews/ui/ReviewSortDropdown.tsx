@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 
 export type ReviewSortKey = 'latest' | 'highest' | 'lowest';
@@ -14,48 +13,6 @@ interface ReviewSortDropdownProps {
   value: ReviewSortKey;
   onChange: (value: ReviewSortKey) => void;
 }
-
-const triggerStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '8px',
-  padding: '8px 16px',
-  background: '#fff',
-  border: '1px solid #222',
-  borderRadius: '24px',
-  color: '#222',
-  fontSize: '14px',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
-
-const menuStyle: CSSProperties = {
-  position: 'absolute',
-  top: 'calc(100% + 8px)',
-  right: 0,
-  zIndex: 10,
-  minWidth: '200px',
-  padding: '8px',
-  background: '#fff',
-  border: '1px solid #ebebeb',
-  borderRadius: '12px',
-  boxShadow: '0 12px 40px rgba(24, 24, 27, 0.18)',
-};
-
-const itemStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  width: '100%',
-  padding: '10px 12px',
-  background: 'none',
-  border: 'none',
-  borderRadius: '8px',
-  color: '#222',
-  fontSize: '14px',
-  textAlign: 'left',
-  cursor: 'pointer',
-};
 
 export function ReviewSortDropdown({ value, onChange }: ReviewSortDropdownProps) {
   const [open, setOpen] = useState(false);
@@ -86,23 +43,20 @@ export function ReviewSortDropdown({ value, onChange }: ReviewSortDropdownProps)
     REVIEW_SORT_OPTIONS.find((option) => option.key === value)?.label ?? '최신순';
 
   return (
-    <div ref={containerRef} style={{ position: 'relative' }}>
+    <div ref={containerRef} className="review-sort">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        style={triggerStyle}
+        className="review-sort__trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         {currentLabel}
-        <ChevronDown
-          size={16}
-          style={{ transition: 'transform 150ms', transform: open ? 'rotate(180deg)' : 'none' }}
-        />
+        <ChevronDown size={16} className="review-sort__chevron" />
       </button>
 
       {open && (
-        <div role="listbox" style={menuStyle}>
+        <div role="listbox" className="review-sort__menu">
           {REVIEW_SORT_OPTIONS.map((option) => {
             const isSelected = option.key === value;
             return (
@@ -115,9 +69,7 @@ export function ReviewSortDropdown({ value, onChange }: ReviewSortDropdownProps)
                   onChange(option.key);
                   setOpen(false);
                 }}
-                style={{ ...itemStyle, fontWeight: isSelected ? 700 : 400 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#f7f7f7')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                className={`review-sort__option${isSelected ? ' selected' : ''}`}
               >
                 {option.label}
                 {isSelected && <Check size={16} />}

@@ -36,8 +36,8 @@ export function RoomDetailPage() {
   const sideImages = allImages.slice(1, 5);
 
   return (
-    <div style={{ backgroundColor: '#fff', minHeight: '100vh', paddingTop: '0', marginTop: '-40px' }}>
-      <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px' }}>
+    <div className="room-detail-page">
+      <div className="room-detail-page__inner">
 
         {/* A. 제목 및 액션 버튼 */}
         <RoomDetailHeader room={room} />
@@ -46,10 +46,10 @@ export function RoomDetailPage() {
         <RoomGallery room={room} />
 
         {/* 사진 영역과 본문을 구분하는 라인 */}
-        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '0 0 32px' }} />
+        <hr className="room-detail-divider" />
 
         {/* 메인 레이아웃 (좌: 정보 / 우: 예약창) — 예약 폼은 이 그리드 안에서만 따라온다 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 372px', gap: '80px', position: 'relative' }}>
+        <div className="room-detail-main">
 
           {/* 좌측: 숙소 정보 */}
           <article>
@@ -64,8 +64,8 @@ export function RoomDetailPage() {
           </article>
 
           {/* H. 우측: 스티키 예약 폼 */}
-          <aside style={{ position: 'relative' }}>
-            <div style={{ position: 'sticky', top: '100px' }}>
+          <aside className="room-detail-aside">
+            <div className="room-detail-sticky">
               <ReservationForm room={room} />
             </div>
           </aside>
@@ -73,13 +73,13 @@ export function RoomDetailPage() {
         </div>
 
         {/* 편의시설과 위치 사이 전체 너비 구분선 */}
-        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '48px 0' }} />
+        <hr className="room-detail-divider wide" />
 
         {/* F. 숙소 위치 (실제 지도 연동) — 전체 너비 */}
         <RoomLocation room={room} />
 
         {/* G. 후기 섹션 — 전체 너비 */}
-        <section id="reviews" style={{ paddingTop: '16px', paddingBottom: '48px' }}>
+        <section id="reviews" className="room-detail-reviews">
           <ReviewList roomId={parsedRoomId} />
         </section>
       </div>

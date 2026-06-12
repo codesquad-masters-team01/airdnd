@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { CSSProperties } from 'react';
 import { ChevronRight, Star } from 'lucide-react';
 import { useRoomReviewsQuery } from '../api/reviewsQueries';
 import { ReviewItem } from './ReviewItem';
@@ -16,23 +15,6 @@ interface ReviewListProps {
 
 // 가로 2개씩 4줄 = 8개까지만 먼저 보여주고, 그 이상은 '후기 더보기'로 모달에서 전체를 본다
 const INITIAL_VISIBLE_COUNT = 8;
-
-const moreButtonStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '2px',
-  marginTop: '4px',
-  justifySelf: 'start',
-  width: 'fit-content',
-  padding: '13px 23px',
-  background: 'none',
-  border: '1px solid #222',
-  borderRadius: '8px',
-  color: '#222',
-  fontSize: '16px',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
 
 export function ReviewList({ roomId }: ReviewListProps) {
   const { data: reviews, isLoading, error } = useRoomReviewsQuery(roomId);
@@ -84,7 +66,7 @@ export function ReviewList({ roomId }: ReviewListProps) {
       </div>
 
       {hasMore && (
-        <button type="button" onClick={() => setIsModalOpen(true)} style={moreButtonStyle}>
+        <button type="button" onClick={() => setIsModalOpen(true)} className="detail-more-button tight">
           후기 {reviews.length}개 모두 보기 <ChevronRight size={16} />
         </button>
       )}
@@ -96,28 +78,8 @@ export function ReviewList({ roomId }: ReviewListProps) {
         maxWidth={680}
       >
         {/* 헤더: 별점 평균 + 후기 개수 (좌) / 정렬 드롭다운 (우) */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-            paddingBottom: '20px',
-            paddingRight: '36px',
-            marginBottom: '4px',
-            borderBottom: '1px solid #ebebeb',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '20px',
-              fontWeight: 700,
-              color: '#222',
-            }}
-          >
+        <div className="review-modal-head">
+          <div className="review-modal-head__rating">
             <Star size={20} fill="currentColor" />
             <span>
               {averageRating.toFixed(2)} · 후기 {reviews.length}개
@@ -127,25 +89,10 @@ export function ReviewList({ roomId }: ReviewListProps) {
         </div>
 
         {/* 본문: 전체 후기를 1열로, 길어지면 모달 안에서 스크롤 */}
-        <div
-          style={{
-            maxHeight: 'min(64vh, 560px)',
-            overflowY: 'auto',
-            paddingTop: '20px',
-            paddingRight: '4px',
-          }}
-        >
-          <div style={{ display: 'grid' }}>
-            {sortedReviews.map((review, index) => (
-              <div
-                key={review.id}
-                style={{
-                  paddingTop: index === 0 ? 0 : '28px',
-                  paddingBottom: index === sortedReviews.length - 1 ? 0 : '28px',
-                  borderBottom:
-                    index === sortedReviews.length - 1 ? 'none' : '1px solid #ebebeb',
-                }}
-              >
+        <div className="detail-modal-scroll md">
+          <div className="review-modal-list">
+            {sortedReviews.map((review) => (
+              <div key={review.id} className="review-modal-row">
                 <ReviewItem review={review} />
               </div>
             ))}
