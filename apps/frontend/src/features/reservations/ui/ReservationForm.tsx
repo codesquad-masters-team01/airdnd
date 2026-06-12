@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { Link, useLocation } from 'react-router-dom';
@@ -24,59 +23,6 @@ import {
 } from '../model/reservationTypes';
 import { useCreateReservationMutation } from '../api/reservationsQueries';
 import { GuestSelector } from './GuestSelector';
-
-const cardStyle: CSSProperties = {
-  border: '1px solid #dddddd',
-  borderRadius: '16px',
-  padding: '24px',
-  boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)',
-  backgroundColor: '#fff',
-};
-
-const dateCellStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2px',
-  padding: '10px 12px',
-  cursor: 'pointer',
-};
-
-const dateLabelStyle: CSSProperties = {
-  fontSize: '10px',
-  fontWeight: 700,
-  letterSpacing: '0.04em',
-  color: '#222',
-  textTransform: 'uppercase',
-};
-
-const dateValueStyle: CSSProperties = {
-  fontSize: '14px',
-  color: '#222',
-};
-
-const datePlaceholderStyle: CSSProperties = {
-  fontSize: '14px',
-  color: '#717171',
-};
-
-const fieldErrorStyle: CSSProperties = {
-  display: 'block',
-  marginTop: '6px',
-  color: '#c93449',
-  fontSize: '13px',
-};
-
-const primaryButtonStyle: CSSProperties = {
-  width: '100%',
-  padding: '14px',
-  border: 'none',
-  borderRadius: '10px',
-  background: 'linear-gradient(to right, #e84c60, #c93449)',
-  color: '#fff',
-  fontSize: '16px',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
 
 export function ReservationForm({ room }: { room: RoomDetail }) {
   const location = useLocation();
@@ -198,16 +144,10 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
 
   if (!user) {
     return (
-      <aside style={cardStyle}>
-        <p style={{ fontSize: '22px', fontWeight: 600, margin: '0 0 4px' }}>예약하기</p>
-        <p style={{ color: '#717171', fontSize: '15px', margin: '0 0 20px' }}>
-          예약하려면 로그인이 필요합니다.
-        </p>
-        <Link
-          to="/login"
-          state={{ from: location }}
-          style={{ ...primaryButtonStyle, display: 'block', textAlign: 'center', textDecoration: 'none' }}
-        >
+      <aside className="booking-card">
+        <p className="booking-login-title">예약하기</p>
+        <p className="booking-login-desc">예약하려면 로그인이 필요합니다.</p>
+        <Link to="/login" state={{ from: location }} className="booking-submit as-link">
           로그인하고 예약하기
         </Link>
       </aside>
@@ -216,12 +156,9 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
 
   return (
     <>
-      <aside style={cardStyle}>
-        <p style={{ marginBottom: '20px' }}>
-          <span style={{ fontSize: '22px', fontWeight: 600, color: '#222' }}>
-            {formatCurrency(room.pricePerNight)}
-          </span>
-          <span style={{ fontSize: '16px', color: '#222' }}> / 박</span>
+      <aside className="booking-card">
+        <p className="booking-price-row">
+          <span className="booking-price">{formatCurrency(room.pricePerNight)}</span>
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -231,44 +168,25 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
           <input type="hidden" {...register('checkOut')} />
 
           {/* 체크인 / 체크아웃 — 하나의 테두리 박스 + 달력 팝오버 */}
-          <div ref={dateFieldRef} style={{ position: 'relative', marginBottom: '8px' }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                border: '1px solid #b0b0b0',
-                borderRadius: '10px',
-                overflow: 'hidden',
-              }}
-            >
+          <div ref={dateFieldRef} className="booking-date-field">
+            <div className="booking-date-grid">
               <button
                 type="button"
                 onClick={() => setOpenPanel(openPanel === 'checkIn' ? null : 'checkIn')}
-                style={{
-                  ...dateCellStyle,
-                  alignItems: 'flex-start',
-                  textAlign: 'left',
-                  borderRight: '1px solid #b0b0b0',
-                  background: openPanel === 'checkIn' ? '#f7f7f7' : '#fff',
-                }}
+                className={`booking-date-cell start${openPanel === 'checkIn' ? ' is-open' : ''}`}
               >
-                <span style={dateLabelStyle}>체크인</span>
-                <span style={checkIn ? dateValueStyle : datePlaceholderStyle}>
+                <span className="booking-date-label">체크인</span>
+                <span className={checkIn ? 'booking-date-value' : 'booking-date-placeholder'}>
                   {checkIn ? formatDateSummary(checkIn, '날짜 추가') : '날짜 추가'}
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => setOpenPanel(openPanel === 'checkOut' ? null : 'checkOut')}
-                style={{
-                  ...dateCellStyle,
-                  alignItems: 'flex-start',
-                  textAlign: 'left',
-                  background: openPanel === 'checkOut' ? '#f7f7f7' : '#fff',
-                }}
+                className={`booking-date-cell${openPanel === 'checkOut' ? ' is-open' : ''}`}
               >
-                <span style={dateLabelStyle}>체크아웃</span>
-                <span style={checkOut ? dateValueStyle : datePlaceholderStyle}>
+                <span className="booking-date-label">체크아웃</span>
+                <span className={checkOut ? 'booking-date-value' : 'booking-date-placeholder'}>
                   {checkOut ? formatDateSummary(checkOut, '날짜 추가') : '날짜 추가'}
                 </span>
               </button>
@@ -289,10 +207,10 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
               />
             ) : null}
           </div>
-          {errors.checkIn ? <span style={fieldErrorStyle}>{errors.checkIn.message}</span> : null}
-          {errors.checkOut ? <span style={fieldErrorStyle}>{errors.checkOut.message}</span> : null}
+          {errors.checkIn ? <span className="booking-field-error">{errors.checkIn.message}</span> : null}
+          {errors.checkOut ? <span className="booking-field-error">{errors.checkOut.message}</span> : null}
 
-          <div style={{ marginTop: '8px' }}>
+          <div className="booking-guests">
             <GuestSelector
               maxGuests={room.maxGuests}
               allowsPets={room.allowsPets}
@@ -300,53 +218,24 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
               watch={watch}
             />
           </div>
-          {errors.adults ? <span style={fieldErrorStyle}>{errors.adults.message}</span> : null}
+          {errors.adults ? <span className="booking-field-error">{errors.adults.message}</span> : null}
 
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            style={{
-              ...primaryButtonStyle,
-              marginTop: '16px',
-              opacity: createMutation.isPending ? 0.7 : 1,
-              cursor: createMutation.isPending ? 'default' : 'pointer',
-            }}
-          >
+          <button type="submit" disabled={createMutation.isPending} className="booking-submit spaced">
             {createMutation.isPending ? '예약 중...' : '예약 요청'}
           </button>
 
-          <p style={{ textAlign: 'center', color: '#717171', fontSize: '13px', margin: '12px 0 0' }}>
-            예약 확정 전에는 요금이 청구되지 않습니다.
-          </p>
+          <p className="booking-fineprint">예약 확정 전에는 요금이 청구되지 않습니다.</p>
 
           {/* 요금 상세 — 숙박 일수가 정해졌을 때만 노출 */}
           {nights > 0 && (
-            <div style={{ marginTop: '20px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  color: '#222',
-                  fontSize: '15px',
-                  marginBottom: '12px',
-                }}
-              >
-                <span style={{ textDecoration: 'underline' }}>
+            <div className="booking-price-detail">
+              <div className="booking-price-line">
+                <span className="booking-price-line__label">
                   {formatCurrency(room.pricePerNight)} × {nights}박
                 </span>
                 <span>{formatCurrency(totalPrice)}</span>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  paddingTop: '16px',
-                  borderTop: '1px solid #ddd',
-                  fontWeight: 600,
-                  fontSize: '16px',
-                  color: '#222',
-                }}
-              >
+              <div className="booking-price-total">
                 <span>총 합계</span>
                 <span>{formatCurrency(totalPrice)}</span>
               </div>
@@ -354,7 +243,7 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
           )}
 
           {createMutation.error ? (
-            <div style={{ marginTop: '16px' }}>
+            <div className="booking-error">
               <ErrorMessage error={createMutation.error} />
             </div>
           ) : null}
@@ -363,65 +252,24 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
 
       {/* 예약 완료 팝업 */}
       <Modal open={showSuccess} onClose={() => setShowSuccess(false)} ariaLabel="예약 완료">
-        <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              margin: '0 auto 20px',
-              borderRadius: '50%',
-              background: 'linear-gradient(to right, #e84c60, #c93449)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+        <div className="booking-success">
+          <div className="booking-success__check">
             <Check size={34} strokeWidth={3} color="#fff" />
           </div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 8px', color: '#222' }}>
-            예약이 완료되었습니다!
-          </h2>
-          <p style={{ color: '#717171', fontSize: '15px', margin: '0 0 24px' }}>
-            예약 내역은 ‘예약 목록’에서 확인할 수 있어요.
-          </p>
+          <h2 className="booking-success__title">예약이 완료되었습니다!</h2>
+          <p className="booking-success__desc">예약 내역은 ‘예약 목록’에서 확인할 수 있어요.</p>
 
-          <div
-            style={{
-              textAlign: 'left',
-              border: '1px solid #eee',
-              borderRadius: '12px',
-              padding: '16px',
-              marginBottom: '24px',
-            }}
-          >
+          <div className="booking-success__summary">
             <SummaryRow label="숙소" value={room.name} />
             <SummaryRow label="일정" value={scheduleText} />
             <SummaryRow label="인원" value={guestSummary} />
             <SummaryRow label="총 금액" value={formatCurrency(totalPrice)} emphasize />
           </div>
 
-          <Link
-            to="/reservations"
-            style={{ ...primaryButtonStyle, display: 'block', textAlign: 'center', textDecoration: 'none' }}
-          >
+          <Link to="/reservations" className="booking-submit as-link">
             예약 목록 보기
           </Link>
-          <button
-            type="button"
-            onClick={() => setShowSuccess(false)}
-            style={{
-              width: '100%',
-              marginTop: '8px',
-              padding: '12px',
-              border: 'none',
-              background: 'transparent',
-              color: '#222',
-              fontSize: '15px',
-              fontWeight: 600,
-              textDecoration: 'underline',
-              cursor: 'pointer',
-            }}
-          >
+          <button type="button" onClick={() => setShowSuccess(false)} className="booking-success__dismiss">
             계속 둘러보기
           </button>
         </div>
@@ -432,26 +280,9 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
 
 function SummaryRow({ label, value, emphasize }: { label: string; value: string; emphasize?: boolean }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '16px',
-        padding: '8px 0',
-      }}
-    >
-      <span style={{ color: '#717171', fontSize: '14px', flexShrink: 0 }}>{label}</span>
-      <span
-        style={{
-          color: '#222',
-          fontSize: emphasize ? '16px' : '14px',
-          fontWeight: emphasize ? 700 : 500,
-          textAlign: 'right',
-        }}
-      >
-        {value}
-      </span>
+    <div className="booking-summary-row">
+      <span className="booking-summary-row__label">{label}</span>
+      <span className={`booking-summary-row__value${emphasize ? ' emphasize' : ''}`}>{value}</span>
     </div>
   );
 }
