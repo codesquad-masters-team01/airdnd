@@ -31,32 +31,32 @@ export function HostRoomsPage() {
       </div>
 
       {rooms.length > 0 ? (
-        <div className="host-metric-grid">
-          <div className="host-metric">
-            <span className="host-metric-icon">
+        <div className="metric-grid">
+          <div className="metric">
+            <span className="metric-icon">
               <Home size={20} strokeWidth={1.9} aria-hidden />
             </span>
             <div>
-              <p className="host-metric-label">전체 숙소</p>
-              <strong className="host-metric-value">{rooms.length}</strong>
+              <p className="metric-label">전체 숙소</p>
+              <strong className="metric-value">{rooms.length}</strong>
             </div>
           </div>
-          <div className="host-metric">
-            <span className="host-metric-icon is-active">
+          <div className="metric">
+            <span className="metric-icon is-active">
               <CheckCircle2 size={20} strokeWidth={1.9} aria-hidden />
             </span>
             <div>
-              <p className="host-metric-label">운영 중</p>
-              <strong className="host-metric-value">{activeCount}</strong>
+              <p className="metric-label">운영 중</p>
+              <strong className="metric-value">{activeCount}</strong>
             </div>
           </div>
-          <div className="host-metric">
-            <span className="host-metric-icon is-muted">
+          <div className="metric">
+            <span className="metric-icon is-muted">
               <PauseCircle size={20} strokeWidth={1.9} aria-hidden />
             </span>
             <div>
-              <p className="host-metric-label">비활성 · 대기</p>
-              <strong className="host-metric-value">{inactiveCount}</strong>
+              <p className="metric-label">비활성 · 대기</p>
+              <strong className="metric-value">{inactiveCount}</strong>
             </div>
           </div>
         </div>

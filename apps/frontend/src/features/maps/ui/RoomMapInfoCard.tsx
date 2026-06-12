@@ -33,7 +33,7 @@ export function RoomMapInfoCard({ room, onClose }: RoomMapInfoCardProps) {
           {room.region} · 최대 {room.maxGuests}명
         </p>
         <p className="map-infocard__price">
-          <strong>{formatCurrency(room.pricePerNight)}</strong> <span>/ 박</span>
+          <strong>{formatCurrency(room.pricePerNight)}</strong> <span>· 1박</span>
         </p>
       </Link>
     </div>

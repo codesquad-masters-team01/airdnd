@@ -33,7 +33,7 @@ export function AdminRoomApprovalsPage() {
               <div className="reservation-content">
                 <h2>{room.name}</h2>
                 <p className="muted">{room.address}</p>
-                <strong>{formatCurrency(room.pricePerNight)} / 박</strong>
+                <strong>{formatCurrency(room.pricePerNight)} · 1박</strong>
               </div>
               <div className="button-group">
                 <button className="primary-button" type="button" onClick={() => approveMutation.mutate(room.id)}>

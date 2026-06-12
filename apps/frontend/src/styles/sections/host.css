@@ -1,11 +1,12 @@
 /* ?? ?몄뒪???숈냼 愿由?????????????????????????????? */
-.host-metric-grid {
+/* 요약 지표 카드 — 호스트 숙소 관리·예약 목록이 공유하는 스타일 */
+.metric-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
-.host-metric {
+.metric {
   display: flex;
   align-items: center;
   gap: var(--space-4);
@@ -16,7 +17,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.host-metric-icon {
+.metric-icon {
   display: grid;
   place-items: center;
   width: 46px;
@@ -27,24 +28,29 @@
   background: var(--surface-subtle);
 }
 
-.host-metric-icon.is-active {
+.metric-icon.is-active {
   color: var(--color-success);
   background: var(--color-success-soft);
 }
 
-.host-metric-icon.is-muted {
+.metric-icon.is-muted {
   color: var(--text-tertiary);
   background: var(--color-gray-100);
 }
 
-.host-metric-label {
+.metric-icon.is-cancelled {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.metric-label {
   margin-bottom: 2px;
   color: var(--text-tertiary);
   font-size: var(--font-size-13);
   font-weight: 700;
 }
 
-.host-metric-value {
+.metric-value {
   font-size: var(--font-size-24);
   line-height: 1;
 }
@@ -73,6 +79,12 @@
 .host-room-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+}
+
+.host-room-link {
+  display: contents;
+  color: inherit;
+  text-decoration: none;
 }
 
 .host-room-media {

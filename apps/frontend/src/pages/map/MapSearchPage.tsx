@@ -99,7 +99,7 @@ export function MapSearchPage() {
                   <p className="muted">{room.address}</p>
                   <p className="card-meta">
                     <RoomReviewBadge roomId={room.id} showReviewCount={false} /> ·{' '}
-                    {formatCurrency(room.pricePerNight)} / 박
+                    {formatCurrency(room.pricePerNight)} · 1박
                   </p>
                 </div>
               </Link>

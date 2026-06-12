@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { CalendarDays, CheckCircle2, ChevronDown, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../../../shared/lib/format';
 import { EmptyState } from '../../../shared/ui/EmptyState';
@@ -124,7 +124,7 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
           </p>
           <div className="reservation-price">
             <strong>{formatCurrency(reservation.totalPrice)}</strong>
-            <span className="muted">{formatCurrency(reservation.pricePerNight)} / 박</span>
+            <span className="muted">{formatCurrency(reservation.pricePerNight)} · 1박</span>
           </div>
         </div>
         <div className="reservation-actions">
@@ -169,18 +169,33 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
 
   return (
     <div className="list-stack">
-      <div className="reservation-summary">
-        <div className="reservation-summary__item">
-          <span className="reservation-summary__value">{reservations.length}</span>
-          <span className="reservation-summary__label">전체</span>
+      <div className="metric-grid">
+        <div className="metric">
+          <span className="metric-icon">
+            <CalendarDays size={20} strokeWidth={1.9} aria-hidden />
+          </span>
+          <div>
+            <p className="metric-label">전체</p>
+            <strong className="metric-value">{reservations.length}</strong>
+          </div>
         </div>
-        <div className="reservation-summary__item">
-          <span className="reservation-summary__value">{confirmedCount}</span>
-          <span className="reservation-summary__label">확정</span>
+        <div className="metric">
+          <span className="metric-icon is-active">
+            <CheckCircle2 size={20} strokeWidth={1.9} aria-hidden />
+          </span>
+          <div>
+            <p className="metric-label">확정</p>
+            <strong className="metric-value">{confirmedCount}</strong>
+          </div>
         </div>
-        <div className="reservation-summary__item">
-          <span className="reservation-summary__value">{cancelledCount}</span>
-          <span className="reservation-summary__label">취소</span>
+        <div className="metric">
+          <span className="metric-icon is-cancelled">
+            <XCircle size={20} strokeWidth={1.9} aria-hidden />
+          </span>
+          <div>
+            <p className="metric-label">취소</p>
+            <strong className="metric-value">{cancelledCount}</strong>
+          </div>
         </div>
       </div>
 

@@ -135,7 +135,7 @@
     grid-template-columns: 1fr;
   }
 
-  .host-metric-grid {
+  .metric-grid {
     grid-template-columns: 1fr;
   }
 
@@ -155,7 +155,8 @@
     grid-template-columns: 1fr;
   }
 
-  .reservation-group__cards {
+  .reservation-group__cards,
+  .reservation-cancelled__list {
     grid-template-columns: 1fr;
   }
 

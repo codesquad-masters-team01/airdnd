@@ -4,39 +4,6 @@
   gap: var(--space-5);
 }
 
-.reservation-summary {
-  display: flex;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-16);
-  background: var(--color-white);
-}
-
-.reservation-summary__item {
-  display: grid;
-  flex: 1;
-  gap: var(--space-1);
-  justify-items: center;
-  text-align: center;
-}
-
-.reservation-summary__item + .reservation-summary__item {
-  border-left: 1px solid var(--border-subtle);
-}
-
-.reservation-summary__value {
-  font-size: var(--font-size-24);
-  font-weight: 850;
-  line-height: 1.1;
-}
-
-.reservation-summary__label {
-  color: var(--text-tertiary);
-  font-size: var(--font-size-13);
-  font-weight: 700;
-}
-
 .reservation-region {
   margin: 0;
   color: var(--text-secondary);
@@ -186,8 +153,8 @@
 }
 
 .reservation-cancelled__list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-3);
   /* 痍⑥냼媛 ?꾨Т由?留롮븘???곸뿭 ?믪씠瑜?怨좎젙?섍퀬 ?대??먯꽌留??ㅽ겕濡?(???移대뱶 3媛??믪씠) */
   max-height: 540px;

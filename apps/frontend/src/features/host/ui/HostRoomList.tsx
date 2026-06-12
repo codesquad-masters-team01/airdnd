@@ -36,27 +36,29 @@ export function HostRoomList({ rooms, pendingRoomId, onStatusChange }: HostRoomL
 
         return (
           <article className="host-room-card" key={room.id}>
-            <div className="host-room-media">
-              <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
-              <span className={`host-status ${statusModifier[room.status]}`}>
-                {statusText[room.status]}
-              </span>
-            </div>
-            <div className="host-room-body">
-              <h2>{room.name}</h2>
-              <p className="host-room-loc">
-                <MapPin size={15} strokeWidth={1.8} aria-hidden />
-                {room.region}
-              </p>
-              <div className="host-room-meta">
-                <span>
-                  <Users size={15} strokeWidth={1.8} aria-hidden />
-                  최대 {room.maxGuests}명
+            <Link className="host-room-link" to={`/rooms/${room.id}`}>
+              <div className="host-room-media">
+                <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
+                <span className={`host-status ${statusModifier[room.status]}`}>
+                  {statusText[room.status]}
                 </span>
-                {amenityCount > 0 ? <span>편의시설 {amenityCount}개</span> : null}
               </div>
-              <p className="host-room-price">{formatCurrency(room.pricePerNight)}</p>
-            </div>
+              <div className="host-room-body">
+                <h2>{room.name}</h2>
+                <p className="host-room-loc">
+                  <MapPin size={15} strokeWidth={1.8} aria-hidden />
+                  {room.region}
+                </p>
+                <div className="host-room-meta">
+                  <span>
+                    <Users size={15} strokeWidth={1.8} aria-hidden />
+                    최대 {room.maxGuests}명
+                  </span>
+                  {amenityCount > 0 ? <span>편의시설 {amenityCount}개</span> : null}
+                </div>
+                <p className="host-room-price">{formatCurrency(room.pricePerNight)}</p>
+              </div>
+            </Link>
             <div className="host-room-actions">
               <Link className="secondary-button" to={`/host/rooms/${room.id}/edit`}>
                 <Pencil size={16} strokeWidth={1.9} aria-hidden />
