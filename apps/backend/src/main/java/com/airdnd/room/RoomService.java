@@ -6,7 +6,6 @@ import com.airdnd.room.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,15 +60,11 @@ public class RoomService {
     public RoomDetailResponse getRoomById(Long id) {
 
         Room room = roomRepository.findById(id).orElseThrow(()
-                -> new IllegalStateException("Room with id " + id + " not found!"));
+                -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        if (!room.getIsActive()) {
-            throw new IllegalStateException("Room with id " + id + " is not active!");
+        if (!room.getIsActive() || room.getIsDeleted()) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
-        if (room.getIsDeleted()) {
-            throw new IllegalStateException("Room with id " + id + " is deleted!");
-        }
-
         return RoomDetailResponse.from(room);
     }
 
@@ -77,10 +72,10 @@ public class RoomService {
     @Transactional
     public RoomDetailResponse updateRoomDetails(Long hostId,Long roomId, RoomUpdateRequest request) {
         Room room = roomRepository.findById(roomId).orElseThrow(()
-                -> new IllegalStateException("Room with id " + roomId + " not found!"));
+                -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         if (!room.getHostId().equals(hostId)) {
-            throw new IllegalStateException("Room with id " + hostId + " does not belong to this host!");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
         }
         room.updateRoom(
                 request.name(),
