@@ -42,7 +42,7 @@ export function RoomOverview({ room }: { room: RoomDetail }) {
 
       {/* 평점·후기 요약 버튼 (클릭 시 후기 섹션으로 스크롤) */}
       <div className="room-overview-review">
-        <RoomReviewSummaryButton roomId={room.id} fullWidth />
+        <RoomReviewSummaryButton rating={room.rating} reviewCount={room.reviewCount} fullWidth />
       </div>
 
       {/* 숙소 하이라이트 (가로 2개씩 배치) */}

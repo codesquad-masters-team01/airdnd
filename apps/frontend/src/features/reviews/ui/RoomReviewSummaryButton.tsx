@@ -1,6 +1,4 @@
 import { Star } from 'lucide-react';
-import { useMemo } from 'react';
-import { useRoomReviewsQuery } from '../api/reviewsQueries';
 
 // 평점(0~5)에 비례해 5개의 별을 부분적으로 채워 그리는 컴포넌트
 function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
@@ -26,7 +24,8 @@ function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
 }
 
 interface RoomReviewSummaryButtonProps {
-  roomId: number;
+  rating?: number; // 백엔드가 집계해 내려준 평균 평점
+  reviewCount?: number; // 백엔드가 집계해 내려준 후기 수
   fullWidth?: boolean; // 가로 전체로 늘릴지 여부
 }
 
@@ -35,21 +34,9 @@ function scrollToReviews() {
   document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-export function RoomReviewSummaryButton({ roomId, fullWidth = false }: RoomReviewSummaryButtonProps) {
-  const { data: reviews, isLoading } = useRoomReviewsQuery(roomId);
-
-  const summary = useMemo(() => {
-    if (!reviews || reviews.length === 0) return null;
-
-    const sum = reviews.reduce((acc, curr) => acc + curr.rating, 0);
-    return {
-      rating: Math.round((sum / reviews.length) * 10) / 10,
-      reviewCount: reviews.length,
-    };
-  }, [reviews]);
-
-  // 로딩 중이거나 후기가 없으면 버튼을 노출하지 않음
-  if (isLoading || !summary) return null;
+export function RoomReviewSummaryButton({ rating, reviewCount, fullWidth = false }: RoomReviewSummaryButtonProps) {
+  // 평점이 없거나 후기가 0개면 버튼을 노출하지 않음
+  if (rating == null || !reviewCount) return null;
 
   // 가로로 늘릴 때는 '에어디엔디 선정' 배너 형태:
   // 좌측에 선정 문구, 우측에 [평점(숫자+별) | 후기]를 세로 구분선으로 구분
@@ -66,8 +53,8 @@ export function RoomReviewSummaryButton({ roomId, fullWidth = false }: RoomRevie
         <span className="review-summary__right">
           {/* 평점: 위 숫자, 아래 별 */}
           <span className="review-summary__metric">
-            <span className="review-summary__value">{summary.rating.toFixed(1)}</span>
-            <StarRating rating={summary.rating} />
+            <span className="review-summary__value">{rating.toFixed(1)}</span>
+            <StarRating rating={rating} />
           </span>
 
           {/* 평점과 후기 사이 세로 구분선 */}
@@ -75,7 +62,7 @@ export function RoomReviewSummaryButton({ roomId, fullWidth = false }: RoomRevie
 
           {/* 후기: 위 개수, 아래 라벨 */}
           <span className="review-summary__metric">
-            <span className="review-summary__value">{summary.reviewCount}</span>
+            <span className="review-summary__value">{reviewCount}</span>
             <span className="review-summary__label">후기</span>
           </span>
         </span>
@@ -86,9 +73,9 @@ export function RoomReviewSummaryButton({ roomId, fullWidth = false }: RoomRevie
   return (
     <button type="button" onClick={scrollToReviews} className="review-summary-btn">
       <Star size={16} fill="#222" strokeWidth={0} />
-      <span>{summary.rating.toFixed(1)}</span>
+      <span>{rating.toFixed(1)}</span>
       <span className="review-summary__dot">·</span>
-      <span className="review-summary__count">후기 {summary.reviewCount}개</span>
+      <span className="review-summary__count">후기 {reviewCount}개</span>
     </button>
   );
 }

@@ -98,7 +98,7 @@ export function MapSearchPage() {
                   <h2>{room.name}</h2>
                   <p className="muted">{room.address}</p>
                   <p className="card-meta">
-                    <RoomReviewBadge roomId={room.id} showReviewCount={false} /> ·{' '}
+                    <RoomReviewBadge rating={room.rating} reviewCount={room.reviewCount} showReviewCount={false} /> ·{' '}
                     {formatCurrency(room.pricePerNight)} / 박
                   </p>
                 </div>
