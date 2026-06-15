@@ -80,7 +80,7 @@ export function RoomDetailPage() {
 
         {/* G. 후기 섹션 — 전체 너비 */}
         <section id="reviews" className="room-detail-reviews">
-          <ReviewList roomId={parsedRoomId} />
+          <ReviewList roomId={parsedRoomId} rating={room.rating} />
         </section>
       </div>
     </div>

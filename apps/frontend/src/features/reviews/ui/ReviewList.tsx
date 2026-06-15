@@ -11,12 +11,13 @@ import { Modal } from '../../../shared/ui/Modal';
 
 interface ReviewListProps {
   roomId: number;
+  rating?: number; // 백엔드가 집계해 내려준 평균 평점 (모달 헤더 표시용)
 }
 
 // 가로 2개씩 4줄 = 8개까지만 먼저 보여주고, 그 이상은 '후기 더보기'로 모달에서 전체를 본다
 const INITIAL_VISIBLE_COUNT = 8;
 
-export function ReviewList({ roomId }: ReviewListProps) {
+export function ReviewList({ roomId, rating }: ReviewListProps) {
   const { data: reviews, isLoading, error } = useRoomReviewsQuery(roomId);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortKey, setSortKey] = useState<ReviewSortKey>('latest');
@@ -40,8 +41,6 @@ export function ReviewList({ roomId }: ReviewListProps) {
 
   const hasMore = reviews.length > INITIAL_VISIBLE_COUNT;
   const visibleReviews = reviews.slice(0, INITIAL_VISIBLE_COUNT);
-  const averageRating =
-    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
   // 모달 안에서만 정렬을 적용한다 (원본 순서는 섹션 미리보기 유지)
   const sortedReviews = [...reviews].sort((a, b) => {
@@ -82,7 +81,7 @@ export function ReviewList({ roomId }: ReviewListProps) {
           <div className="review-modal-head__rating">
             <Star size={20} fill="currentColor" />
             <span>
-              {averageRating.toFixed(2)} · 후기 {reviews.length}개
+              {rating != null ? `${rating.toFixed(2)} · ` : ''}후기 {reviews.length}개
             </span>
           </div>
           <ReviewSortDropdown value={sortKey} onChange={setSortKey} />

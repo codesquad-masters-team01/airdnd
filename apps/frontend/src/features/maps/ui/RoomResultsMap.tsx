@@ -222,6 +222,7 @@ function MapContent({ rooms, zoom, selectedId, hoveredId, viewedIds, onSelect, o
                   selected={room.id === selectedId}
                   hovered={room.id === hoveredId}
                   viewed={viewedIds.has(room.id)}
+                  rating={room.rating}
                 />
               </div>
             </AdvancedMarker>
