@@ -1,13 +1,8 @@
 package com.airdnd.payment.dto;
 
-import java.time.LocalDate;
+import jakarta.validation.constraints.NotNull;
 
 public record PaymentOrderRequest(
-        Long roomId,
-        LocalDate checkInDate,
-        LocalDate checkOutDate,
-        int adultCount,
-        int childCount,
-        int infantCount,
-        boolean hasPets
+        @NotNull(message = "예약 정보는 필수입니다")
+        Long reservationId
 ) { }

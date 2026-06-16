@@ -38,6 +38,12 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.OK).body(reservation);
     }
 
+    @GetMapping("{reservationId}")
+    public ResponseEntity<ReservationResponse> getReservationDetail(@AuthenticationPrincipal AuthMemberPrincipal principal, @PathVariable Long reservationId){
+        ReservationResponse response = reservationService.findReservationResponseById(principal.getMemberId(), reservationId);
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/{reservationId}")
     public ResponseEntity<Void> cancelReservation(@PathVariable Long reservationId,
                                                   @AuthenticationPrincipal AuthMemberPrincipal principal) {

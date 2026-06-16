@@ -11,9 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,18 +40,28 @@ class ReservationServiceTest {
     private RoomRepository roomRepository;
 
     private static final Long MEMBER_ID = 9002L;
+    private static final Long OTHER_MEMBER_ID = 5005L;
     private static final Long ROOM_ID = 1L;
+    private static final Long HOLD_ID = 55L;
 
     private ReservationRequest request(LocalDate checkIn, LocalDate checkOut) {
         return new ReservationRequest(
                 ROOM_ID, checkIn, checkOut,
-                300000, 2, 0, 0, false);
+                2, 0, 0, false);
     }
 
     private Room roomWithCapacity(int capacity) {
-        Room room = Room.builder().maxCapacity(capacity).build();
+        Room room = Room.builder().maxCapacity(capacity).pricePerNight(100000).build();
         ReflectionTestUtils.setField(room, "id", ROOM_ID);
         return room;
+    }
+
+    private Reservation hold(Long guestId, ReservationStatus status, LocalDateTime expiresAt) {
+        Reservation r = Reservation.builder()
+                .guestId(guestId).roomId(ROOM_ID).status(status).expiresAt(expiresAt).totalPrice(100_000L)
+                .build();
+        ReflectionTestUtils.setField(r, "id", HOLD_ID);
+        return r;
     }
 
     @Test
@@ -58,10 +70,10 @@ class ReservationServiceTest {
         // given
         ReservationRequest request = request(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 3));
         given(roomRepository.findByIdForUpdate(ROOM_ID)).willReturn(Optional.of(roomWithCapacity(4)));
-        given(reservationRepository.existsOverlappingReservation(eq(ROOM_ID), anyCollection(), any(), any()))
+        given(reservationRepository.existsOverlappingReservation(eq(ROOM_ID), anyCollection(), any(), any(), any()))
                 .willReturn(false);
 
-        Reservation saved = Reservation.fromRequest(MEMBER_ID, request);
+        Reservation saved = Reservation.createHold(MEMBER_ID, request, 0L, null);
         ReflectionTestUtils.setField(saved, "id", 100L);
         given(reservationRepository.save(any(Reservation.class))).willReturn(saved);
 
@@ -80,7 +92,7 @@ class ReservationServiceTest {
         // given
         ReservationRequest request = request(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 3));
         given(roomRepository.findByIdForUpdate(ROOM_ID)).willReturn(Optional.of(roomWithCapacity(4)));
-        given(reservationRepository.existsOverlappingReservation(eq(ROOM_ID), anyCollection(), any(), any()))
+        given(reservationRepository.existsOverlappingReservation(eq(ROOM_ID), anyCollection(), any(), any(), any()))
                 .willReturn(true);
 
         // when & then
@@ -105,7 +117,99 @@ class ReservationServiceTest {
                 .extracting(e -> ((BusinessException) e).getCode())
                 .isEqualTo(ErrorCode.INVALID_RESERVATION_DATE);
 
-        verify(reservationRepository, never()).existsOverlappingReservation(any(), anyCollection(), any(), any());
+        verify(reservationRepository, never()).existsOverlappingReservation(any(), anyCollection(), any(), any(), any());
         verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("인원이 숙소 최대 수용 인원을 넘으면 ROOM_CAPACITY_EXCEEDED 로 거절된다.")
+    void createReservation_rejected_whenCapacityExceeded() {
+        ReservationRequest request = request(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 3)); // 성인 2명
+        given(roomRepository.findByIdForUpdate(ROOM_ID)).willReturn(Optional.of(roomWithCapacity(1)));
+
+        assertThatThrownBy(() -> reservationService.createReservation(MEMBER_ID, request))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getCode())
+                .isEqualTo(ErrorCode.ROOM_CAPACITY_EXCEEDED);
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("총액은 서버가 (1박 요금 × 박수)로 계산하고 만료 시각이 있는 PENDING 홀드로 저장한다.")
+    void createReservation_computesPriceAndHoldServerSide() {
+        ReservationRequest request = request(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 3)); // 2박, 1박 100,000원
+        given(roomRepository.findByIdForUpdate(ROOM_ID)).willReturn(Optional.of(roomWithCapacity(4)));
+        given(reservationRepository.existsOverlappingReservation(eq(ROOM_ID), anyCollection(), any(), any(), any()))
+                .willReturn(false);
+        Reservation saved = Reservation.createHold(MEMBER_ID, request, 0L, null);
+        ReflectionTestUtils.setField(saved, "id", 100L);
+        given(reservationRepository.save(any(Reservation.class))).willReturn(saved);
+
+        reservationService.createReservation(MEMBER_ID, request);
+
+        ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
+        verify(reservationRepository).save(captor.capture());
+        Reservation toSave = captor.getValue();
+        assertThat(toSave.getTotalPrice()).isEqualTo(200_000L);
+        assertThat(toSave.getStatus()).isEqualTo(ReservationStatus.PENDING);
+        assertThat(toSave.getGuestId()).isEqualTo(MEMBER_ID);
+        assertThat(toSave.getExpiresAt()).isAfter(LocalDateTime.now());
+    }
+
+    @Test
+    @DisplayName("getPayableHold: 본인 소유의 만료 전 PENDING 홀드면 그대로 반환한다.")
+    void getPayableHold_success() {
+        Reservation reservation = hold(MEMBER_ID, ReservationStatus.PENDING, LocalDateTime.now().plusMinutes(10));
+        given(reservationRepository.findById(HOLD_ID)).willReturn(Optional.of(reservation));
+
+        assertThat(reservationService.getPayableHold(HOLD_ID, MEMBER_ID)).isSameAs(reservation);
+    }
+
+    @Test
+    @DisplayName("getPayableHold: 예약이 없으면 RESERVATION_NOT_FOUND.")
+    void getPayableHold_notFound() {
+        given(reservationRepository.findById(HOLD_ID)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> reservationService.getPayableHold(HOLD_ID, MEMBER_ID))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getCode())
+                .isEqualTo(ErrorCode.RESERVATION_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("getPayableHold: 소유자가 아니면 UNAUTHORIZED_ACTION.")
+    void getPayableHold_rejectedWhenNotOwner() {
+        Reservation reservation = hold(OTHER_MEMBER_ID, ReservationStatus.PENDING, LocalDateTime.now().plusMinutes(10));
+        given(reservationRepository.findById(HOLD_ID)).willReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> reservationService.getPayableHold(HOLD_ID, MEMBER_ID))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getCode())
+                .isEqualTo(ErrorCode.UNAUTHORIZED_ACTION);
+    }
+
+    @Test
+    @DisplayName("getPayableHold: 만료된 PENDING 이면 RESERVATION_NOT_PAYABLE.")
+    void getPayableHold_rejectedWhenExpired() {
+        Reservation reservation = hold(MEMBER_ID, ReservationStatus.PENDING, LocalDateTime.now().minusMinutes(1));
+        given(reservationRepository.findById(HOLD_ID)).willReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> reservationService.getPayableHold(HOLD_ID, MEMBER_ID))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getCode())
+                .isEqualTo(ErrorCode.RESERVATION_NOT_PAYABLE);
+    }
+
+    @Test
+    @DisplayName("getPayableHold: PENDING 이 아니면(이미 확정/취소) RESERVATION_NOT_PAYABLE.")
+    void getPayableHold_rejectedWhenNotPending() {
+        Reservation reservation = hold(MEMBER_ID, ReservationStatus.CONFIRMED, null);
+        given(reservationRepository.findById(HOLD_ID)).willReturn(Optional.of(reservation));
+
+        assertThatThrownBy(() -> reservationService.getPayableHold(HOLD_ID, MEMBER_ID))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getCode())
+                .isEqualTo(ErrorCode.RESERVATION_NOT_PAYABLE);
     }
 }

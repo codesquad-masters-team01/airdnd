@@ -36,7 +36,7 @@ public class RoomController {
     @PatchMapping("/{roomId}")
     public ResponseEntity<RoomDetailResponse> updateRoom(@PathVariable Long roomId,
                                                          @AuthenticationPrincipal AuthMemberPrincipal principal,
-                                                         @RequestBody RoomUpdateRequest request) {
+                                                         @Valid @RequestBody RoomUpdateRequest request) {
         RoomDetailResponse updatedRoom = roomService.updateRoomDetails(principal.getMemberId(),roomId,request);
         return ResponseEntity.status(HttpStatus.OK).body(updatedRoom);
     }

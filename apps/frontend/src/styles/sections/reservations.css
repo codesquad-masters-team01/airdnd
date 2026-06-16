@@ -304,3 +304,89 @@
   justify-content: space-between;
 }
 
+/* ── 예약 상세: 상태별 액션 패널 ───────────────────────────── */
+.reservation-status-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.reservation-panel__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-18);
+  font-weight: 750;
+  color: var(--text-secondary);
+}
+
+.reservation-panel__title--success {
+  color: var(--color-success);
+}
+
+/* 결제 마감 카운트다운 */
+.reservation-countdown {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-radius: var(--radius-16);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.reservation-countdown--urgent {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.reservation-countdown__label {
+  font-size: var(--font-size-14);
+  font-weight: 600;
+}
+
+.reservation-countdown__time {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* 취소 — 패널 하단의 절제된 텍스트 버튼 */
+.reservation-panel__cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: calc(-1 * var(--space-2));
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-14);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.reservation-panel__cancel:hover:not(:disabled) {
+  color: var(--color-danger);
+}
+
+.reservation-panel__cancel:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.reservation-panel__error {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+/* 취소된 예약: 좌측 콘텐츠를 흐리게 처리 */
+.reservation-detail--cancelled .reservation-detail-hero {
+  filter: grayscale(0.6);
+  opacity: 0.72;
+}
+

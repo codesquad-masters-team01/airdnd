@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +22,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    private static final List<String> BLOCKING_STATUSES = List.of("CONFIRMED", "PENDING");
+    private static final List<ReservationStatus> BLOCKING_STATUSES =
+            List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING);
+
+    private static final int HOLD_MINUTES = 1;
 
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
@@ -42,13 +46,19 @@ public class ReservationService {
             throw new BusinessException(ErrorCode.ROOM_CAPACITY_EXCEEDED);
         }
 
+        LocalDateTime now = LocalDateTime.now();
+
         boolean alreadyBooked = reservationRepository.existsOverlappingReservation(
-                request.roomId(), BLOCKING_STATUSES, request.checkInDate(), request.checkOutDate());
+                request.roomId(), BLOCKING_STATUSES, now, request.checkInDate(), request.checkOutDate());
         if(alreadyBooked){
             throw new BusinessException(ErrorCode.ROOM_ALREADY_BOOKED);
         }
 
-        Reservation reservation = Reservation.fromRequest(memberId, request);
+        long nights = ChronoUnit.DAYS.between(request.checkInDate(), request.checkOutDate());
+        long totalPrice = (long) room.getPricePerNight() * nights;
+        LocalDateTime expiresAt = now.plusMinutes(HOLD_MINUTES);
+
+        Reservation reservation = Reservation.createHold(memberId, request, totalPrice, expiresAt);
 
         Reservation savedReservation = reservationRepository.save(reservation);
         return savedReservation.getId();
@@ -56,7 +66,7 @@ public class ReservationService {
 
     @Transactional(readOnly = true)
     public List<BookedDateRange> getBookedRanges(Long roomId) {
-        return reservationRepository.findBookedRanges(roomId, BLOCKING_STATUSES, LocalDate.now());
+        return reservationRepository.findBookedRanges(roomId, BLOCKING_STATUSES, LocalDate.now(), LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)
@@ -79,6 +89,7 @@ public class ReservationService {
                     room.getPricePerNight(),
                     reservation.getTotalPrice(),
                     reservation.getStatus(),
+                    reservation.getExpiresAt(),
                     reservation.getCreatedAt()
 
             ));
@@ -96,24 +107,40 @@ public class ReservationService {
         reservation.cancel();
     }
 
+    @Transactional(readOnly = true)
+    public Reservation getPayableHold(Long reservationId, Long guestId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+        if (!reservation.getGuestId().equals(guestId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
+        }
+        boolean payable = reservation.getStatus() == ReservationStatus.PENDING
+                && reservation.getExpiresAt() != null
+                && reservation.getExpiresAt().isAfter(LocalDateTime.now());
+        if (!payable) {
+            throw new BusinessException(ErrorCode.RESERVATION_NOT_PAYABLE);
+        }
+        return reservation;
+    }
+
+
     @Transactional
-    public Long createConfirmedReservation(Long guestId, Long roomId, LocalDate checkIn, LocalDate checkOut,
-                                           int adultCount, int childCount, int infantCount,
-                                           boolean hasPets, int totalPrice) {
-        Reservation reservation = Reservation.builder()
-                .guestId(guestId)
-                .roomId(roomId)
-                .checkInDate(checkIn)
-                .checkOutDate(checkOut)
-                .totalPrice(totalPrice)
-                .adultCount(adultCount)
-                .childCount(childCount)
-                .infantCount(infantCount)
-                .hasPets(hasPets)
-                .status("PENDING")
-                .createdAt(LocalDateTime.now())
-                .build();
-        return reservationRepository.save(reservation).getId();
+    public ReservationResponse findReservationResponseById(Long memberId, Long reservationId){
+        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+        if(!reservation.getGuestId().equals(memberId)){
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION, "본인의 예약 내역만 조회 가능합니다");
+        }
+        Room targetRoom = roomRepository.findById(reservation.getRoomId()).orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        return ReservationResponse.from(reservation, targetRoom);
+    }
+
+    public Reservation findReservationById(Long reservationId){
+        Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+        return reservation;
+    }
+
+    public Reservation saveReservation(Reservation reservation){
+        return reservationRepository.save(reservation);
     }
 
 }

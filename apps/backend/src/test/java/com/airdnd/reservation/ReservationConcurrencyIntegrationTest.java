@@ -91,7 +91,7 @@ class ReservationConcurrencyIntegrationTest {
         int threads = 2;
         ReservationRequest request = new ReservationRequest(
                 roomId, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 3),
-                200000, 2, 0, 0, false);
+                2, 0, 0, false);
 
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         CountDownLatch ready = new CountDownLatch(threads);

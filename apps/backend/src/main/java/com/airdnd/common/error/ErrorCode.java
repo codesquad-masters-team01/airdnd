@@ -12,6 +12,7 @@ public enum ErrorCode {
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 숙소 정보를 찾을 수 없습니다"),
     ROOM_CAPACITY_EXCEEDED(HttpStatus.BAD_REQUEST, "숙소 최대 수용 인원을 초과했습니다"),
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 예약 정보를 찾을 수 없습니다"),
+    RESERVATION_NOT_PAYABLE(HttpStatus.CONFLICT, "결제할 수 없는 예약입니다 (이미 처리되었거나 대기 시간이 만료되었습니다)"),
     INVALID_RESERVATION_DATE(HttpStatus.BAD_REQUEST, "체크인 날짜는 체크아웃 날짜보다 앞서야 합니다"),
     ROOM_ALREADY_BOOKED(HttpStatus.CONFLICT, "선택하신 날짜에는 이미 예약이 존재합니다"),
     RESERVATION_LOCK_TIMEOUT(HttpStatus.CONFLICT, "예약 요청이 많아 처리하지 못했습니다. 잠시 후 다시 시도해 주세요"),

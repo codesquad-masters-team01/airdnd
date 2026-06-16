@@ -14,13 +14,15 @@ import {
   toDateValue,
 } from '../../../shared/lib/calendar';
 import { CalendarPopover } from '../../../shared/ui/CalendarPopover';
-import { CheckoutState } from '../../payments/model/paymentTypes';
 import {
   CreateReservationFormValues,
   CreateReservationInput,
   createReservationSchema,
 } from '../model/reservationTypes';
-import { useRoomBookedDatesQuery } from '../api/reservationsQueries';
+import {
+  useCreateReservationMutation,
+  useRoomBookedDatesQuery,
+} from '../api/reservationsQueries';
 import { GuestSelector } from './GuestSelector';
 
 export function ReservationForm({ room }: { room: RoomDetail }) {
@@ -48,6 +50,7 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
   });
 
   const { data: bookedRanges } = useRoomBookedDatesQuery(room.id);
+  const createReservation = useCreateReservationMutation(room.id);
 
   const checkIn = useWatch({ control, name: 'checkIn' });
   const checkOut = useWatch({ control, name: 'checkOut' });
@@ -138,13 +141,13 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
     return bookedNights.has(value);
   }
 
-  // 예약 요청 → 결제 페이지로 이동. 예약 draft 와 숙소 스냅샷을 router state 로 전달한다.
-  // 실제 예약 생성은 결제(capture) 성공 후 백엔드에서 이뤄진다.
+  // 예약 요청 → PENDING 홀드를 먼저 만들고, 그 예약 id 로 결제 페이지(영속 URL)로 이동한다.
+  // 결제 페이지는 router state 가 아니라 reservationId 로 서버에서 다시 불러오므로 새로고침·재방문에 안전하다.
   function onSubmit(input: CreateReservationInput) {
     if (!user) return;
 
-    const checkoutState: CheckoutState = {
-      draft: {
+    createReservation.mutate(
+      {
         roomId: room.id,
         checkInDate: input.checkIn,
         checkOutDate: input.checkOut,
@@ -153,16 +156,10 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
         infantCount: input.infants,
         hasPets: input.pets > 0,
       },
-      room: {
-        id: room.id,
-        name: room.name,
-        pricePerNight: room.pricePerNight,
-        imageUrl: room.imageUrl,
-        region: room.region,
+      {
+        onSuccess: (reservationId) => navigate(`/checkout/${reservationId}`),
       },
-    };
-
-    navigate('/checkout', { state: checkoutState });
+    );
   }
 
   if (!user) {
@@ -242,9 +239,13 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
         </div>
         {errors.adults ? <span className="booking-field-error">{errors.adults.message}</span> : null}
 
-        <button type="submit" className="booking-submit spaced">
-          예약 요청
+        <button type="submit" disabled={createReservation.isPending} className="booking-submit spaced">
+          {createReservation.isPending ? '예약 요청 중...' : '예약 요청'}
         </button>
+
+        {createReservation.error ? (
+          <span className="booking-field-error">예약 요청에 실패했습니다. 다시 시도해 주세요.</span>
+        ) : null}
 
         <p className="booking-fineprint">예약 확정 전에는 요금이 청구되지 않습니다.</p>
 

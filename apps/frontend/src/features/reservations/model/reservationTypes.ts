@@ -14,6 +14,7 @@ export const reservationSchema = z.object({
   pricePerNight: z.number(),
   totalPrice: z.number(),
   status: reservationStatusSchema,
+  expiresAt: z.string().nullish(), // PENDING 홀드 만료 시각(ISO). CONFIRMED/CANCELLED 면 null
   guestName: z.string().optional(),
   createdAt: z.string().optional(),
 });
@@ -39,6 +40,21 @@ export const createReservationSchema = z
     message: '체크아웃은 체크인보다 늦어야 합니다.',
     path: ['checkOut'],
   });
+
+/**
+ * POST /api/reservations 로 보내는 PENDING 홀드 생성 페이로드.
+ * 금액(totalPrice)·guestId 는 보내지 않는다 — 백엔드가 roomId+날짜로 재계산하고
+ * guestId 는 인증 principal 에서 가져온다.
+ */
+export type CreateReservationPayload = {
+  roomId: number;
+  checkInDate: string; // yyyy-MM-dd
+  checkOutDate: string; // yyyy-MM-dd
+  adultCount: number;
+  childCount: number;
+  infantCount: number;
+  hasPets: boolean;
+};
 
 export type Reservation = z.infer<typeof reservationSchema>;
 export type ReservationStatus = z.infer<typeof reservationStatusSchema>;
