@@ -2,6 +2,7 @@ package com.airdnd.reservation;
 
 import com.airdnd.common.error.ErrorCode;
 import com.airdnd.common.exception.BusinessException;
+import com.airdnd.reservation.dto.BookedDateRange;
 import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
 import com.airdnd.room.Room;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,36 +21,42 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReservationService {
 
+    private static final List<String> BLOCKING_STATUSES = List.of("CONFIRMED", "PENDING");
+
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
 
     @Transactional
-    public Long createReservation(ReservationRequest request) {
+    public Long createReservation(Long memberId ,ReservationRequest request) {
 
-        Room room = roomRepository.findById(request.roomId())
+        Room room = roomRepository.findByIdForUpdate(request.roomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        if(!request.checkInDate().isBefore(request.checkOutDate())){
+            throw new BusinessException(ErrorCode.INVALID_RESERVATION_DATE);
+        }
 
         int totalGuests = request.adultCount() + request.childCount();
 
         if(totalGuests > room.getMaxCapacity()) {
             throw new BusinessException(ErrorCode.ROOM_CAPACITY_EXCEEDED);
         }
-        Reservation reservation = Reservation.builder()
-                .guestId(request.guestId())
-                .roomId(request.roomId())
-                .checkInDate(request.checkInDate())
-                .checkOutDate(request.checkOutDate())
-                .totalPrice(request.totalPrice())
-                .adultCount(request.adultCount())
-                .childCount(request.childCount())
-                .infantCount(request.infantCount())
-                .hasPets(request.hasPets())
-                .status("CONFIRMED")
-                .createdAt(LocalDateTime.now())
-                .build();
+
+        boolean alreadyBooked = reservationRepository.existsOverlappingReservation(
+                request.roomId(), BLOCKING_STATUSES, request.checkInDate(), request.checkOutDate());
+        if(alreadyBooked){
+            throw new BusinessException(ErrorCode.ROOM_ALREADY_BOOKED);
+        }
+
+        Reservation reservation = Reservation.fromRequest(memberId, request);
 
         Reservation savedReservation = reservationRepository.save(reservation);
         return savedReservation.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookedDateRange> getBookedRanges(Long roomId) {
+        return reservationRepository.findBookedRanges(roomId, BLOCKING_STATUSES, LocalDate.now());
     }
 
     @Transactional(readOnly = true)

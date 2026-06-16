@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { Link, useLocation } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { RoomDetail } from '../../rooms/model/roomTypes';
 import { getStayNights } from '../../../shared/lib/date';
 import { formatCurrency, formatDate } from '../../../shared/lib/format';
 import {
+  eachNightValue,
   formatDateSummary,
   getMonthStart,
   parseDateValue,
@@ -21,7 +22,10 @@ import {
   CreateReservationInput,
   createReservationSchema,
 } from '../model/reservationTypes';
-import { useCreateReservationMutation } from '../api/reservationsQueries';
+import {
+  useCreateReservationMutation,
+  useRoomBookedDatesQuery,
+} from '../api/reservationsQueries';
 import { GuestSelector } from './GuestSelector';
 
 export function ReservationForm({ room }: { room: RoomDetail }) {
@@ -49,6 +53,8 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
     },
   });
 
+  const { data: bookedRanges } = useRoomBookedDatesQuery(room.id);
+
   const checkIn = useWatch({ control, name: 'checkIn' });
   const checkOut = useWatch({ control, name: 'checkOut' });
   const adults = useWatch({ control, name: 'adults' });
@@ -70,6 +76,23 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
   );
   const dateFieldRef = useRef<HTMLDivElement>(null);
   const todayValue = toDateValue(new Date());
+
+  // DB 예약 구간을 '점유된 밤'(YYYY-MM-DD) 집합으로 펼친다. 체크아웃 당일은 비어 있는 것으로 본다.
+  const bookedNights = useMemo(() => {
+    const nights = new Set<string>();
+    (bookedRanges ?? []).forEach((range) => {
+      eachNightValue(range.checkInDate, range.checkOutDate).forEach((night) => nights.add(night));
+    });
+    return nights;
+  }, [bookedRanges]);
+
+  // 체크인 이후 가장 이른 점유된 밤. 체크아웃이 이 날을 넘어 예약 구간을 가로지르지 못하게 막는다.
+  const firstBlockedAfterCheckIn = useMemo(() => {
+    if (!checkIn) return null;
+    // YYYY-MM-DD 는 사전순 정렬이 곧 날짜순 정렬
+    const after = [...bookedNights].filter((night) => night > checkIn).sort();
+    return after[0] ?? null;
+  }, [bookedNights, checkIn]);
 
   // 달력 바깥 클릭 / ESC 로 닫기
   useEffect(() => {
@@ -116,9 +139,18 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
     return Boolean(checkIn && checkOut && value > checkIn && value < checkOut);
   }
   function isDateDisabled(value: string) {
-    // 지난 날짜 + (체크아웃 선택 중일 때) 체크인 이전 날짜 비활성화
+    // 지난 날짜는 항상 비활성화
     if (value < todayValue) return true;
-    return openPanel === 'checkOut' && Boolean(checkIn && value <= checkIn);
+
+    if (openPanel === 'checkOut' && checkIn) {
+      // 체크아웃: 체크인 당일 이전 불가 + 예약 구간을 가로지르는 날짜 불가.
+      // (체크아웃 당일은 점유로 보지 않으므로 첫 점유된 밤 당일까지는 선택 가능 — 턴오버 허용)
+      if (value <= checkIn) return true;
+      return Boolean(firstBlockedAfterCheckIn && value > firstBlockedAfterCheckIn);
+    }
+
+    // 체크인(또는 체크인 미선택): 이미 예약된 밤은 선택 불가 → 지난 날짜처럼 회색 처리됨
+    return bookedNights.has(value);
   }
 
   function onSubmit(input: CreateReservationInput) {
