@@ -3,7 +3,7 @@ package com.airdnd.room;
 import com.airdnd.auth.AuthMemberPrincipal;
 import com.airdnd.room.dto.RoomDetailResponse;
 import com.airdnd.room.dto.RoomResponse;
-import com.airdnd.room.dto.RoomSearchRequestDTO;
+import com.airdnd.room.dto.RoomSearchRequestDto;
 import com.airdnd.room.dto.RoomUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class RoomController {
     private final RoomService roomService;
 
     @GetMapping
-    public ResponseEntity<List<RoomResponse>> getRooms(@Valid @ModelAttribute RoomSearchRequestDTO searchConditions) {
+    public ResponseEntity<List<RoomResponse>> getRooms(@Valid @ModelAttribute RoomSearchRequestDto searchConditions) {
         List<RoomResponse> rooms = roomService.getRooms(searchConditions);
         return ResponseEntity.status(HttpStatus.OK).body(rooms);
     }

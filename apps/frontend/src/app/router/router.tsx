@@ -7,6 +7,7 @@ import { AdminRoomApprovalsPage } from '../../pages/admin/AdminRoomApprovalsPage
 import { AdminUsersPage } from '../../pages/admin/AdminUsersPage';
 import { AdminWaitlistPage } from '../../pages/admin/AdminWaitlistPage';
 import { AuthCallbackPage } from '../../pages/auth/AuthCallbackPage';
+import { CheckoutPage } from '../../pages/checkout/CheckoutPage';
 import { LoginPage } from '../../pages/auth/LoginPage';
 import { ForbiddenPage } from '../../pages/ForbiddenPage';
 import { HostRoomFormPage } from '../../pages/host/HostRoomFormPage';
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
+          { path: '/checkout', element: <CheckoutPage /> },
           { path: '/reservations', element: <ReservationsPage /> },
           { path: '/reservations/:reservationId', element: <ReservationDetailPage /> },
           { path: '/wishlists', element: <WishlistsPage /> },

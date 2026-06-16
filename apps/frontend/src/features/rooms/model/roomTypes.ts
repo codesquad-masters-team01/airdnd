@@ -13,7 +13,7 @@ export const roomSummarySchema = z.object({
   // 지도 검색용 좌표. 백엔드 목록 응답(RoomResponse)이 추가하기 전까지는 없을 수 있어 optional 입니다.
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
-  // 백엔드가 집계한 평점/후기 수. 백엔드(RoomResponse/RoomDetailResponse)가 추가하기 전까지는 없을 수 있어 optional 입니다.
+  // 백엔드가 집계한 평점/후기 수. 백엔드 응답의 averageRating 은 roomsApi 에서 rating 으로 변환해 들어옵니다.
   rating: z.number().min(0).max(5).optional(),
   reviewCount: z.number().int().min(0).optional(),
 });

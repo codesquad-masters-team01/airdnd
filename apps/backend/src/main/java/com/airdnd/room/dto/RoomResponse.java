@@ -1,9 +1,9 @@
 package com.airdnd.room.dto;
 
 import com.airdnd.room.Room;
-
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public record RoomResponse (
 
@@ -17,10 +17,12 @@ public record RoomResponse (
         BigDecimal latitude,
         BigDecimal longitude,
         boolean isAvailable,
-        boolean allowsPets
+        boolean allowsPets,
+        Double averageRating,
+        Long reviewCount
 )
 {
-    public static RoomResponse from(Room room){
+    public static RoomResponse from(Room room, RoomRatingDto rating){
         return new RoomResponse(
                 room.getId(),
                 room.getName(),
@@ -32,11 +34,15 @@ public record RoomResponse (
                 room.getLatitude(),
                 room.getLongitude(),
                 room.getIsActive(),
-                room.getAllowsPets()
+                room.getAllowsPets(),
+                rating == null ? null : rating.averageRating(),
+                rating == null ? 0L : rating.reviewCount()
         );
     }
 
-    public static List<RoomResponse> fromList(List<Room> rooms){
-        return rooms.stream().map(RoomResponse::from).toList();
+    public static List<RoomResponse> fromList(List<Room> rooms, Map<Long,RoomRatingDto> ratings){
+        return rooms.stream().map(
+                room -> from(room, ratings.get(room.getId()))
+        ).toList();
     }
 }

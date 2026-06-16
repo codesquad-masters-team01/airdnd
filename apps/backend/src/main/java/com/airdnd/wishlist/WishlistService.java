@@ -4,6 +4,7 @@ import com.airdnd.common.error.ErrorCode;
 import com.airdnd.common.exception.BusinessException;
 import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
+import com.airdnd.room.dto.RoomRatingDto;
 import com.airdnd.user.Member;
 import com.airdnd.wishlist.dto.WishlistListResponse;
 import com.airdnd.wishlist.dto.WishlistRequest;
@@ -11,6 +12,9 @@ import com.airdnd.wishlist.dto.WishlistResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +40,12 @@ public class WishlistService {
         // open-in-view=false 환경에서 LazyInitializationException이 발생하지 않습니다.
         Wishlist wishlist = wishlistRepository.findDetailByIdAndMemberId(wishlistId, memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
-        return WishlistResponse.from(wishlist);
+
+        List<Long> roomIds = wishlist.getRooms().stream()
+                .map(wishlistRoom -> wishlistRoom.getRoom().getId()).toList();
+
+        Map <Long, RoomRatingDto> ratings = roomRepository.findRatingByRoomIds(roomIds);
+        return WishlistResponse.from(wishlist, ratings);
     }
 
     @Transactional
