@@ -22,9 +22,11 @@ public record RoomDetailResponse(
         List<String> imageUrls,
         String hostName,
         BigDecimal latitude,
-        BigDecimal longitude
+        BigDecimal longitude,
+        Double averageRating,
+        Long reviewCount
 ) {
-    public static RoomDetailResponse from(Room room) {
+    public static RoomDetailResponse from(Room room, RoomRatingDto rating) {
         List<String> imageUrls = room.getImages().stream()
                 .map(RoomImage::getImageUrl)
                 .toList();
@@ -45,7 +47,9 @@ public record RoomDetailResponse(
                 imageUrls,
                 room.getHostName(),
                 room.getLatitude(),
-                room.getLongitude()
+                room.getLongitude(),
+                rating == null ? null : rating.averageRating(),
+                rating == null ? 0L : rating.reviewCount()
         );
     }
 }

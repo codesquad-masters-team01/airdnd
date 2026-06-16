@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +87,26 @@ public class ReservationService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
         }
         reservation.cancel();
+    }
+
+    @Transactional
+    public Long createConfirmedReservation(Long guestId, Long roomId, LocalDate checkIn, LocalDate checkOut,
+                                           int adultCount, int childCount, int infantCount,
+                                           boolean hasPets, int totalPrice) {
+        Reservation reservation = Reservation.builder()
+                .guestId(guestId)
+                .roomId(roomId)
+                .checkInDate(checkIn)
+                .checkOutDate(checkOut)
+                .totalPrice(totalPrice)
+                .adultCount(adultCount)
+                .childCount(childCount)
+                .infantCount(infantCount)
+                .hasPets(hasPets)
+                .status("PENDING")
+                .createdAt(LocalDateTime.now())
+                .build();
+        return reservationRepository.save(reservation).getId();
     }
 
 }

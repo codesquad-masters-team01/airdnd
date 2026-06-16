@@ -25,3 +25,10 @@ server:
 
 app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL:http://127.0.0.1:5173}
+
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID}
+  client-secret: ${PAYPAL_CLIENT_SECRET}
+  base-url: https://api-m.sandbox.paypal.com
+  currency: USD
+  exchange-rate: 1550      # KRW → USD 변환용 (Sandbox는 상수로 충분)
