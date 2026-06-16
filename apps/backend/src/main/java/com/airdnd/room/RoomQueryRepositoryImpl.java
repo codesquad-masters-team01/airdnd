@@ -1,6 +1,8 @@
 package com.airdnd.room;
 
-import com.airdnd.room.dto.RoomSearchRequestDTO;
+import com.airdnd.room.dto.RoomRatingDto;
+import com.airdnd.room.dto.RoomSearchRequestDto;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +10,11 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import static com.airdnd.reservation.QReservation.reservation;
+import static com.airdnd.review.QReview.review;
 import static com.airdnd.room.QRoom.room;
 import static org.springframework.util.StringUtils.hasText;
 
@@ -19,7 +25,7 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
     private final JPAQueryFactory factory;
 
     @Override
-    public List<Room> findByRoomSearchRequest(RoomSearchRequestDTO conditions){
+    public List<Room> findByRoomSearchRequest(RoomSearchRequestDto conditions){
         return factory.selectFrom(room)
                 .where(
                     regionContains(conditions.region()),
@@ -89,4 +95,41 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
             return room.allowsInfants.isTrue();
         }
     }
+
+    @Override
+    public RoomRatingDto findRatingByRoomId(Long roomId) {
+        return factory.select(Projections.constructor(RoomRatingDto.class,
+                reservation.roomId,
+                review.rating.avg(),
+                review.count()))
+                .from(review)
+                .join(reservation).on(reservation.id.eq(review.reservationId))
+                .where(
+                        reservation.roomId.eq(roomId),
+                        review.deletedAt.isNull()
+                )
+                .groupBy(reservation.roomId)
+                .fetchOne();
+    }
+
+    @Override
+    public Map<Long, RoomRatingDto> findRatingByRoomIds(List<Long> roomIds) {
+        return factory.select(Projections.constructor(RoomRatingDto.class,
+                reservation.roomId,
+                review.rating.avg(),
+                review.count()))
+                .from(review)
+                .join(reservation).on(reservation.id.eq(review.reservationId))
+                .where(
+                        reservation.roomId.in(roomIds),
+                        review.deletedAt.isNull()
+                )
+                .groupBy(reservation.roomId)
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(
+                        RoomRatingDto::roomId,
+                        dto->dto));
+    }
+
 }

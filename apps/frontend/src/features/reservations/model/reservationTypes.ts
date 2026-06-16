@@ -44,15 +44,3 @@ export type Reservation = z.infer<typeof reservationSchema>;
 export type ReservationStatus = z.infer<typeof reservationStatusSchema>;
 export type CreateReservationInput = z.infer<typeof createReservationSchema>;
 export type CreateReservationFormValues = z.input<typeof createReservationSchema>;
-
-export type CreateReservationPayload = {
-  guestId: number;
-  roomId: number;
-  checkInDate: string;
-  checkOutDate: string;
-  totalPrice: number;
-  adultCount: number;
-  childCount: number;
-  infantCount: number;
-  hasPets: boolean;
-};

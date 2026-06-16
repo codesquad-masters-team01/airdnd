@@ -96,4 +96,24 @@ public class ReservationService {
         reservation.cancel();
     }
 
+    @Transactional
+    public Long createConfirmedReservation(Long guestId, Long roomId, LocalDate checkIn, LocalDate checkOut,
+                                           int adultCount, int childCount, int infantCount,
+                                           boolean hasPets, int totalPrice) {
+        Reservation reservation = Reservation.builder()
+                .guestId(guestId)
+                .roomId(roomId)
+                .checkInDate(checkIn)
+                .checkOutDate(checkOut)
+                .totalPrice(totalPrice)
+                .adultCount(adultCount)
+                .childCount(childCount)
+                .infantCount(infantCount)
+                .hasPets(hasPets)
+                .status("PENDING")
+                .createdAt(LocalDateTime.now())
+                .build();
+        return reservationRepository.save(reservation).getId();
+    }
+
 }
