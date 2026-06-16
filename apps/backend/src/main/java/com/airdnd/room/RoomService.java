@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -51,9 +52,12 @@ public class RoomService {
     }
 
     @Transactional(readOnly = true)
-    public List<RoomResponse> getRooms(RoomSearchRequestDTO conditions) {
+    public List<RoomResponse> getRooms(RoomSearchRequestDto conditions) {
         List<Room> rooms = roomRepository.findByRoomSearchRequest(conditions);
-        return RoomResponse.fromList(rooms);
+        List<Long> roomIds = rooms.stream().map(Room::getId).toList();
+        Map<Long, RoomRatingDto> ratings = roomRepository.findRatingByRoomIds(roomIds);
+
+        return RoomResponse.fromList(rooms, ratings);
     }
 
     @Transactional(readOnly = true)
@@ -65,7 +69,9 @@ public class RoomService {
         if (!room.getIsActive() || room.getIsDeleted()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
-        return RoomDetailResponse.from(room);
+
+        RoomRatingDto rating = roomRepository.findRatingByRoomId(id);
+        return RoomDetailResponse.from(room, rating);
     }
 
 
@@ -99,7 +105,8 @@ public class RoomService {
             room.updateImages(newImages);
         }
 
-        return RoomDetailResponse.from(room);
+        RoomRatingDto rating = roomRepository.findRatingByRoomId(roomId);
+        return RoomDetailResponse.from(room, rating);
     }
 
     @Transactional

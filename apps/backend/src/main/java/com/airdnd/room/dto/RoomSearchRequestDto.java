@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public record RoomSearchRequestDTO(
+public record RoomSearchRequestDto(
         String region,
         LocalDate checkIn,
         LocalDate checkOut,
