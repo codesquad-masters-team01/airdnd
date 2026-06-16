@@ -1,11 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  createReservation,
-  cancelReservation,
-  getReservation,
-  getReservations,
-} from './reservationsApi';
-import { roomQueryKeys } from '../../rooms/api/roomsQueries';
+import { cancelReservation, getReservation, getReservations } from './reservationsApi';
 
 export const reservationQueryKeys = {
   list: ['reservations', 'list'] as const,
@@ -24,18 +18,6 @@ export function useReservationQuery(reservationId: number) {
     queryKey: reservationQueryKeys.detail(reservationId),
     queryFn: () => getReservation(reservationId),
     enabled: Number.isFinite(reservationId),
-  });
-}
-
-export function useCreateReservationMutation(roomId: number) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createReservation,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: reservationQueryKeys.list });
-      queryClient.invalidateQueries({ queryKey: roomQueryKeys.detail(roomId) });
-    },
   });
 }
 
