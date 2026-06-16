@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check } from 'lucide-react';
@@ -7,33 +7,49 @@ import { env } from '../../shared/config/env';
 import { getStayNights } from '../../shared/lib/date';
 import { formatCurrency, formatDate } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
-import { Modal } from '../../shared/ui/Modal';
-import { CheckoutState } from '../../features/payments/model/paymentTypes';
+import { Loading } from '../../shared/ui/Loading';
 import { capturePaymentOrder, createPaymentOrder } from '../../features/payments/api/paymentsApi';
-import { reservationQueryKeys } from '../../features/reservations/api/reservationsQueries';
+import {
+  reservationQueryKeys,
+  useReservationQuery,
+} from '../../features/reservations/api/reservationsQueries';
 import { roomQueryKeys } from '../../features/rooms/api/roomsQueries';
+import { Reservation } from '../../features/reservations/model/reservationTypes';
 
 export function CheckoutPage() {
-  const location = useLocation();
+  const { reservationId } = useParams();
+  const id = Number(reservationId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const state = location.state as CheckoutState | null;
 
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  // URL 파라미터 → 서버에서 예약을 다시 불러온다 (router state 대신). 새로고침·새 탭·재방문 OK.
+  const { data: reservation, isLoading, isError, error } = useReservationQuery(id);
+  const [payError, setPayError] = useState<unknown>(null);
 
-  // 직접 URL 진입·새로고침 등으로 예약 정보가 없으면 홈으로 돌려보낸다.
-  if (!state?.draft || !state?.room) {
-    return <Navigate to="/" replace />;
+  if (!Number.isFinite(id)) return <Navigate to="/" replace />;
+  if (isLoading) return <Loading message="예약 정보를 불러오는 중입니다." />;
+  if (isError || !reservation) {
+    return (
+      <div className="checkout-page">
+        <div className="checkout-page__inner">
+          <ErrorMessage error={error ?? new Error('예약을 찾을 수 없습니다.')} />
+          <Link to="/reservations" className="booking-submit as-link">
+            예약 목록으로
+          </Link>
+        </div>
+      </div>
+    );
   }
 
-  const { draft, room } = state;
-  const nights = getStayNights(draft.checkInDate, draft.checkOutDate);
-  const totalPrice = nights * room.pricePerNight;
-  const guests = draft.adultCount + draft.childCount;
-  const guestSummary = buildGuestSummary(draft);
-  const scheduleText = `${formatDate(draft.checkInDate)} → ${formatDate(draft.checkOutDate)} · ${nights}박`;
+  const expiresAt = reservation.expiresAt ? new Date(reservation.expiresAt) : null;
+  const isExpired = expiresAt ? expiresAt.getTime() <= Date.now() : false;
 
+  // 상태로 분기 — 이 페이지는 이제 어떤 상태로든 진입 가능하다.
+  if (reservation.status === 'CONFIRMED') return <AlreadyPaid reservation={reservation} />;
+  if (reservation.status === 'CANCELLED' || isExpired) return <Expired />;
+
+  // status === 'PENDING' && 만료 전 → 결제 UI
+  const nights = getStayNights(reservation.checkIn, reservation.checkOut);
   const paypalConfigured = env.paypalClientId.length > 0;
 
   return (
@@ -43,6 +59,14 @@ export function CheckoutPage() {
           ← 돌아가기
         </button>
         <h1 className="checkout-title">결제하기</h1>
+        {expiresAt ? (
+          <Countdown
+            target={expiresAt}
+            onExpire={() =>
+              queryClient.invalidateQueries({ queryKey: reservationQueryKeys.detail(id) })
+            }
+          />
+        ) : null}
 
         <div className="checkout-layout">
           {/* 좌측: 결제 수단 */}
@@ -66,33 +90,38 @@ export function CheckoutPage() {
               >
                 <PayPalButtons
                   style={{ layout: 'vertical', label: 'pay' }}
-                  // 주문 생성: 백엔드가 금액을 계산해 PayPal order 를 만들고 id 를 돌려준다.
+                  // 주문 생성: reservationId 만 보낸다. 금액은 백엔드가 예약에서 재계산.
                   createOrder={async () => {
-                    setError(null);
-                    const { orderId } = await createPaymentOrder(draft);
+                    setPayError(null);
+                    const { orderId } = await createPaymentOrder(id);
                     return orderId;
                   }}
-                  // 결제 확정: 백엔드 capture → 예약 생성. 성공 시 완료 모달.
+                  // capture → 예약 PENDING→CONFIRMED. 성공 시 예약 상세로 이동.
                   onApprove={async (data) => {
                     try {
                       await capturePaymentOrder(data.orderID);
+                      await queryClient.invalidateQueries({
+                        queryKey: reservationQueryKeys.detail(id),
+                      });
                       queryClient.invalidateQueries({ queryKey: reservationQueryKeys.list });
-                      queryClient.invalidateQueries({ queryKey: roomQueryKeys.detail(room.id) });
-                      setShowSuccess(true);
+                      queryClient.invalidateQueries({
+                        queryKey: roomQueryKeys.detail(reservation.roomId),
+                      });
+                      navigate(`/reservations/${id}`, { replace: true });
                     } catch (err) {
-                      setError(err);
+                      setPayError(err);
                     }
                   }}
-                  onError={(err) => {
-                    setError(err instanceof Error ? err : new Error(String(err)));
-                  }}
+                  onError={(err) =>
+                    setPayError(err instanceof Error ? err : new Error(String(err)))
+                  }
                 />
               </PayPalScriptProvider>
             )}
 
-            {error ? (
+            {payError ? (
               <div className="checkout-error">
-                <ErrorMessage error={error} />
+                <ErrorMessage error={payError} />
               </div>
             ) : null}
 
@@ -101,95 +130,115 @@ export function CheckoutPage() {
             </p>
           </section>
 
-          {/* 우측: 예약 요약 */}
+          {/* 우측: 예약 요약 — 전부 reservation 에서 온다 (room 스냅샷·router state 불필요) */}
           <aside className="checkout-summary">
             <div className="checkout-summary__card">
               <div className="checkout-summary__room">
-                {room.imageUrl ? (
-                  <img className="checkout-summary__thumb" src={room.imageUrl} alt={room.name} />
+                {reservation.roomUrl ? (
+                  <img
+                    className="checkout-summary__thumb"
+                    src={reservation.roomUrl}
+                    alt={reservation.roomName}
+                  />
                 ) : null}
                 <div>
-                  <p className="checkout-summary__room-name">{room.name}</p>
-                  <p className="checkout-summary__room-region">{room.region}</p>
+                  <p className="checkout-summary__room-name">{reservation.roomName}</p>
+                  <p className="checkout-summary__room-region">{reservation.region}</p>
                 </div>
               </div>
 
               <hr className="checkout-summary__divider" />
 
-              <SummaryRow label="일정" value={scheduleText} />
-              <SummaryRow label="인원" value={guestSummary} />
+              <SummaryRow
+                label="일정"
+                value={`${formatDate(reservation.checkIn)} → ${formatDate(reservation.checkOut)} · ${nights}박`}
+              />
+              <SummaryRow label="인원" value={`게스트 ${reservation.guests}명`} />
 
               <hr className="checkout-summary__divider" />
 
               <div className="checkout-summary__line">
                 <span>
-                  {formatCurrency(room.pricePerNight)} × {nights}박
+                  {formatCurrency(reservation.pricePerNight)} × {nights}박
                 </span>
-                <span>{formatCurrency(totalPrice)}</span>
+                <span>{formatCurrency(reservation.totalPrice)}</span>
               </div>
               <div className="checkout-summary__total">
                 <span>총 합계</span>
-                <span>{formatCurrency(totalPrice)}</span>
+                <span>{formatCurrency(reservation.totalPrice)}</span>
               </div>
             </div>
           </aside>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* 결제 완료 팝업 */}
-      <Modal open={showSuccess} onClose={() => navigate('/reservations')} ariaLabel="결제 완료">
+// 만료 카운트다운. 0 이 되면 onExpire 로 예약을 다시 불러와 상태 분기를 갱신.
+function Countdown({ target, onExpire }: { target: Date; onExpire: () => void }) {
+  const [remaining, setRemaining] = useState(target.getTime() - Date.now());
+
+  useEffect(() => {
+    const tick = () => {
+      const left = target.getTime() - Date.now();
+      setRemaining(left);
+      if (left <= 0) onExpire();
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [target, onExpire]);
+
+  if (remaining <= 0) return null;
+  const m = Math.floor(remaining / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  return (
+    <p className="checkout-countdown">
+      결제까지 {m}:{String(s).padStart(2, '0')} 남음
+    </p>
+  );
+}
+
+function AlreadyPaid({ reservation }: { reservation: Reservation }) {
+  return (
+    <div className="checkout-page">
+      <div className="checkout-page__inner">
         <div className="booking-success">
           <div className="booking-success__check">
             <Check size={34} strokeWidth={3} color="#fff" />
           </div>
-          <h2 className="booking-success__title">결제가 완료되었습니다!</h2>
-          <p className="booking-success__desc">예약 내역은 ‘예약 목록’에서 확인할 수 있어요.</p>
-
-          <div className="booking-success__summary">
-            <SummaryRow label="숙소" value={room.name} />
-            <SummaryRow label="일정" value={scheduleText} />
-            <SummaryRow label="인원" value={`게스트 ${guests}명`} />
-            <SummaryRow label="총 금액" value={formatCurrency(totalPrice)} emphasize />
-          </div>
-
-          <Link to="/reservations" className="booking-submit as-link">
-            예약 목록 보기
+          <h2 className="booking-success__title">이미 결제가 완료된 예약입니다.</h2>
+          <Link to={`/reservations/${reservation.id}`} className="booking-submit as-link">
+            예약 상세 보기
           </Link>
-          <button
-            type="button"
-            onClick={() => navigate(`/rooms/${room.id}`)}
-            className="booking-success__dismiss"
-          >
-            계속 둘러보기
-          </button>
         </div>
-      </Modal>
+      </div>
     </div>
   );
 }
 
-function SummaryRow({ label, value, emphasize }: { label: string; value: string; emphasize?: boolean }) {
+function Expired() {
+  return (
+    <div className="checkout-page">
+      <div className="checkout-page__inner">
+        <div className="booking-success">
+          <h2 className="booking-success__title">예약 대기 시간이 만료되었습니다.</h2>
+          <p className="booking-success__desc">날짜를 다시 선택해 예약을 진행해 주세요.</p>
+          <Link to="/" className="booking-submit as-link">
+            숙소 둘러보기
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="booking-summary-row">
       <span className="booking-summary-row__label">{label}</span>
-      <span className={`booking-summary-row__value${emphasize ? ' emphasize' : ''}`}>{value}</span>
+      <span className="booking-summary-row__value">{value}</span>
     </div>
   );
-}
-
-function buildGuestSummary({
-  adultCount,
-  childCount,
-  infantCount,
-  hasPets,
-}: {
-  adultCount: number;
-  childCount: number;
-  infantCount: number;
-  hasPets: boolean;
-}) {
-  let summary = `게스트 ${adultCount + childCount}명`;
-  if (infantCount > 0) summary += `, 유아 ${infantCount}명`;
-  if (hasPets) summary += `, 반려동물 동반`;
-  return summary;
 }

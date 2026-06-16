@@ -19,10 +19,6 @@ public record ReservationRequest (
         @NotNull(message = "체크아웃 날짜는 필수입니다")
         LocalDate checkOutDate,
 
-        @NotNull(message = "총 가격은 필수입니다")
-        @Positive(message = "총 가격은 0보다 커야 합니다")
-        Integer totalPrice,
-
         @Min(value = 1, message = "성인은 최소 1명 이상이어야 합니다")
         int adultCount,
 

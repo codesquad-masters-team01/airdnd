@@ -36,7 +36,7 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
-          { path: '/checkout', element: <CheckoutPage /> },
+          { path: '/checkout/:reservationId', element: <CheckoutPage /> },
           { path: '/reservations', element: <ReservationsPage /> },
           { path: '/reservations/:reservationId', element: <ReservationDetailPage /> },
           { path: '/wishlists', element: <WishlistsPage /> },

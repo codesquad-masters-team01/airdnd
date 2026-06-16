@@ -4,26 +4,15 @@ import { Link } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../../../shared/lib/format';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { Modal } from '../../../shared/ui/Modal';
-import { StatusBadge, StatusBadgeTone } from '../../../shared/ui/StatusBadge';
-import { Reservation, ReservationStatus } from '../model/reservationTypes';
+import { StatusBadge } from '../../../shared/ui/StatusBadge';
+import { Reservation } from '../model/reservationTypes';
+import { reservationStatusText, reservationStatusTone } from '../model/reservationStatus';
 
 type ReservationListProps = {
   reservations: Reservation[];
   onCancel: (reservationId: number) => void;
   /** 현재 취소 요청이 진행 중인 예약 id (해당 카드에만 로딩 표시) */
   cancelingId?: number | null;
-};
-
-const statusText: Record<ReservationStatus, string> = {
-  PENDING: '대기',
-  CONFIRMED: '확정',
-  CANCELLED: '취소',
-};
-
-const statusTone: Record<ReservationStatus, StatusBadgeTone> = {
-  PENDING: 'warning',
-  CONFIRMED: 'success',
-  CANCELLED: 'neutral',
 };
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
@@ -128,7 +117,9 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
           </div>
         </div>
         <div className="reservation-actions">
-          <StatusBadge tone={statusTone[reservation.status]}>{statusText[reservation.status]}</StatusBadge>
+          <StatusBadge tone={reservationStatusTone[reservation.status]}>
+            {reservationStatusText[reservation.status]}
+          </StatusBadge>
           {cancellable ? (
             <button
               type="button"
