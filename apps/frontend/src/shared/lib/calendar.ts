@@ -42,6 +42,24 @@ export function addMonths(date: Date, amount: number) {
   return new Date(date.getFullYear(), date.getMonth() + amount, 1);
 }
 
+/**
+ * [checkInValue, checkOutValue) 구간의 '점유된 밤' 날짜 값들을 반환한다.
+ * 체크아웃 당일은 비어 있는 것으로 보므로 제외한다(턴오버 가능).
+ */
+export function eachNightValue(checkInValue: string, checkOutValue: string) {
+  const start = parseDateValue(checkInValue);
+  const end = parseDateValue(checkOutValue);
+  if (!start || !end) return [];
+
+  const nights: string[] = [];
+  const cursor = new Date(start);
+  while (cursor < end) {
+    nights.push(toDateValue(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return nights;
+}
+
 export function getCalendarDays(monthStart: Date) {
   const start = new Date(monthStart);
   start.setDate(1 - start.getDay());

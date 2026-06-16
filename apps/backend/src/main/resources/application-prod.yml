@@ -1,5 +1,7 @@
 spring:
   datasource:
+    hikari:
+      connection-init-sql: "SET innodb_lock_wait_timeout = 5"
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}

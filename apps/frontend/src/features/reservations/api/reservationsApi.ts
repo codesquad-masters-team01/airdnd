@@ -1,9 +1,16 @@
 import { request } from '../../../shared/api/httpClient';
 import {
+  BookedDateRange,
+  bookedDateRangeSchema,
   CreateReservationPayload,
   Reservation,
   reservationSchema,
 } from '../model/reservationTypes';
+
+export async function getRoomBookedDates(roomId: number) {
+  const data = await request<BookedDateRange[]>(`/api/reservations/rooms/${roomId}/booked-dates`);
+  return bookedDateRangeSchema.array().parse(data);
+}
 
 export async function getReservations() {
   const data = await request<Reservation[]>('/api/reservations');

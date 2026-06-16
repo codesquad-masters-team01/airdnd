@@ -1,8 +1,10 @@
 package com.airdnd.reservation;
 
 import com.airdnd.auth.AuthMemberPrincipal;
+import com.airdnd.reservation.dto.BookedDateRange;
 import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +22,14 @@ public class ReservationController {
 
 
     @PostMapping
-    public ResponseEntity<Long> reservationRoom(@RequestBody ReservationRequest request) {
-        Long reservationId = reservationService.createReservation(request);
+    public ResponseEntity<Long> reservationRoom(@AuthenticationPrincipal AuthMemberPrincipal principal, @Valid @RequestBody ReservationRequest request) {
+        Long reservationId = reservationService.createReservation(principal.getMemberId(),request);
         return ResponseEntity.status(HttpStatus.CREATED).body(reservationId);
+    }
+
+    @GetMapping("/rooms/{roomId}/booked-dates")
+    public ResponseEntity<List<BookedDateRange>> bookedDates(@PathVariable Long roomId) {
+        return ResponseEntity.ok(reservationService.getBookedRanges(roomId));
     }
 
     @GetMapping

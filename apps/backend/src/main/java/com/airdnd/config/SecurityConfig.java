@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/", "/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/rooms/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reservations/rooms/*/booked-dates").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/members/me/host-activation").hasRole("GUEST")
                         .requestMatchers(HttpMethod.GET, "/api/rooms").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()

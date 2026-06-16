@@ -1,6 +1,7 @@
 package com.airdnd.reservation;
 
 
+import com.airdnd.reservation.dto.ReservationRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -76,5 +77,21 @@ public class Reservation {
         this.status = "CANCELLED";
         this.deletedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public static Reservation fromRequest(Long memberId,ReservationRequest request){
+        return Reservation.builder()
+                .guestId(memberId)
+                .roomId(request.roomId())
+                .checkInDate(request.checkInDate())
+                .checkOutDate(request.checkOutDate())
+                .totalPrice(request.totalPrice())
+                .adultCount(request.adultCount())
+                .childCount(request.childCount())
+                .infantCount(request.infantCount())
+                .hasPets(request.hasPets())
+                .status("CONFIRMED")
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 }

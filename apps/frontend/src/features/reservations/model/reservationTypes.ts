@@ -18,6 +18,13 @@ export const reservationSchema = z.object({
   createdAt: z.string().optional(),
 });
 
+export const bookedDateRangeSchema = z.object({
+  checkInDate: z.string(),
+  checkOutDate: z.string(),
+});
+
+export type BookedDateRange = z.infer<typeof bookedDateRangeSchema>;
+
 export const createReservationSchema = z
   .object({
     roomId: z.number(),
