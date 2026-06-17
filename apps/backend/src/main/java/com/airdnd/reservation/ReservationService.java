@@ -5,6 +5,7 @@ import com.airdnd.common.exception.BusinessException;
 import com.airdnd.reservation.dto.BookedDateRange;
 import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
+import com.airdnd.review.ReviewRepository;
 import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 @Service
@@ -29,6 +32,7 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public Long createReservation(Long memberId ,ReservationRequest request) {
@@ -40,6 +44,10 @@ public class ReservationService {
             throw new BusinessException(ErrorCode.INVALID_RESERVATION_DATE);
         }
 
+        if (request.checkInDate().isBefore(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.INVALID_RESERVATION_DATE);
+        }
+        
         int totalGuests = request.adultCount() + request.childCount();
 
         if(totalGuests > room.getMaxCapacity()) {
@@ -72,6 +80,12 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public List<ReservationResponse> getGuestReservations(Long guestId) {
         List<Reservation> reservations = reservationRepository.findByGuestId(guestId);
+
+        List<Long> reservationIds = reservations.stream().map(Reservation::getId).toList();
+        Set<Long> reviewedIds = reservationIds.isEmpty()
+                ? Set.of()
+                : new HashSet<>(reviewRepository.findReservationIdsByReservationIdIn(reservationIds));
+
         List<ReservationResponse> responses = new ArrayList<>();
         for(Reservation reservation : reservations) {
             Room room = roomRepository.findById(reservation.getRoomId()).orElseThrow(
@@ -90,8 +104,8 @@ public class ReservationService {
                     reservation.getTotalPrice(),
                     reservation.getStatus(),
                     reservation.getExpiresAt(),
-                    reservation.getCreatedAt()
-
+                    reservation.getCreatedAt(),
+                    reviewedIds.contains(reservation.getId())
             ));
         }
         return responses;
@@ -131,7 +145,22 @@ public class ReservationService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION, "본인의 예약 내역만 조회 가능합니다");
         }
         Room targetRoom = roomRepository.findById(reservation.getRoomId()).orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
-        return ReservationResponse.from(reservation, targetRoom);
+        return new ReservationResponse(
+                reservation.getId(),
+                reservation.getRoomId(),
+                targetRoom.getName(),
+                targetRoom.getRepresentativeImageUrl(),
+                targetRoom.getRegion(),
+                reservation.getCheckInDate(),
+                reservation.getCheckOutDate(),
+                targetRoom.getMaxCapacity(),
+                targetRoom.getPricePerNight(),
+                reservation.getTotalPrice(),
+                reservation.getStatus(),
+                reservation.getExpiresAt(),
+                reservation.getCreatedAt(),
+                reviewRepository.existsByReservationId(reservationId)
+        );
     }
 
     public Reservation findReservationById(Long reservationId){
