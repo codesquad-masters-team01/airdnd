@@ -1,22 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, Clock, MapPin, UsersRound, XCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   reservationQueryKeys,
   useCancelReservationMutation,
   useReservationQuery,
 } from '../../features/reservations/api/reservationsQueries';
-import {
-  reservationStatusText,
-  reservationStatusTone,
-} from '../../features/reservations/model/reservationStatus';
 import { getStayNights } from '../../shared/lib/date';
-import { formatCurrency, formatDate } from '../../shared/lib/format';
+import { formatCurrency, formatStayRange } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
 import { Modal } from '../../shared/ui/Modal';
-import { StatusBadge } from '../../shared/ui/StatusBadge';
 
 export function ReservationDetailPage() {
   const { reservationId } = useParams();
@@ -63,135 +58,141 @@ export function ReservationDetailPage() {
   // 취소 가능: 확정됐거나 결제 대기 중인 예약 (이미 취소/만료된 건은 불가)
   const cancellable = isConfirmed || isPendingActive;
 
-  return (
-    <section className="detail-layout">
-      <article className={`stack detail-content${isCancelled ? ' reservation-detail--cancelled' : ''}`}>
-        <img
-          className="detail-hero reservation-detail-hero"
-          src={reservation.roomUrl}
-          alt={`${reservation.roomName} 대표 이미지`}
-        />
-
-        <div className="detail-header">
-          <div className="detail-header-top">
-            <div className="page-heading">
-              <p className="eyebrow">Reservation</p>
-              <h1>예약 상세</h1>
-              <p className="muted">예약 번호 #{reservation.id}</p>
-            </div>
-            <StatusBadge tone={reservationStatusTone[reservation.status]}>
-              {reservationStatusText[reservation.status]}
-            </StatusBadge>
-          </div>
-        </div>
-
-        <div className="content-section">
-          <h2>{reservation.roomName}</h2>
-          <div className="info-row">
-            <span>
-              <MapPin size={16} /> {reservation.region ?? '지역 정보 없음'}
-            </span>
-            <span>
-              <CalendarDays size={16} /> {formatDate(reservation.checkIn)} -{' '}
-              {formatDate(reservation.checkOut)}
-            </span>
-            <span>
-              <UsersRound size={16} /> 게스트 {reservation.guests}명 · {nights}박
-            </span>
-          </div>
-        </div>
-
-        <div className="content-section">
-          <h2>결제 요약</h2>
-          <div className="price-summary">
-            <span>
-              {formatCurrency(reservation.pricePerNight)} × {nights}박
-            </span>
-            <strong>{formatCurrency(reservation.totalPrice)}</strong>
-          </div>
-          <div className="price-summary price-summary--total">
-            <span>총 합계</span>
-            <strong>{formatCurrency(reservation.totalPrice)}</strong>
-          </div>
-        </div>
-      </article>
-
-      <aside className="reservation-panel reservation-status-panel">
-        {isPendingActive ? (
+  // 상태별 화면 구성 — 결제 완료(확정)가 기본이며, 결제가 끝나면 곧장 이 화면으로 들어온다.
+  const view = isConfirmed
+    ? {
+        tone: 'success' as const,
+        pill: '예약 확정',
+        headline: (
           <>
-            <p className="reservation-panel__title">
-              <Clock size={18} /> 결제 대기 중
-            </p>
-            {expiresAt ? (
-              <Countdown targetMs={expiresAt.getTime()} onExpire={handleHoldExpired} />
-            ) : null}
-            <p className="muted">제한 시간 안에 결제를 완료해야 예약이 확정됩니다.</p>
-            <Link className="primary-button full-width" to={`/checkout/${reservation.id}`}>
-              결제 계속하기
-            </Link>
+            예약이
+            <br />
+            확정됐어요
           </>
-        ) : null}
-
-        {isPendingExpired ? (
-          <>
-            <p className="reservation-panel__title">
-              <XCircle size={18} /> 결제 시간 만료
-            </p>
-            <p className="muted">결제 제한 시간이 지나 선점이 해제되었습니다. 다시 예약해 주세요.</p>
-            <Link className="primary-button full-width" to={`/rooms/${reservation.roomId}`}>
-              다시 예약하기
-            </Link>
-          </>
-        ) : null}
-
-        {isConfirmed ? (
-          <>
-            <p className="reservation-panel__title reservation-panel__title--success">
-              <CheckCircle2 size={18} /> 예약이 확정되었어요
-            </p>
-            <p className="muted">체크인 전 예약 정보와 알림을 확인하세요.</p>
-          </>
-        ) : null}
-
-        {isCancelled ? (
-          <>
-            <p className="reservation-panel__title">
-              <XCircle size={18} /> 취소된 예약
-            </p>
-            <p className="muted">환불 금액은 숙소의 취소 정책에 따라 결정됩니다.</p>
-            <Link className="primary-button full-width" to="/">
-              숙소 둘러보기
-            </Link>
-          </>
-        ) : null}
-
-        <Link className="secondary-button full-width" to="/reservations">
-          예약 목록으로
-        </Link>
-
-        {cancellable ? (
-          <button
-            type="button"
-            className="reservation-panel__cancel"
-            disabled={cancelMutation.isPending}
-            onClick={() => setConfirmCancel(true)}
-          >
-            {cancelMutation.isPending ? (
+        ),
+        lead: '결제가 완료되어 예약이 확정됐어요. 확정 내역과 체크인 안내를 이메일로 보내드렸어요.',
+        primary: { label: '예약 목록으로', to: '/reservations' },
+        secondary: { label: '숙소 상세 보기', to: `/rooms/${reservation.roomId}` },
+      }
+    : isPendingActive
+      ? {
+          tone: 'warning' as const,
+          pill: '결제 대기',
+          headline: (
+            <>
+              결제를
+              <br />
+              완료해 주세요
+            </>
+          ),
+          lead: '제한 시간 안에 결제를 완료해야 예약이 확정돼요.',
+          primary: { label: '결제 계속하기', to: `/checkout/${reservation.id}` },
+        }
+      : isPendingExpired
+        ? {
+            tone: 'neutral' as const,
+            pill: '시간 만료',
+            headline: (
               <>
-                <span className="button-spinner" aria-hidden="true" /> 취소 중…
+                결제 시간이
+                <br />
+                만료됐어요
               </>
-            ) : (
-              '예약 취소'
-            )}
-          </button>
-        ) : null}
+            ),
+            lead: '결제 제한 시간이 지나 선점이 해제됐어요. 다시 예약해 주세요.',
+            primary: { label: '다시 예약하기', to: `/rooms/${reservation.roomId}` },
+          }
+        : {
+            tone: 'neutral' as const,
+            pill: '예약 취소',
+            headline: (
+              <>
+                취소된
+                <br />
+                예약이에요
+              </>
+            ),
+            lead: '환불 금액은 숙소의 취소 정책에 따라 결정돼요.',
+            primary: { label: '숙소 둘러보기', to: '/' },
+          };
 
-        {cancelMutation.error ? (
-          <div className="reservation-panel__error">
-            <ErrorMessage error={cancelMutation.error} />
+  return (
+    <section className={`confirm-stage${isCancelled ? ' confirm-stage--muted' : ''}`}>
+      <div className="confirm-split">
+        <article className="stay-card">
+          <div className="stay-card__media">
+            <img src={reservation.roomUrl} alt={`${reservation.roomName} 대표 이미지`} />
+            <span className={`stay-pill stay-pill--${view.tone}`}>
+              <span className="dot" />
+              {view.pill}
+            </span>
           </div>
-        ) : null}
-      </aside>
+          <div className="stay-card__body">
+            <h2 className="stay-card__title">{reservation.roomName}</h2>
+            <p className="stay-card__dates">
+              {formatStayRange(reservation.checkIn, reservation.checkOut)}
+            </p>
+            <div className="stay-card__foot">
+              <p>
+                게스트 {reservation.guests}명 · {nights}박
+              </p>
+              <p className="stay-card__total">
+                <strong>{formatCurrency(reservation.totalPrice)}</strong> 총액
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <section className="confirm-message">
+          <h1>{view.headline}</h1>
+
+          {isPendingActive && expiresAt ? (
+            <Countdown targetMs={expiresAt.getTime()} onExpire={handleHoldExpired} />
+          ) : null}
+
+          <p className="confirm-message__lead">{view.lead}</p>
+
+          <div className="confirm-actions">
+            <Link className="confirm-btn-primary" to={view.primary.to}>
+              {view.primary.label}
+            </Link>
+            {cancellable ? (
+              <button
+                type="button"
+                className="confirm-btn-ghost"
+                disabled={cancelMutation.isPending}
+                onClick={() => setConfirmCancel(true)}
+              >
+                {cancelMutation.isPending ? (
+                  <>
+                    <span className="button-spinner" aria-hidden="true" /> 취소 중…
+                  </>
+                ) : (
+                  <>
+                    <X size={17} /> 예약 취소
+                  </>
+                )}
+              </button>
+            ) : null}
+          </div>
+
+          {'secondary' in view ? (
+            <Link className="confirm-btn-text" to={view.secondary.to}>
+              {view.secondary.label}
+            </Link>
+          ) : view.primary.to !== '/reservations' ? (
+            <Link className="confirm-btn-text" to="/reservations">
+              예약 목록으로
+            </Link>
+          ) : null}
+
+          {cancelMutation.error ? (
+            <div className="confirm-message__error">
+              <ErrorMessage error={cancelMutation.error} />
+            </div>
+          ) : null}
+        </section>
+      </div>
 
       <Modal
         open={confirmCancel}
@@ -204,7 +205,7 @@ export function ReservationDetailPage() {
           <p className="cancel-confirm__desc">
             <strong>{reservation.roomName}</strong>
             <br />
-            {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
+            {formatStayRange(reservation.checkIn, reservation.checkOut)}
           </p>
           <p className="cancel-confirm__note">
             취소 후에는 되돌릴 수 없으며, 환불 금액은 숙소의 취소 정책에 따라 결정됩니다.
