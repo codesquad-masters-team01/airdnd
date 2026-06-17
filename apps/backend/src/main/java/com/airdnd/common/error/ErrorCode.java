@@ -23,7 +23,9 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "결제 정보를 찾을 수 없습니다"),
     PAYMENT_ALREADY_CAPTURED(HttpStatus.CONFLICT, "이미 결제가 완료된 주문입니다"),
     PAYMENT_CREATION_FAILED(HttpStatus.BAD_GATEWAY, "결제 주문 생성에 실패했습니다"),
-    PAYMENT_CAPTURE_FAILED(HttpStatus.BAD_GATEWAY, "결제 승인에 실패했습니다");
+    PAYMENT_CAPTURE_FAILED(HttpStatus.BAD_GATEWAY, "결제 승인에 실패했습니다"),
+    REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 예약에 대한 리뷰가 작성되어 있습니다"),
+    REVIEW_NOT_ELIGIBLE(HttpStatus.BAD_REQUEST, "체크아웃이 완료된 예약에만 후기를 작성할 수 있습니다");
 
 
     private final HttpStatus status;
