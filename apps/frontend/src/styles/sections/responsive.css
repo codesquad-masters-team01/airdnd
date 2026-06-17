@@ -155,23 +155,15 @@
     grid-template-columns: 1fr;
   }
 
-  .reservation-group__cards {
+  /* 게스트 예약 목록 카드 그리드는 한 열로 */
+  .res-grid {
     grid-template-columns: 1fr;
   }
 
+  /* admin 예약/숙소 승인 카드는 모바일에서 세로로 쌓는다 */
   .reservation-item {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .reservation-item img {
-    width: 100%;
-  }
-
-  .reservation-actions {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
   }
 
   .footer-grid {

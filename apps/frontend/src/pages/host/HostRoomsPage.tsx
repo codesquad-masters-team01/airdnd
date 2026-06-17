@@ -22,7 +22,6 @@ export function HostRoomsPage() {
         <div className="page-heading">
           <p className="eyebrow">Host</p>
           <h1>호스트 숙소 관리</h1>
-          <p className="muted">등록한 숙소의 운영 상태를 관리하고 정보를 수정하세요.</p>
         </div>
         <Link className="primary-button inline-action" to="/host/rooms/new">
           <Plus size={18} strokeWidth={2.4} aria-hidden />

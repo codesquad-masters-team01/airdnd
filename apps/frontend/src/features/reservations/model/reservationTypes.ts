@@ -17,6 +17,8 @@ export const reservationSchema = z.object({
   expiresAt: z.string().nullish(), // PENDING 홀드 만료 시각(ISO). CONFIRMED/CANCELLED 면 null
   guestName: z.string().optional(),
   createdAt: z.string().optional(),
+  // 이 예약에 후기를 이미 작성했는지 (목록 응답에만 포함 — 단건 응답엔 없을 수 있어 기본 false)
+  hasReview: z.boolean().default(false),
 });
 
 export const bookedDateRangeSchema = z.object({

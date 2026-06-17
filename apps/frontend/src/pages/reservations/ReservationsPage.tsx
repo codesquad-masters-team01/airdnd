@@ -27,6 +27,7 @@ export function ReservationsPage() {
       <div className="page-heading">
         <p className="eyebrow">Reservations</p>
         <h1>예약 목록</h1>
+        <p className="reservation-intro">다가오는 여행과 지난 여행을 한곳에서 관리하세요.</p>
       </div>
       {reservationsQuery.isLoading ? <Loading message="예약 목록을 불러오는 중입니다." /> : null}
       {reservationsQuery.error ? <ErrorMessage error={reservationsQuery.error} /> : null}
