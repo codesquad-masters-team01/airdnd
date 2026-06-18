@@ -176,7 +176,7 @@ export function ReservationDetailPage() {
             ) : null}
           </div>
 
-          {'secondary' in view ? (
+          {'secondary' in view && view.secondary ? (
             <Link className="confirm-btn-text" to={view.secondary.to}>
               {view.secondary.label}
             </Link>
