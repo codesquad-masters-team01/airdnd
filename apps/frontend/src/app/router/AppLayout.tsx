@@ -7,6 +7,7 @@ import {
   useLogoutMutation,
 } from '../../features/auth/api/authQueries';
 import { canAccessAdmin, canAccessHost, getRoleLabel } from '../../features/auth/lib/authAccess';
+import { NotificationBell } from '../../features/notifications/ui/NotificationBell';
 
 export function AppLayout() {
   const { data: user } = useCurrentUserQuery();
@@ -87,6 +88,7 @@ export function AppLayout() {
               {hostActivationMutation.isPending ? '전환 중...' : '호스팅 시작하기'}
             </button>
           ) : null}
+          {user ? <NotificationBell /> : null}
           <div className={`account-menu ${isAccountMenuOpen ? 'open' : ''}`}>
             <button
               className="account-menu-trigger"

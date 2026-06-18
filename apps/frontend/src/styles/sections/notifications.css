@@ -1,0 +1,386 @@
+/* 알림 페이지 — 디자인 키트 ui_kits/web/Notifications.html 기반.
+ * 헤더/내비게이션은 header.css(AppLayout)에서 처리하고,
+ * 헤더 벨/드롭다운만 이 파일에서 추가로 정의합니다. */
+
+/* 제목/탭은 다른 페이지와 동일하게 컨테이너 폭을 그대로 사용(좌측 정렬).
+ * 폭 제한은 아래 .notif-list 에서 목록에만 적용한다. */
+.notifications-page {
+  width: 100%;
+}
+
+/* ---------- 헤더 벨 ---------- */
+.header-bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--text-primary);
+}
+.header-bell:hover {
+  background: var(--surface-subtle);
+}
+.header-bell__count {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  border: 1.5px solid #fff;
+}
+
+/* ---------- 알림 드롭다운 ---------- */
+.notif-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+.notif-dropdown {
+  position: fixed;
+  top: calc(var(--header-height) + 8px);
+  right: max(24px, calc((100vw - var(--container)) / 2));
+  width: 380px;
+  max-height: calc(100vh - var(--header-height) - 40px);
+  background: var(--color-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-16);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.13),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  pointer-events: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+.notif-dropdown.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+.notif-dropdown__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex: none;
+}
+.notif-dropdown__title {
+  font-size: var(--font-size-18);
+  font-weight: 800;
+}
+.notif-dropdown__mark {
+  background: none;
+  font-size: var(--font-size-13);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 140ms ease;
+}
+.notif-dropdown__mark:hover {
+  color: var(--text-primary);
+}
+.notif-dropdown__body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 0;
+}
+.notif-dropdown__item {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 14px 20px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.notif-dropdown__item:hover {
+  background: var(--surface-subtle);
+}
+.notif-dropdown__item-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.notif-dropdown__item-icon--reservation {
+  background: rgba(232, 76, 96, 0.12);
+  color: var(--color-brand);
+}
+.notif-dropdown__item-icon--system,
+.notif-dropdown__item-icon--host {
+  background: rgba(34, 150, 138, 0.14);
+  color: #22968a;
+}
+.notif-dropdown__item-icon--review {
+  background: rgba(245, 180, 40, 0.16);
+  color: #d99412;
+}
+.notif-dropdown__item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 2px;
+}
+.notif-dropdown__item-msg {
+  font-size: var(--font-size-14);
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.notif-dropdown__item.unread .notif-dropdown__item-msg {
+  font-weight: 700;
+}
+.notif-dropdown__item-time {
+  font-size: var(--font-size-13);
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+.notif-dropdown__item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  margin-top: 7px;
+  flex: none;
+}
+.notif-dropdown__empty {
+  padding: var(--space-10) 0;
+  text-align: center;
+  font-size: var(--font-size-14);
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+.notif-dropdown__footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 14px 20px;
+  flex: none;
+}
+.notif-dropdown__all-link {
+  display: block;
+  text-align: center;
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 140ms ease;
+}
+.notif-dropdown__all-link:hover {
+  opacity: 0.6;
+}
+
+@media (max-width: 920px) {
+  .notif-dropdown {
+    width: calc(100vw - 32px);
+    right: 16px;
+  }
+}
+
+/* ---------- 제목 + 모두 읽음 ---------- */
+.notif-head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+.notif-mark-all {
+  background: none;
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  transition: opacity 160ms ease;
+}
+.notif-mark-all:hover {
+  opacity: 0.6;
+}
+
+/* ---------- 탭 ---------- */
+.notif-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-2);
+}
+.notif-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 4px;
+  margin-right: var(--space-6);
+  margin-bottom: -1px;
+  background: none;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-15);
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.notif-tab:hover {
+  color: var(--text-primary);
+}
+.notif-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+}
+.notif-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ---------- 목록 ---------- */
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  /* 탭 밑줄과 길이를 맞추기 위해 전체 폭 사용 */
+  width: 100%;
+}
+.notif-item {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+/* 테두리는 전체 폭, 내용 묶음만 가운데로 모은다 */
+.notif-item-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: flex-start;
+  width: min(640px, 100%);
+}
+.notif-item:last-child {
+  border-bottom: none;
+}
+.notif-item--clickable {
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.notif-item--clickable:hover {
+  background: var(--surface-subtle);
+}
+
+/* 타입 아이콘 */
+.notif-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.notif-icon--reservation {
+  background: rgba(232, 76, 96, 0.12);
+  color: var(--color-brand);
+}
+.notif-icon--host,
+.notif-icon--system {
+  background: rgba(34, 150, 138, 0.14);
+  color: #22968a;
+}
+.notif-icon--review {
+  background: rgba(245, 180, 40, 0.16);
+  color: #d99412;
+}
+
+/* 안읽음 점 */
+.notif-unread-dot {
+  position: absolute;
+  left: -16px;
+  top: 24px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-brand);
+}
+
+/* 본문 */
+.notif-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 3px;
+}
+/* 첫 줄: 방 이름·날짜(또는 평점) 등 제목 */
+.notif-title {
+  font-size: var(--font-size-15);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+/* 둘째 줄: 안내 메시지 */
+.notif-message {
+  font-size: var(--font-size-14);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+/* 아직 읽지 않은(클릭 안 한) 알림은 메시지도 진하게 강조 */
+.notif-item:not(.is-read) .notif-message {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.notif-time {
+  margin-top: 4px;
+  font-size: var(--font-size-13);
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+/* ---------- 빈 상태 ---------- */
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16) 0;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+.notif-empty svg {
+  opacity: 0.4;
+}
+.notif-empty p {
+  font-size: var(--font-size-16);
+  font-weight: 600;
+}
