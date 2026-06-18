@@ -2,13 +2,16 @@ package com.airdnd.room;
 
 import com.airdnd.room.dto.RoomRatingDto;
 import com.airdnd.room.dto.RoomSearchRequestDto;
+import com.airdnd.room.dto.RoomSummary;
+import com.querydsl.core.types.ConstructorExpression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,7 +19,7 @@ import java.util.stream.Collectors;
 import static com.airdnd.reservation.QReservation.reservation;
 import static com.airdnd.review.QReview.review;
 import static com.airdnd.room.QRoom.room;
-import static org.springframework.util.StringUtils.hasText;
+import static com.airdnd.room.QRoomImage.roomImage;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,75 +28,59 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
     private final JPAQueryFactory factory;
 
     @Override
-    public List<Room> findByRoomSearchRequest(RoomSearchRequestDto conditions){
-        return factory.selectFrom(room)
-                .where(
-                    regionContains(conditions.region()),
-                    priceBetween(conditions.minPrice(),conditions.maxPrice()),
-                    isPetAllowed(conditions.allowsPets()),
-                    withInMaxCapacity(conditions.guests()),
-                    withinLatitude(conditions.south(), conditions.north()),
-                    withinLongitude(conditions.west(), conditions.east()),
-                    isInfantAllowed(conditions.infants()),
-                    room.isActive.isTrue(),
-                    room.isDeleted.isFalse()
-                ).limit(conditions.resolvedLimit()).fetch();
+    public List<RoomSummary> findPage(RoomSearchRequestDto conditions, LocalDateTime now){
+        return factory.select(roomSummaryProjection())
+                .from(room)
+                .where(sharedFilters(conditions, now))
+                .where(RoomPredicates.cursorAfter(conditions.cursorId()))
+                .orderBy(room.id.asc())
+                .limit(conditions.resolvedSize() + 1L)
+                .fetch();
     }
 
-    private BooleanExpression regionContains(String region){
-        if(!hasText(region)){
-            return null;
-        }
-        return room.region.containsIgnoreCase(region);
-    }
-    private BooleanExpression priceBetween(Integer min, Integer max){
-        if(min == null && max == null){
-            return null;
-        }
-        if(min != null && max == null){
-            return room.pricePerNight.goe(min);
-        }
-        if(min == null && max != null){
-            return room.pricePerNight.loe(max);
-        }
-        return room.pricePerNight.between(min, max);
-    }
-
-    private BooleanExpression isPetAllowed(Boolean allowsPets){
-        if(allowsPets == null){
-            return null;
-        }
-        return room.allowsPets.eq(allowsPets);
+    // 목록/지도 points 가 공유하는 RoomSummary 투영. 인자 순서는 RoomSummary 생성자와 정확히 일치해야 한다.
+    private ConstructorExpression<RoomSummary> roomSummaryProjection() {
+        return Projections.constructor(RoomSummary.class,
+                room.id,
+                room.name,
+                room.region,
+                room.address,
+                room.pricePerNight,
+                room.maxCapacity,
+                // 대표 이미지 URL. 집계(max)를 쓰면 GROUP BY 없는 스칼라 집계라 항상 1행(값 또는 null)을
+                // 돌려주므로, 한 방에 대표 이미지가 여러 개여도 "Subquery returns more than 1 row" 로 죽지 않는다.
+                // (limit(1) 은 QueryDSL-JPA 서브쿼리에서 렌더링이 보장되지 않아 쓰지 않는다.)
+                JPAExpressions.select(roomImage.imageUrl.max())
+                        .from(roomImage)
+                        .where(roomImage.room.eq(room), roomImage.isRepresentative.isTrue()),
+                room.latitude,
+                room.longitude,
+                room.isActive,
+                room.allowsPets);
     }
 
-    private BooleanExpression withInMaxCapacity(Integer guests){
-        if(guests == null){
-            return null;
-        }
-        return room.maxCapacity.goe(guests);
+    // 목록과 지도가 공유하는 필터/가용성 술어 묶음(커서 제외). null 술어는 .where 에서 무시된다.
+    private BooleanExpression[] sharedFilters(RoomSearchRequestDto c, LocalDateTime now) {
+        return new BooleanExpression[]{
+                RoomPredicates.regionContains(c.region()),
+                RoomPredicates.priceBetween(c.minPrice(), c.maxPrice()),
+                RoomPredicates.isPetAllowed(c.allowsPets()),
+                RoomPredicates.withinMaxCapacity(c.guests()),
+                RoomPredicates.withinLatitude(c.south(), c.north()),
+                RoomPredicates.withinLongitude(c.west(), c.east()),
+                RoomPredicates.isInfantAllowed(c.infants()),
+                RoomPredicates.available(c.checkIn(), c.checkOut(), now),
+                RoomPredicates.visible()
+        };
     }
 
-    private BooleanExpression withinLatitude(BigDecimal south, BigDecimal north){
-        if(south == null || north == null){
-            return null;
-        }
-        return room.latitude.between(south, north);
-    }
-
-    private BooleanExpression withinLongitude(BigDecimal west, BigDecimal east){
-        if(west == null || east == null){
-            return null;
-        }
-        return room.longitude.between(west, east);
-    }
-
-    private BooleanExpression isInfantAllowed(Integer infants){
-        if(infants == null || infants.equals(0)){
-            return null;
-        }
-        else{
-            return room.allowsInfants.isTrue();
-        }
+    @Override
+    public long countInArea(RoomSearchRequestDto conditions, LocalDateTime now) {
+        Long count = factory.select(room.count())
+                .from(room)
+                .where(sharedFilters(conditions, now))
+                .fetchOne();
+        return count == null ? 0L : count;
     }
 
     @Override

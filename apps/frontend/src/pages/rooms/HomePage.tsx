@@ -1,10 +1,11 @@
 import { useSearchParams } from 'react-router-dom';
 import { SearchBar } from '../../features/rooms/ui/SearchBar';
 import { RoomList } from '../../features/rooms/ui/RoomList';
-import { useRoomsQuery } from '../../features/rooms/api/roomsQueries';
+import { useRoomListQuery } from '../../features/rooms/api/roomsQueries';
 import { RoomSearchParams } from '../../features/rooms/model/roomTypes';
 import { Loading } from '../../shared/ui/Loading';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
+import { InfiniteScrollSentinel } from '../../shared/ui/InfiniteScrollSentinel';
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,7 +21,8 @@ export function HomePage() {
     maxPrice: Number(searchParams.get('maxPrice') ?? '0') || undefined,
     allowsPets: searchParams.get('allowsPets') === 'true' || undefined,
   };
-  const roomsQuery = useRoomsQuery(params);
+  const roomsQuery = useRoomListQuery(params);
+  const rooms = roomsQuery.data?.pages.flatMap((page) => page.items) ?? [];
 
   function handleSearch(nextParams: RoomSearchParams) {
     const next = new URLSearchParams();
@@ -50,7 +52,16 @@ export function HomePage() {
       </div>
       {roomsQuery.isLoading ? <Loading message="숙소 목록을 불러오는 중입니다." /> : null}
       {roomsQuery.error ? <ErrorMessage error={roomsQuery.error} /> : null}
-      {roomsQuery.data ? <RoomList rooms={roomsQuery.data} /> : null}
+      {roomsQuery.data ? (
+        <>
+          <RoomList rooms={rooms} />
+          <InfiniteScrollSentinel
+            onReachEnd={() => roomsQuery.fetchNextPage()}
+            hasNext={roomsQuery.hasNextPage}
+            isFetching={roomsQuery.isFetchingNextPage}
+          />
+        </>
+      ) : null}
     </section>
   );
 }

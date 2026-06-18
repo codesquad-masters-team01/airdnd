@@ -9,22 +9,33 @@ import { RoomClusterMarker } from './RoomClusterMarker';
 import { RoomMapInfoCard } from './RoomMapInfoCard';
 
 interface RoomResultsMapProps {
+  // 현재 지도 영역의 검색 결과(목록 카드와 동일한 한 페이지). 이 숙소들이 그대로 지도 핀이 됩니다.
   rooms: RoomSummary[];
   selectedId: number | null;
   hoveredId: number | null;
   viewedIds: Set<number>;
   onSelect: (roomId: number | null) => void;
   onHover: (roomId: number | null) => void;
-  // 현재 지도 영역으로 검색을 요청합니다. 부모가 이 경계를 검색 파라미터에 넣어 백엔드에 재요청합니다.
+  // 현재 지도 영역(bbox)으로 검색을 요청합니다. 자동 검색이 켜져 있으면 지도가 멈출 때마다 호출됩니다.
   onSearchArea: (bounds: MapBounds) => void;
+  // 설정되면 카메라를 그 경계 상자로 한 번 맞춥니다(지역 검색 결과로 이동). 적용 후 onFitConsumed 로 비웁니다.
+  fitBoundsTarget?: MapBounds | null;
+  onFitConsumed?: () => void;
+  // URL/검색어의 지역 지오코딩을 기다리는 동안 기본 한국 전체 영역으로 첫 검색을 보내지 않습니다.
+  suppressInitialSearch?: boolean;
 }
 
 type LocatedRoom = RoomSummary & { latitude: number; longitude: number };
 
-interface Cluster {
+interface PointCluster {
   rooms: LocatedRoom[];
   lat: number;
   lng: number;
+}
+
+interface PixelPoint {
+  x: number;
+  y: number;
 }
 
 // The d3 tail tip sits 16px from the left edge and 9px below the marker body.
@@ -32,36 +43,128 @@ const PRICE_MARKER_ANCHOR: [string, string] = ['16px', 'calc(100% + 9px)'];
 // Keep the card arrow above the selected pin so the pin remains visible and clickable.
 const INFO_CARD_ANCHOR: [string, string] = ['50%', 'calc(100% + 64px)'];
 
+// 서비스 지역(대한민국) 밖으로 과도하게 줌아웃/이동하지 못하도록 제한합니다.
+const MAP_MIN_ZOOM = 5;
+const KOREA_BOUNDS = { north: 39.5, south: 33.0, west: 124.0, east: 132.0 };
+const TILE_SIZE = 256;
+const CLUSTER_RADIUS_PX = 56;
+// 자동 검색을 다시 실행할 최소 이동량. 중심이 현재 뷰포트 가로/세로의 이 비율 이상 움직였을 때만
+// 재검색한다(살짝 미는 정도로는 누적된 결과·스크롤이 리셋되지 않도록). 줌 레벨 변경은 항상 재검색.
+const SIGNIFICANT_MOVE_RATIO = 0.25;
+
 function hasCoords(room: RoomSummary): room is LocatedRoom {
   return typeof room.latitude === 'number' && typeof room.longitude === 'number';
 }
 
-// 현재 줌에서 가까운(약 64px 이내) 숙소들을 묶습니다. n이 작아 단순 그리디로 충분합니다.
-function clusterRooms(rooms: LocatedRoom[], zoom: number): Cluster[] {
-  const degPerPixel = 360 / (256 * 2 ** zoom);
-  const radius = 64 * degPerPixel;
-  const clusters: Cluster[] = [];
+function toWorldPixel(room: LocatedRoom, zoom: number): PixelPoint {
+  const scale = TILE_SIZE * 2 ** zoom;
+  const sinLat = Math.sin((room.latitude * Math.PI) / 180);
+  const clampedSinLat = Math.min(Math.max(sinLat, -0.9999), 0.9999);
+
+  return {
+    x: ((room.longitude + 180) / 360) * scale,
+    y: (0.5 - Math.log((1 + clampedSinLat) / (1 - clampedSinLat)) / (4 * Math.PI)) * scale,
+  };
+}
+
+function pixelDistance(a: PixelPoint, b: PixelPoint) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function averagePosition(rooms: LocatedRoom[]) {
+  return {
+    lat: rooms.reduce((sum, item) => sum + item.latitude, 0) / rooms.length,
+    lng: rooms.reduce((sum, item) => sum + item.longitude, 0) / rooms.length,
+  };
+}
+
+function densestNeighborhood(rooms: LocatedRoom[], zoom: number): LocatedRoom[] {
+  if (rooms.length <= 2) {
+    return rooms;
+  }
+
+  const effectiveZoom = Math.max(zoom, MAP_MIN_ZOOM);
+  const pixels = new globalThis.Map<number, PixelPoint>(
+    rooms.map((room) => [room.id, toWorldPixel(room, effectiveZoom)]),
+  );
+  let bestGroup: LocatedRoom[] = [];
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (const room of rooms) {
+    const roomPixel = pixels.get(room.id);
+    if (!roomPixel) continue;
+
+    const group: LocatedRoom[] = [];
+    let totalDistance = 0;
+    for (const other of rooms) {
+      const otherPixel = pixels.get(other.id);
+      if (!otherPixel) continue;
+
+      const distance = pixelDistance(roomPixel, otherPixel);
+      if (distance <= CLUSTER_RADIUS_PX) {
+        group.push(other);
+        totalDistance += distance;
+      }
+    }
+
+    if (group.length > bestGroup.length || (group.length === bestGroup.length && totalDistance < bestDistance)) {
+      bestGroup = group;
+      bestDistance = totalDistance;
+    }
+  }
+
+  return bestGroup;
+}
+
+// 화면에서 거의 겹치는 핀만 가볍게 묶습니다. 한 페이지(약 십여 개)라 단순 그리디로 충분합니다.
+function clusterPoints(rooms: LocatedRoom[], zoom: number): PointCluster[] {
+  const clusters: PointCluster[] = [];
   const used = new Set<number>();
+  const effectiveZoom = Math.max(zoom, MAP_MIN_ZOOM);
+  const pixels = new globalThis.Map<number, PixelPoint>(
+    rooms.map((room) => [room.id, toWorldPixel(room, effectiveZoom)]),
+  );
 
   for (const room of rooms) {
     if (used.has(room.id)) continue;
     used.add(room.id);
     const group = [room];
+    const roomPixel = pixels.get(room.id);
+    if (!roomPixel) continue;
     for (const other of rooms) {
       if (used.has(other.id)) continue;
-      if (
-        Math.abs(other.latitude - room.latitude) < radius &&
-        Math.abs(other.longitude - room.longitude) < radius
-      ) {
+      const otherPixel = pixels.get(other.id);
+      if (otherPixel && pixelDistance(roomPixel, otherPixel) <= CLUSTER_RADIUS_PX) {
         used.add(other.id);
         group.push(other);
       }
     }
-    const lat = group.reduce((sum, item) => sum + item.latitude, 0) / group.length;
-    const lng = group.reduce((sum, item) => sum + item.longitude, 0) / group.length;
+    const { lat, lng } = averagePosition(group);
     clusters.push({ rooms: group, lat, lng });
   }
   return clusters;
+}
+
+interface SearchedView {
+  center: { lat: number; lng: number };
+  zoom: number;
+}
+
+// 직전에 "검색한" 뷰포트와 현재 뷰포트를 비교해, 재검색할 만큼 의미 있게 움직였는지 판단한다.
+// 줌이 바뀌면 항상 true(위치 드릴다운 정확도 유지), 그 외에는 뷰포트 크기 대비 패닝 거리로 판단한다.
+function isSignificantMove(
+  prev: SearchedView | null,
+  center: { lat: number; lng: number },
+  zoom: number,
+  bounds: MapBounds,
+): boolean {
+  if (!prev) return true;
+  if (Math.round(prev.zoom) !== Math.round(zoom)) return true;
+  const latSpan = Math.abs(bounds.north - bounds.south) || 1e-9;
+  const lngSpan = Math.abs(bounds.east - bounds.west) || 1e-9;
+  const dLat = Math.abs(center.lat - prev.center.lat);
+  const dLng = Math.abs(center.lng - prev.center.lng);
+  return dLat > latSpan * SIGNIFICANT_MOVE_RATIO || dLng > lngSpan * SIGNIFICANT_MOVE_RATIO;
 }
 
 export function RoomResultsMap(props: RoomResultsMapProps) {
@@ -83,34 +186,61 @@ function RoomResultsMapView({
   onSelect,
   onHover,
   onSearchArea,
+  fitBoundsTarget,
+  onFitConsumed,
+  suppressInitialSearch = false,
 }: RoomResultsMapProps) {
   const status = useApiLoadingStatus();
   const [zoom, setZoom] = useState(DEFAULT_KOREA_ZOOM);
+  const [autoSearch, setAutoSearch] = useState(true);
   const [hasMoved, setHasMoved] = useState(false);
   const latestBounds = useRef<MapBounds | null>(null);
+  const latestCenter = useRef<{ lat: number; lng: number } | null>(null);
+  const latestZoom = useRef(DEFAULT_KOREA_ZOOM);
+  // 마지막으로 실제 "검색한" 뷰포트(중심+줌). 이동량 임계치 판단의 기준점.
+  const lastSearched = useRef<SearchedView | null>(null);
   const cameraMoved = useRef(false);
   const cameraInitialized = useRef(false);
 
-  function searchCurrentArea() {
+  // 현재 영역으로 검색하고, 임계치 비교 기준이 될 뷰포트를 갱신합니다.
+  function runSearch() {
     const bounds = latestBounds.current;
-    if (!bounds) return;
-
-    // 현재 보이는 영역의 경계를 부모로 올려보내 백엔드에 bbox 검색을 재요청합니다.
+    const center = latestCenter.current;
+    if (!bounds || !center) return;
     onSearchArea(bounds);
+    lastSearched.current = { center, zoom: latestZoom.current };
+  }
+
+  // "이 지역 검색" 버튼: 이동량과 무관하게 항상 검색합니다.
+  function searchCurrentArea() {
+    if (!latestBounds.current) return;
+    runSearch();
     onSelect(null);
     setHasMoved(false);
   }
 
   function handleIdle() {
+    const bounds = latestBounds.current;
+    const center = latestCenter.current;
     if (!cameraInitialized.current) {
       cameraInitialized.current = true;
       cameraMoved.current = false;
+      // 초기 1회: 현재 보이는 영역으로 검색해 첫 결과를 띄웁니다.
+      if (bounds && center && !suppressInitialSearch) runSearch();
       return;
     }
     if (!cameraMoved.current) return;
-
     cameraMoved.current = false;
-    setHasMoved(true);
+
+    if (!autoSearch) {
+      setHasMoved(true);
+      return;
+    }
+    // 자동 검색: 의미 있는 이동(줌 변경 또는 충분한 패닝)일 때만 재검색해, 사소한 움직임에
+    // 누적된 결과·스크롤이 리셋되지 않게 합니다.
+    if (bounds && center && isSignificantMove(lastSearched.current, center, latestZoom.current, bounds)) {
+      runSearch();
+    }
   }
 
   if (status === APILoadingStatus.FAILED || status === APILoadingStatus.AUTH_FAILURE) {
@@ -130,10 +260,15 @@ function RoomResultsMapView({
         gestureHandling="greedy"
         clickableIcons={false}
         mapTypeControl={false}
+        minZoom={MAP_MIN_ZOOM}
+        restriction={{ latLngBounds: KOREA_BOUNDS, strictBounds: false }}
         reuseMaps
         onCameraChanged={(event) => {
           latestBounds.current = event.detail.bounds;
+          latestCenter.current = event.detail.center;
+          latestZoom.current = event.detail.zoom;
           setZoom(Math.round(event.detail.zoom));
+          if (cameraInitialized.current) cameraMoved.current = true;
         }}
         onDragstart={() => {
           cameraMoved.current = true;
@@ -152,9 +287,24 @@ function RoomResultsMapView({
           viewedIds={viewedIds}
           onSelect={onSelect}
           onHover={onHover}
+          fitBoundsTarget={fitBoundsTarget}
+          onFitConsumed={onFitConsumed}
         />
       </Map>
-      {hasMoved ? (
+
+      <label className="map-autosearch-toggle">
+        <input
+          type="checkbox"
+          checked={autoSearch}
+          onChange={(event) => {
+            setAutoSearch(event.target.checked);
+            setHasMoved(false);
+          }}
+        />
+        지도 이동 시 검색
+      </label>
+
+      {!autoSearch && hasMoved ? (
         <button type="button" className="search-here" onClick={searchCurrentArea}>
           <Search size={16} aria-hidden="true" />
           이 지역 검색
@@ -168,43 +318,65 @@ interface MapContentProps extends Omit<RoomResultsMapProps, 'onSearchArea'> {
   zoom: number;
 }
 
-function MapContent({ rooms, zoom, selectedId, hoveredId, viewedIds, onSelect, onHover }: MapContentProps) {
+function MapContent({
+  rooms,
+  zoom,
+  selectedId,
+  hoveredId,
+  viewedIds,
+  onSelect,
+  onHover,
+  fitBoundsTarget,
+  onFitConsumed,
+}: MapContentProps) {
   const map = useMap();
-  const located = useMemo(() => rooms.filter(hasCoords), [rooms]);
-  const points = useMemo(() => located.map((room) => ({ lat: room.latitude, lng: room.longitude })), [located]);
-  const clusters = useMemo(() => clusterRooms(located, zoom), [located, zoom]);
 
-  // 검색 결과가 바뀔 때만 지도 영역을 결과 전체에 맞춥니다.
+  // 통제된 단발성 fit: 부모가 fitBoundsTarget(지역 검색 결과 영역)을 줄 때만 카메라를 한 번 맞추고 비웁니다.
   useEffect(() => {
-    if (!map || points.length === 0) {
+    if (!map || !fitBoundsTarget) {
       return;
     }
-    if (points.length === 1) {
-      map.setCenter(points[0]);
-      map.setZoom(14);
-      return;
-    }
-    const lats = points.map((point) => point.lat);
-    const lngs = points.map((point) => point.lng);
     map.fitBounds(
-      { north: Math.max(...lats), south: Math.min(...lats), east: Math.max(...lngs), west: Math.min(...lngs) },
-      80,
+      {
+        north: fitBoundsTarget.north,
+        south: fitBoundsTarget.south,
+        east: fitBoundsTarget.east,
+        west: fitBoundsTarget.west,
+      },
+      60,
     );
-  }, [map, points]);
+    onFitConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, fitBoundsTarget]);
+
+  const located = useMemo(() => rooms.filter(hasCoords), [rooms]);
+  const pointClusters = useMemo(() => clusterPoints(located, zoom), [located, zoom]);
 
   const selectedRoom = located.find((room) => room.id === selectedId) ?? null;
   const selectedIsSingle =
-    selectedRoom != null && clusters.some((c) => c.rooms.length === 1 && c.rooms[0].id === selectedRoom.id);
+    selectedRoom != null && pointClusters.some((c) => c.rooms.length === 1 && c.rooms[0].id === selectedRoom.id);
 
-  function zoomIntoCluster(cluster: Cluster) {
+  function zoomIntoCluster(cluster: PointCluster) {
     if (!map) return;
-    map.panTo({ lat: cluster.lat, lng: cluster.lng });
-    map.setZoom(Math.min((map.getZoom() ?? zoom) + 2, 17));
+    const focusRooms = densestNeighborhood(cluster.rooms, map.getZoom() ?? zoom);
+    const lats = focusRooms.map((room) => room.latitude);
+    const lngs = focusRooms.map((room) => room.longitude);
+    const north = Math.max(...lats);
+    const south = Math.min(...lats);
+    const east = Math.max(...lngs);
+    const west = Math.min(...lngs);
+    // 좌표가 사실상 동일하면 fitBounds 가 의미 없으므로 한 단계 더 깊게 줌인합니다.
+    if (north === south && east === west) {
+      map.panTo({ lat: north, lng: east });
+      map.setZoom(Math.min((map.getZoom() ?? zoom) + 2, 18));
+      return;
+    }
+    map.fitBounds({ north, south, east, west }, 60);
   }
 
   return (
     <>
-      {clusters.map((cluster) => {
+      {pointClusters.map((cluster) => {
         if (cluster.rooms.length === 1) {
           const room = cluster.rooms[0];
           return (
@@ -232,7 +404,7 @@ function MapContent({ rooms, zoom, selectedId, hoveredId, viewedIds, onSelect, o
         const prices = cluster.rooms.map((room) => room.pricePerNight);
         return (
           <AdvancedMarker
-            key={`cluster-${cluster.rooms.map((room) => room.id).join('-')}`}
+            key={`p-${cluster.rooms.map((room) => room.id).join('-')}`}
             position={{ lat: cluster.lat, lng: cluster.lng }}
             anchorPoint={['50%', '50%']}
             zIndex={40}

@@ -170,6 +170,51 @@
   box-shadow: var(--shadow-md);
 }
 
+/* 지도 검색 페이지(데스크톱 2단): 페이지 자체는 스크롤하지 않고 좌측 목록만 내부 스크롤시킨다.
+   섹션을 헤더 아래 남은 뷰포트 높이에 정확히 맞추고(heading/검색바는 고정, 지도+목록 영역이 나머지를
+   채움), 목록만 overflow 로 스크롤한다. 무한 스크롤로 카드가 붙어도 문서 높이가 그대로라 지도가 흔들리지 않는다.
+   2단 레이아웃이 적용되는 폭(>980px)에서만 잠그고, 그 이하 모바일에서는 기존 세로 스택/일반 스크롤을 유지한다. */
+@media (min-width: 981px) {
+  .map-search-page {
+    /* 헤더(높이) + page-container 상단 패딩(space-10)을 뺀 나머지 = 섹션 높이 */
+    height: calc(100vh - var(--header-height) - var(--space-10));
+    /* page-container 하단 패딩(space-16)을 상쇄해 푸터가 화면 바로 아래에 오도록(콘텐츠 영역은 페이지 스크롤 없음) */
+    margin-bottom: calc(-1 * var(--space-16));
+    /* heading(auto) / 검색바(auto) / 지도+목록(1fr) */
+    grid-template-rows: auto auto minmax(0, 1fr);
+    /* 섹션 자체는 넘치지 않음 — 스크롤은 오직 내부 목록에서만 */
+    overflow: hidden;
+  }
+
+  .map-search-page .map-layout {
+    height: 100%;
+    min-height: 0;
+    /* 두 칼럼(목록/지도)이 행 높이를 꽉 채우도록(기본 align-items: start 덮어쓰기) */
+    align-items: stretch;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .map-search-page .list-stack {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    /* 내부 스크롤바가 카드에 바싹 붙지 않도록 살짝 여백 */
+    padding-right: var(--space-2);
+    /* 스크롤바 표시/숨김에 따라 폭이 출렁이지 않도록 거터 항상 확보 */
+    scrollbar-gutter: stable;
+    /* 목록 끝에서 스크롤이 문서로 넘어가며 튀는 현상 방지 */
+    overscroll-behavior: contain;
+  }
+
+  .map-search-page .results-map {
+    /* 섹션이 이미 뷰포트에 고정돼 있으므로 sticky 불필요 — 칼럼을 그대로 채운다 */
+    position: static;
+    top: auto;
+    height: 100%;
+    min-height: 0;
+  }
+}
+
 .results-map--fallback {
   display: grid;
   place-items: center;

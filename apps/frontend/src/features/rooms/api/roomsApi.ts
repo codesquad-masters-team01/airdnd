@@ -2,9 +2,9 @@ import { request } from '../../../shared/api/httpClient';
 import {
   RoomDetail,
   RoomSearchParams,
-  RoomSummary,
+  RoomSummaryPage,
   roomDetailSchema,
-  roomSummarySchema,
+  roomSummaryPageSchema,
 } from '../model/roomTypes';
 
 // 백엔드 응답은 평균 평점을 averageRating(후기 없으면 null)으로 내려주지만,
@@ -17,18 +17,24 @@ function withRating(raw: unknown) {
   return raw;
 }
 
-export async function getRooms(params: RoomSearchParams) {
+function toQuery(params: RoomSearchParams): string {
   const searchParams = new URLSearchParams();
-
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== '') {
       searchParams.set(key, String(value));
     }
   });
-
   const query = searchParams.toString();
-  const data = await request<RoomSummary[]>(`/api/rooms${query ? `?${query}` : ''}`);
-  return roomSummarySchema.array().parse(Array.isArray(data) ? data.map(withRating) : data);
+  return query ? `?${query}` : '';
+}
+
+// 커서 페이지네이션 목록. 한 페이지(items)와 다음 커서를 함께 받습니다.
+export async function getRooms(params: RoomSearchParams): Promise<RoomSummaryPage> {
+  const data = await request<unknown>(`/api/rooms${toQuery(params)}`);
+  const page = (data ?? {}) as { items?: unknown };
+  const normalized =
+    Array.isArray(page.items) ? { ...page, items: page.items.map(withRating) } : data;
+  return roomSummaryPageSchema.parse(normalized);
 }
 
 export async function getRoom(roomId: number) {
