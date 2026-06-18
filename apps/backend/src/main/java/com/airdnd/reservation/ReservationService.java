@@ -5,10 +5,12 @@ import com.airdnd.common.exception.BusinessException;
 import com.airdnd.reservation.dto.BookedDateRange;
 import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
+import com.airdnd.reservation.event.ReservationCancelledEvent;
 import com.airdnd.review.ReviewRepository;
 import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
     private final ReviewRepository reviewRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public Long createReservation(Long memberId ,ReservationRequest request) {
@@ -118,7 +121,16 @@ public class ReservationService {
         if (!reservation.getGuestId().equals(guestId)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
         }
+        boolean wasConfirmed = reservation.getStatus() == ReservationStatus.CONFIRMED;
         reservation.cancel();
+        if(wasConfirmed){
+            Room room = roomRepository.findById(reservation.getRoomId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+            applicationEventPublisher.publishEvent(new ReservationCancelledEvent(
+                    reservation.getId(), room.getHostId(), room.getName(),reservation.getCheckInDate(),
+                    reservation.getCheckOutDate()
+            ));
+        }
     }
 
     @Transactional(readOnly = true)

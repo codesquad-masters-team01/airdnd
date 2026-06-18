@@ -7,7 +7,11 @@ import com.airdnd.payment.dto.CaptureResponse;
 import com.airdnd.payment.dto.PaymentOrderRequest;
 import com.airdnd.reservation.Reservation;
 import com.airdnd.reservation.ReservationService;
+import com.airdnd.reservation.event.ReservationConfirmedEvent;
+import com.airdnd.room.Room;
+import com.airdnd.room.RoomRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -21,6 +25,8 @@ public class PaymentService {
     private final PaypalClient paypalClient;
     private final PaypalProperties paypalProperties;
     private final ReservationService reservationService;
+    private final RoomRepository roomRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
 
     @Transactional
@@ -66,6 +72,14 @@ public class PaymentService {
 
         reservation.confirm();
         reservationService.saveReservation(reservation);
+
+        Room room = roomRepository.findById(reservation.getRoomId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        applicationEventPublisher.publishEvent(new ReservationConfirmedEvent(
+                reservation.getId(),room.getHostId(),room.getName(),reservation.getCheckInDate(),reservation.getCheckOutDate()
+        ));
+
         return new CaptureResponse(payment.getReservationId());
     }
 }

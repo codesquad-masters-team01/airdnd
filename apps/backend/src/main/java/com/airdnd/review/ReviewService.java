@@ -9,9 +9,13 @@ import com.airdnd.reservation.ReservationRepository;
 import com.airdnd.reservation.ReservationStatus;
 import com.airdnd.review.dto.ReviewRequest;
 import com.airdnd.review.dto.ReviewResponse;
+import com.airdnd.review.event.ReviewCreatedEvent;
+import com.airdnd.room.Room;
+import com.airdnd.room.RoomRepository;
 import com.airdnd.user.Member;
 import com.airdnd.user.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +30,8 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReservationRepository reservationRepository;
     private final MemberRepository memberRepository;
+    private final RoomRepository roomRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional(readOnly = true)
     public List<ReviewResponse> getReviewsRoomId(Long roomId) {
@@ -63,6 +69,13 @@ public class ReviewService {
 
         Member member = memberRepository.getReferenceById(memberId);
         Review review = reviewRepository.save(Review.create(reservationId, member, request));
+
+        Room room = roomRepository.findById(reservation.getRoomId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        applicationEventPublisher.publishEvent(new ReviewCreatedEvent(
+                room.getId(), room.getHostId(), room.getName(),request.rating()
+        ));
         return ReviewResponse.from(review);
     }
 }
