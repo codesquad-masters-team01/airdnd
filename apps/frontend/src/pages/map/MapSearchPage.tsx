@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useRoomsQuery } from '../../features/rooms/api/roomsQueries';
+import { useMapsLibrary } from '@vis.gl/react-google-maps';
+import { useRoomListQuery } from '../../features/rooms/api/roomsQueries';
 import { SearchBar } from '../../features/rooms/ui/SearchBar';
 import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
 import { RoomResultsMap } from '../../features/maps/ui/RoomResultsMap';
@@ -9,19 +10,44 @@ import { RoomSearchParams } from '../../features/rooms/model/roomTypes';
 import { formatCurrency } from '../../shared/lib/format';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
+import { InfiniteScrollSentinel } from '../../shared/ui/InfiniteScrollSentinel';
 
-// 지도 검색 시 한 번에 받아올 최대 숙소 수 (백엔드 limit 파라미터와 동일한 상한).
-const MAP_RESULT_LIMIT = 200;
+// 한 페이지(커서) 크기. 목록은 스크롤로 페이지를 이어 붙입니다.
+const PAGE_SIZE = 18;
+// 지도에 한 번에 찍는 핀 상한. 스크롤로 페이지를 더 불러와도 핀이 지도를 뒤덮지 않도록 제한합니다.
+const MAP_PIN_CAP = 200;
+
+interface GeocoderViewportPoint {
+  lat: () => number;
+  lng: () => number;
+}
+
+interface GeocoderResult {
+  geometry: {
+    viewport: {
+      getNorthEast: () => GeocoderViewportPoint;
+      getSouthWest: () => GeocoderViewportPoint;
+    };
+  };
+}
 
 export function MapSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [viewedIds, setViewedIds] = useState<Set<number>>(new Set());
+  // 현재 지도 영역. 지도가 멈출 때마다(자동 검색) 갱신되고, 이 영역으로 결과를 조회합니다.
   const [bounds, setBounds] = useState<MapBounds | null>(null);
+  // 지오코딩 결과 영역. 지역 검색 시 카메라를 그곳으로 한 번 이동시킵니다.
+  const [fitTarget, setFitTarget] = useState<MapBounds | null>(null);
+  // 지오코딩 대기 중인 지역명(지도 라이브러리가 준비되면 처리). 최초 진입 시 URL 의 region 으로 시작합니다.
+  const [pendingRegion, setPendingRegion] = useState<string | null>(() => searchParams.get('region') || null);
 
-  const baseParams: RoomSearchParams = {
-    region: searchParams.get('region') ?? '',
+  const region = searchParams.get('region') ?? '';
+
+  // 지역(region)은 지도 위치를 정하는 데만 쓰고(지오코딩), DB 필터로는 보내지 않습니다.
+  // 결과는 "현재 보이는 영역(bbox) 안의 숙소"이며, 지역 텍스트 일치 여부와 무관합니다.
+  const filterParams: RoomSearchParams = {
     checkIn: searchParams.get('checkIn') ?? '',
     checkOut: searchParams.get('checkOut') ?? '',
     guests: Number(searchParams.get('guests') ?? '1'),
@@ -32,24 +58,69 @@ export function MapSearchPage() {
     maxPrice: Number(searchParams.get('maxPrice') ?? '0') || undefined,
     allowsPets: searchParams.get('allowsPets') === 'true' || undefined,
   };
-  // 지도 영역('이 지역 검색')이 정해지면 경계 좌표와 결과 상한을 더합니다.
-  // bounds 가 params 에 들어가면 react-query 키(roomQueryKeys.list)가 바뀌어 자동으로
-  // GET /api/rooms?south&west&north&east&limit 을 재요청합니다.
-  const params: RoomSearchParams = bounds
+
+  // SearchBar 초기값에는 region 도 채워줍니다(입력칸 표시·지오코딩용).
+  const searchBarDefault: RoomSearchParams = { region, ...filterParams };
+
+  const areaParams: RoomSearchParams = bounds
     ? {
-        ...baseParams,
+        ...filterParams,
         south: bounds.south,
         west: bounds.west,
         north: bounds.north,
         east: bounds.east,
-        limit: MAP_RESULT_LIMIT,
+        size: PAGE_SIZE,
       }
-    : baseParams;
-  const roomsQuery = useRoomsQuery(params);
+    : filterParams;
+
+  const areaQuery = useRoomListQuery(areaParams, bounds != null);
+  // 무한 스크롤로 불러온 모든 페이지를 이어 붙입니다(뷰포트가 바뀌면 키가 달라져 1페이지부터 다시 시작).
+  const rooms = useMemo(
+    () => areaQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [areaQuery.data],
+  );
+  // totalCount 는 첫 페이지에서만 내려옵니다("이 지역에 N곳").
+  const totalCount = areaQuery.data?.pages[0]?.totalCount ?? null;
+  // 지도 핀은 상한까지만. 목록은 전부 보여주되 핀만 잘라 지도를 보호합니다.
+  const mappedRooms = useMemo(() => rooms.slice(0, MAP_PIN_CAP), [rooms]);
+  const pinsCapped = rooms.length > MAP_PIN_CAP;
+
+  // 지역명 → 좌표/영역(지오코딩). 지도 라이브러리가 준비되면 대기 중인 지역을 처리합니다.
+  const geocodingLib = useMapsLibrary('geocoding');
+  const geocoder = useMemo(() => (geocodingLib ? new geocodingLib.Geocoder() : null), [geocodingLib]);
+  useEffect(() => {
+    if (!pendingRegion || !geocoder) {
+      return;
+    }
+    let cancelled = false;
+    geocoder
+      .geocode({ address: pendingRegion, region: 'KR' })
+      .then(({ results }: { results: GeocoderResult[] }) => {
+        if (cancelled || results.length === 0) return;
+        const vp = results[0].geometry.viewport;
+        const ne = vp.getNorthEast();
+        const sw = vp.getSouthWest();
+        // 카메라를 이 영역으로 이동 → 지도가 멈추면 자동 검색이 그 영역을 조회합니다.
+        setFitTarget({ north: ne.lat(), east: ne.lng(), south: sw.lat(), west: sw.lng() });
+      })
+      .catch(() => {
+        /* 지오코딩 실패 시 지도를 그대로 둡니다(목록은 정상 동작). */
+      })
+      .finally(() => {
+        if (!cancelled) setPendingRegion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingRegion, geocoder]);
 
   function handleSearch(nextParams: RoomSearchParams) {
-    // 새 텍스트/필터 검색은 지도 영역 제약을 초기화합니다(지역 전체 결과부터 다시 보여줌).
-    setBounds(null);
+    const nextRegion = nextParams.region ?? '';
+    // 지역이 새로 지정/변경되면 지도를 그 지역으로 이동시킵니다(지오코딩). 그 외 필터만 바뀌면
+    // 현재 영역을 유지하고, 파라미터가 바뀌므로 같은 영역으로 결과가 자동 갱신됩니다.
+    if (nextRegion && nextRegion !== region) {
+      setPendingRegion(nextRegion);
+    }
     const next = new URLSearchParams();
     Object.entries(nextParams).forEach(([key, value]) => {
       if (value !== undefined && value !== '') {
@@ -62,63 +133,73 @@ export function MapSearchPage() {
   function handleSelect(roomId: number | null) {
     setSelectedId(roomId);
     if (roomId != null) {
-      // 한 번 열어 본 숙소는 마커가 흐려집니다(viewed).
       setViewedIds((prev) => new Set(prev).add(roomId));
     }
   }
 
-  // 백엔드가 이미 지도 영역(bbox)으로 필터링하므로 클라이언트에서 추가로 거르지 않습니다.
-  const visibleRooms = roomsQuery.data;
-
   return (
-    <section className="stack">
+    <section className="stack map-search-page">
       <div className="page-heading">
         <p className="eyebrow">Map Search</p>
         <h1>지도에서 숙소 찾기</h1>
-        <p className="muted">검색 결과를 지도에서 함께 확인하세요.</p>
+        <p className="muted">지도를 움직이면 그 지역의 숙소를 보여드립니다.</p>
       </div>
-      <SearchBar defaultValue={params} onSearch={handleSearch} />
-      {roomsQuery.isLoading ? <Loading message="지도 검색 결과를 불러오는 중입니다." /> : null}
-      {roomsQuery.error ? <ErrorMessage error={roomsQuery.error} /> : null}
-      {roomsQuery.data ? (
-        <div className="map-layout">
-          <div className="list-stack">
-            {visibleRooms?.map((room) => (
-              <Link
-                className={`map-result-card ${
-                  selectedId === room.id || hoveredId === room.id ? 'is-active' : ''
-                }`}
-                to={`/rooms/${room.id}`}
-                key={room.id}
-                onMouseEnter={() => setHoveredId(room.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
-                <div>
-                  <h2>{room.name}</h2>
-                  <p className="muted">{room.address}</p>
-                  <p className="card-meta">
-                    <RoomReviewBadge rating={room.rating} reviewCount={room.reviewCount} showReviewCount={false} /> ·{' '}
-                    {formatCurrency(room.pricePerNight)} / 박
-                  </p>
-                </div>
-              </Link>
-            ))}
-            {visibleRooms?.length === 0 ? (
-              <p className="map-results-empty">현재 지도 영역에 검색 결과가 없습니다.</p>
-            ) : null}
-          </div>
-          <RoomResultsMap
-            rooms={roomsQuery.data}
-            selectedId={selectedId}
-            hoveredId={hoveredId}
-            viewedIds={viewedIds}
-            onSelect={handleSelect}
-            onHover={setHoveredId}
-            onSearchArea={setBounds}
-          />
+      <SearchBar defaultValue={searchBarDefault} onSearch={handleSearch} />
+      <div className="map-layout">
+        <div className="list-stack">
+          {bounds && totalCount != null ? (
+            <p className="map-results-count">
+              이 지역에 <strong>{totalCount.toLocaleString()}</strong>곳
+              {pinsCapped ? ` · 지도에는 ${MAP_PIN_CAP}곳까지만 표시됩니다. 더 좁혀보세요` : ''}
+            </p>
+          ) : null}
+          {areaQuery.isLoading ? <Loading message="지도 검색 결과를 불러오는 중입니다." /> : null}
+          {areaQuery.error ? <ErrorMessage error={areaQuery.error} /> : null}
+          {rooms.map((room) => (
+            <Link
+              className={`map-result-card ${
+                selectedId === room.id || hoveredId === room.id ? 'is-active' : ''
+              }`}
+              to={`/rooms/${room.id}`}
+              key={room.id}
+              onMouseEnter={() => setHoveredId(room.id)}
+              onMouseLeave={() => setHoveredId(null)}
+            >
+              <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
+              <div>
+                <h2>{room.name}</h2>
+                <p className="muted">{room.address}</p>
+                <p className="card-meta">
+                  <RoomReviewBadge rating={room.rating} reviewCount={room.reviewCount} showReviewCount={false} /> ·{' '}
+                  {formatCurrency(room.pricePerNight)} / 박
+                </p>
+              </div>
+            </Link>
+          ))}
+          {areaQuery.data && rooms.length === 0 ? (
+            <p className="map-results-empty">현재 지도 영역에 검색 결과가 없습니다.</p>
+          ) : null}
+          {areaQuery.data ? (
+            <InfiniteScrollSentinel
+              onReachEnd={() => areaQuery.fetchNextPage()}
+              hasNext={areaQuery.hasNextPage}
+              isFetching={areaQuery.isFetchingNextPage}
+            />
+          ) : null}
         </div>
-      ) : null}
+        <RoomResultsMap
+          rooms={mappedRooms}
+          selectedId={selectedId}
+          hoveredId={hoveredId}
+          viewedIds={viewedIds}
+          onSelect={handleSelect}
+          onHover={setHoveredId}
+          onSearchArea={setBounds}
+          fitBoundsTarget={fitTarget}
+          onFitConsumed={() => setFitTarget(null)}
+          suppressInitialSearch={pendingRegion != null}
+        />
+      </div>
     </section>
   );
 }

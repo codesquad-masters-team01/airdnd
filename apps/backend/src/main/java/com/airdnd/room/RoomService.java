@@ -6,6 +6,7 @@ import com.airdnd.room.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +53,26 @@ public class RoomService {
     }
 
     @Transactional(readOnly = true)
-    public List<RoomResponse> getRooms(RoomSearchRequestDto conditions) {
-        List<Room> rooms = roomRepository.findByRoomSearchRequest(conditions);
-        List<Long> roomIds = rooms.stream().map(Room::getId).toList();
-        Map<Long, RoomRatingDto> ratings = roomRepository.findRatingByRoomIds(roomIds);
+    public CursorPage<RoomSummary> getRooms(RoomSearchRequestDto conditions) {
+        LocalDateTime now = LocalDateTime.now();
+        int size = conditions.resolvedSize();
 
-        return RoomResponse.fromList(rooms, ratings);
+        // 다음 페이지 존재 여부 판단을 위해 size + 1 개까지 조회한다.
+        List<RoomSummary> fetched = roomRepository.findPage(conditions, now);
+        boolean hasNext = fetched.size() > size;
+        List<RoomSummary> pageRooms = hasNext ? fetched.subList(0, size) : fetched;
+
+        List<Long> roomIds = pageRooms.stream().map(RoomSummary::id).toList();
+        Map<Long, RoomRatingDto> ratings =
+                roomIds.isEmpty() ? Map.of() : roomRepository.findRatingByRoomIds(roomIds);
+
+        List<RoomSummary> items = RoomSummary.fromList(pageRooms, ratings);
+        String nextCursor = hasNext ? Cursors.encode(pageRooms.get(pageRooms.size() - 1).id()) : null;
+
+        // 영역 내 전체 매칭 수는 첫 페이지(커서 없음)에서만 센다("이 지역에 N곳" 안내용). 인덱스 백업 COUNT.
+        Long totalCount = conditions.cursorId() == null ? roomRepository.countInArea(conditions, now) : null;
+
+        return new CursorPage<>(items, nextCursor, hasNext, totalCount);
     }
 
     @Transactional(readOnly = true)

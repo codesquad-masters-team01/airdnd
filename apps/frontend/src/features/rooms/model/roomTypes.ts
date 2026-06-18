@@ -40,15 +40,30 @@ export const roomSearchParamsSchema = z.object({
   maxPrice: z.number().optional(),
   allowsPets: z.boolean().optional(),
   // 지도 뷰포트 검색용 경계 좌표. 4개를 함께 보내면 백엔드가 해당 영역 안의 숙소만 반환합니다.
-  // (GET /api/rooms 의 south/west/north/east 파라미터와 1:1)
+  // (south/west/north/east 파라미터와 1:1. 목록(GET /api/rooms)·지도(GET /api/rooms/map) 공용)
   south: z.number().min(-90).max(90).optional(),
   west: z.number().min(-180).max(180).optional(),
   north: z.number().min(-90).max(90).optional(),
   east: z.number().min(-180).max(180).optional(),
-  // 지도 검색 시 마커/페이로드 폭주 방지를 위한 결과 상한.
-  limit: z.number().int().min(1).max(500).optional(),
+  // 목록 커서 페이지네이션: 다음 페이지 커서(불투명 문자열)와 페이지 크기.
+  cursor: z.string().optional(),
+  size: z.number().int().min(1).max(100).optional(),
 });
 
 export type RoomSummary = z.infer<typeof roomSummarySchema>;
 export type RoomDetail = z.infer<typeof roomDetailSchema>;
 export type RoomSearchParams = z.infer<typeof roomSearchParamsSchema>;
+
+// 커서 기반 페이지. items 한 페이지 + 다음 커서. hasNext=false 면 nextCursor=null.
+// totalCount: 현재 조건(영역+필터)에 매칭되는 전체 수. 첫 페이지에서만 채워지고 이후엔 null
+// ("이 지역에 N곳 — 더 좁혀보세요" 안내용).
+export const cursorPageSchema = <T extends z.ZodTypeAny>(item: T) =>
+  z.object({
+    items: z.array(item),
+    nextCursor: z.string().nullable(),
+    hasNext: z.boolean(),
+    totalCount: z.number().int().nonnegative().nullish(),
+  });
+
+export const roomSummaryPageSchema = cursorPageSchema(roomSummarySchema);
+export type RoomSummaryPage = z.infer<typeof roomSummaryPageSchema>;
