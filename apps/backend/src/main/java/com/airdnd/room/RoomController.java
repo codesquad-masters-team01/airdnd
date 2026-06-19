@@ -1,18 +1,13 @@
 package com.airdnd.room;
 
 import com.airdnd.auth.AuthMemberPrincipal;
-import com.airdnd.room.dto.RoomDetailResponse;
-import com.airdnd.room.dto.RoomResponse;
-import com.airdnd.room.dto.RoomSearchRequestDto;
-import com.airdnd.room.dto.RoomUpdateRequest;
+import com.airdnd.room.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,8 +17,8 @@ public class RoomController {
     private final RoomService roomService;
 
     @GetMapping
-    public ResponseEntity<List<RoomResponse>> getRooms(@Valid @ModelAttribute RoomSearchRequestDto searchConditions) {
-        List<RoomResponse> rooms = roomService.getRooms(searchConditions);
+    public ResponseEntity<CursorPage<RoomSummary>> getRooms(@Valid @ModelAttribute RoomSearchRequestDto searchConditions) {
+        CursorPage<RoomSummary> rooms = roomService.getRooms(searchConditions);
         return ResponseEntity.status(HttpStatus.OK).body(rooms);
     }
 
@@ -40,7 +35,5 @@ public class RoomController {
         RoomDetailResponse updatedRoom = roomService.updateRoomDetails(principal.getMemberId(),roomId,request);
         return ResponseEntity.status(HttpStatus.OK).body(updatedRoom);
     }
-
-
 
 }
