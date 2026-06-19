@@ -1,6 +1,8 @@
 package com.airdnd.reservation;
 
 
+import com.airdnd.common.error.ErrorCode;
+import com.airdnd.common.exception.BusinessException;
 import com.airdnd.reservation.dto.ReservationRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -50,10 +52,7 @@ public class Reservation {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ReservationStatus status;
-
-    // PENDING 홀드 만료 시각. 이 시각 이후의 PENDING 은 점유로 보지 않는다(결제 미완료 자동 해제).
     private LocalDateTime expiresAt;
-
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
@@ -87,15 +86,19 @@ public class Reservation {
     }
 
     public void confirm() {
-        this.status = ReservationStatus.CONFIRMED;
-        this.expiresAt = null;
-        this.updatedAt = LocalDateTime.now();
+        if(this.status == ReservationStatus.CANCELLED){
+            throw new BusinessException(ErrorCode.RESERVATION_LOCK_TIMEOUT, "이미 취소된 예약입니다 다시 확인해주세요");
+        }
+        else if(this.status == ReservationStatus.CONFIRMED){
+            throw new BusinessException(ErrorCode.RESERVATION_NOT_PAYABLE, "이미 확정된 예약입니다");
+        }
+        else{
+            this.status = ReservationStatus.CONFIRMED;
+            this.expiresAt = null;
+            this.updatedAt = LocalDateTime.now();
+        }
     }
 
-    /**
-     * 결제 대기(PENDING) 홀드를 만든다. 금액과 만료 시각은 서버가 계산해 넘긴다.
-     * (totalPrice 를 클라이언트 입력으로 받지 않는다 — 가격 위변조 방지)
-     */
     public static Reservation createHold(Long memberId, ReservationRequest request, long totalPrice, LocalDateTime expiresAt) {
         return Reservation.builder()
                 .guestId(memberId)
