@@ -56,4 +56,24 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             WHERE r.status = com.airdnd.reservation.ReservationStatus.PENDING AND r.expiresAt < :now
             """)
     int bulkCancelExpiredReservations(@Param("now") LocalDateTime now);
+
+
+
+    @Query("""
+            SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
+            FROM Reservation r
+            WHERE r.roomId = :roomId
+              AND r.id <> :currentId
+              AND r.status IN :statuses
+              AND (r.status <> com.airdnd.reservation.ReservationStatus.PENDING OR r.expiresAt > :now)
+              AND r.checkInDate < :newCheckOut
+              AND r.checkOutDate > :newCheckIn
+            """)
+    boolean existsOverlappingReservationExcludeCurrentId(@Param("roomId") Long roomId,
+                                                         @Param("statuses") Collection<ReservationStatus> statuses,
+                                                         @Param("now") LocalDateTime now,
+                                                         @Param("newCheckIn") LocalDate newCheckIn,
+                                                         @Param("newCheckOut") LocalDate newCheckOut,
+                                                         @Param("currentId") Long currentId
+    );
 }

@@ -49,8 +49,23 @@ public class Payment {
         this.createdAt = createdAt;
     }
 
+    public void markCapturing() {
+        this.status = PaymentStatus.CAPTURING;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void markCaptured() {
         this.status = PaymentStatus.CAPTURED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markRefundRequired() {
+        this.status = PaymentStatus.REFUND_REQUIRED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markFailed() {
+        this.status = PaymentStatus.FAILED;
         this.updatedAt = LocalDateTime.now();
     }
 }

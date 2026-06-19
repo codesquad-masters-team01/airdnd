@@ -115,4 +115,11 @@ public class Reservation {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    public void reacquireHold(LocalDateTime newExpirationTime){
+        this.status = ReservationStatus.PENDING;
+        this.expiresAt = newExpirationTime;
+        this.deletedAt = null;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

@@ -7,6 +7,7 @@ import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
 import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
+    private final EntityManager entityManager;
 
     @Transactional
     public Long createReservation(Long memberId ,ReservationRequest request) {
@@ -122,6 +124,76 @@ public class ReservationService {
         }
         return reservation;
     }
+
+
+    /**
+     * 결제 capture 직전, 방 홀드를 다시 검증한다
+     * 방 행을 비관적 락으로 잡아 createReservation·다른 capture 와 직렬화하고, 최신 상태를 다시 읽는다.
+     * - 다른 예약이 같은 날짜를 잡고있는 중이면 결제 전에 ROOM_ALREADY_BOOKED 로 막는다(과금 방지).
+     * - 자신의 홀드가 만료/취소됐더라도 방이 비어 있으면 홀드를 재획득해 결제를 이어간다.
+     * 호출자(@Transactional)의 트랜잭션에 합류하므로 락은 결제 확정 커밋까지 유지된다.
+     */
+    @Transactional
+    public void lockAndPrepareForCapture(Reservation reservation) {
+        switch (prepareForCaptureUnderLock(reservation)) {
+            case ALREADY_CONFIRMED ->
+                    throw new BusinessException(ErrorCode.RESERVATION_NOT_PAYABLE, "이미 확정된 예약입니다");
+            case CONFLICT -> throw new BusinessException(ErrorCode.ROOM_ALREADY_BOOKED);
+            case READY -> { /* 유효 홀드이거나 재획득 완료 — 결제 진행 */ }
+        }
+    }
+
+//      복구용! CAPTURING 으로 멈춘 결제를 PayPal 이 COMPLETED 로 확인했을 때,
+
+    @Transactional
+    public CaptureFinalizeResult lockAndConfirmForReconciliation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+        return switch (prepareForCaptureUnderLock(reservation)) {
+            case ALREADY_CONFIRMED -> CaptureFinalizeResult.ALREADY_CONFIRMED;
+            case CONFLICT -> CaptureFinalizeResult.UNFULFILLABLE;
+            case READY -> {
+                reservation.confirm();
+                yield CaptureFinalizeResult.CONFIRMED;
+            }
+        };
+    }
+
+    /**
+     * 방 행을 비관적 락으로 잡고 최신 상태에서 점유를 재검증
+     * 상태-충돌만 결과로 돌려주고 비지니스 예외는 던지지 않는다.
+     * 방이 비어 있으면 만료/취소된 홀드를 재획득한다.
+     */
+    private PrepareOutcome prepareForCaptureUnderLock(Reservation reservation) {
+        roomRepository.findByIdForUpdate(reservation.getRoomId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        // 방 락을 잡은 뒤 최신 커밋 상태를 다시 읽는다(스위퍼/다른 트랜잭션 반영).
+        entityManager.refresh(reservation);
+
+        if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
+            return PrepareOutcome.ALREADY_CONFIRMED;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        boolean conflict = reservationRepository.existsOverlappingReservationExcludeCurrentId(
+                reservation.getRoomId(), BLOCKING_STATUSES, now,
+                reservation.getCheckInDate(), reservation.getCheckOutDate(), reservation.getId());
+        if (conflict) {
+            return PrepareOutcome.CONFLICT;
+        }
+
+        boolean validHold = reservation.getStatus() == ReservationStatus.PENDING
+                && reservation.getExpiresAt() != null
+                && reservation.getExpiresAt().isAfter(now);
+        if (!validHold) {
+            reservation.reacquireHold(now.plusMinutes(HOLD_MINUTES));
+        }
+        return PrepareOutcome.READY;
+    }
+
+    private enum PrepareOutcome { READY, ALREADY_CONFIRMED, CONFLICT }
+
+    public enum CaptureFinalizeResult { CONFIRMED, ALREADY_CONFIRMED, UNFULFILLABLE }
 
 
     @Transactional

@@ -32,3 +32,5 @@ paypal:
   base-url: https://api-m.sandbox.paypal.com
   currency: USD
   exchange-rate: 1550      # KRW → USD 변환용 (Sandbox는 상수로 충분)
+  connect-timeout: 5s      # PayPal 연결 타임아웃
+  read-timeout: 10s        # PayPal 읽기 타임아웃 (capture 시 방 락 보유 시간 상한)
