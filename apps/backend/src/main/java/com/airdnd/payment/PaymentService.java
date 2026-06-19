@@ -32,7 +32,6 @@ public class PaymentService {
         BigDecimal paypalAmount = BigDecimal.valueOf(reservation.getTotalPrice())
                 .divide(paypalProperties.exchangeRate(), 2, RoundingMode.HALF_UP);
 
-        // PayPal 주문 생성하고 받은 orderId 로 Payment 기록 (예약 id 로 연결)
         String orderId = paypalClient.createOrder(paypalAmount);
 
         Payment payment = Payment.builder()
@@ -66,9 +65,6 @@ public class PaymentService {
         // 충돌 시 여기서 결제 방지함ㅇ
         reservationService.lockAndPrepareForCapture(reservation);
 
-        // 과금 직전에 CAPTURING 을 별도 트랜잭션으로 내구 기록한다.
-        // 이후 본 트랜잭션이 PayPal 과금 후 커밋에 실패하더라도, 이 마커가 남아
-        // 정산기가 "결제됐지만 미확정"을 복구할 수 있다(과금 유실 방지).
         paymentCaptureMarker.markCapturing(payment.getId());
 
 

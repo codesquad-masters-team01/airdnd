@@ -9,11 +9,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * CAPTURING 으로 멈춘 결제를 주기적으로 찾아 건별로 정산(복구)한다.
- * 스케줄링·반복은 여기서, 건별 트랜잭션 로직은 PaymentReconciliationService 에서 담당한다
- * (별도 빈이라야 @Transactional 프록시가 건별로 적용됨). 한 건 실패가 전체 루프를 막지 않는다.
- */
 @Component
 @RequiredArgsConstructor
 public class PaymentReconciliationSweeper {

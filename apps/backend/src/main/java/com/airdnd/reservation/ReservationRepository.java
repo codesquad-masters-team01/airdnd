@@ -17,8 +17,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     List<Reservation> findByGuestId(Long guestId);
 
-    // 점유 판정: CONFIRMED 는 항상, PENDING 은 만료 전(expiresAt > now)일 때만 방을 막는다.
-    // 만료된 PENDING 홀드는 별도 정리 작업 없이도 즉시 점유에서 제외된다(지연 만료).
     @Query("""
             SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END
             FROM Reservation r

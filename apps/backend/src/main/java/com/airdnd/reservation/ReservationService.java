@@ -139,7 +139,7 @@ public class ReservationService {
             case ALREADY_CONFIRMED ->
                     throw new BusinessException(ErrorCode.RESERVATION_NOT_PAYABLE, "이미 확정된 예약입니다");
             case CONFLICT -> throw new BusinessException(ErrorCode.ROOM_ALREADY_BOOKED);
-            case READY -> { /* 유효 홀드이거나 재획득 완료 — 결제 진행 */ }
+            case READY -> {}
         }
     }
 
@@ -159,11 +159,8 @@ public class ReservationService {
         };
     }
 
-    /**
-     * 방 행을 비관적 락으로 잡고 최신 상태에서 점유를 재검증
-     * 상태-충돌만 결과로 돌려주고 비지니스 예외는 던지지 않는다.
-     * 방이 비어 있으면 만료/취소된 홀드를 재획득한다.
-     */
+    // Room 락 + 결제 가능여부나 충돌여부 확인하고 중복되거나 만료된 상태에 따라 처리방식 바꾸기
+
     private PrepareOutcome prepareForCaptureUnderLock(Reservation reservation) {
         roomRepository.findByIdForUpdate(reservation.getRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));

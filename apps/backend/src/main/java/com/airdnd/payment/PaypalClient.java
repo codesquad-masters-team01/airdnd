@@ -67,10 +67,7 @@ public class PaypalClient {
         return order.id();
     }
 
-    /**
-     * 주문의 현재 상태를 조회한다(정산/복구의 진실 공급원).
-     * COMPLETED 면 실제로 결제가 일어난 것이다.
-     */
+
     public String getOrderStatus(String orderId) {
         OrderResponse order = paypalRestClient.get()
                 .uri("/v2/checkout/orders/{orderId}", orderId)

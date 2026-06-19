@@ -69,7 +69,6 @@ public class RoomService {
         List<RoomSummary> items = RoomSummary.fromList(pageRooms, ratings);
         String nextCursor = hasNext ? Cursors.encode(pageRooms.get(pageRooms.size() - 1).id()) : null;
 
-        // 영역 내 전체 매칭 수는 첫 페이지(커서 없음)에서만 센다("이 지역에 N곳" 안내용). 인덱스 백업 COUNT.
         Long totalCount = conditions.cursorId() == null ? roomRepository.countInArea(conditions, now) : null;
 
         return new CursorPage<>(items, nextCursor, hasNext, totalCount);

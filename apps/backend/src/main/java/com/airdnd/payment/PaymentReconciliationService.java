@@ -21,12 +21,7 @@ public class PaymentReconciliationService {
     private final PaypalClient paypalClient;
     private final ReservationService reservationService;
 
-    /**
-     * CAPTURING 으로 멈춘 결제 1건을 PayPal(진실 공급원)과 대조해 복구한다.
-     * - PayPal COMPLETED: 실제 과금됨 → 예약 확정 시도 후 CAPTURED. 방을 줄 수 없으면 REFUND_REQUIRED.
-     * - 그 외: 과금되지 않음 → FAILED 로 종료.
-     * 중요: 이 경로는 절대 captureOrder 를 호출하지 않으므로 중복 과금이 발생할 수 없다.
-     */
+
     @Transactional
     public void reconcileOne(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
