@@ -57,6 +57,15 @@ public class ReservationService {
             throw new BusinessException(ErrorCode.ROOM_CAPACITY_EXCEEDED);
         }
 
+
+        if (request.hasPets() && !Boolean.TRUE.equals(room.getAllowsPets())) {
+            throw new BusinessException(ErrorCode.PETS_NOT_ALLOWED);
+        }
+        if (request.infantCount() > 0 && !Boolean.TRUE.equals(room.getAllowsInfants())) {
+            throw new BusinessException(ErrorCode.INFANTS_NOT_ALLOWED);
+        }
+
+
         LocalDateTime now = LocalDateTime.now();
 
         boolean alreadyBooked = reservationRepository.existsOverlappingReservation(

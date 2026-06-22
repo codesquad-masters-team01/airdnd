@@ -6,13 +6,20 @@ import { CreateReservationFormValues } from '../model/reservationTypes';
 interface GuestSelectorProps {
   maxGuests: number;
   allowsPets: boolean;
+  allowsInfants: boolean;
   setValue: UseFormSetValue<CreateReservationFormValues>;
   watch: UseFormWatch<CreateReservationFormValues>;
 }
 
 type GuestType = 'adults' | 'children' | 'infants' | 'pets';
 
-export function GuestSelector({ maxGuests, allowsPets, setValue, watch }: GuestSelectorProps) {
+export function GuestSelector({
+  maxGuests,
+  allowsPets,
+  allowsInfants,
+  setValue,
+  watch,
+}: GuestSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +48,7 @@ export function GuestSelector({ maxGuests, allowsPets, setValue, watch }: GuestS
       }
     } else if (type === 'pets' && allowsPets) {
       setValue(type, pets + 1, { shouldValidate: true });
-    } else if (type === 'infants') {
+    } else if (type === 'infants' && allowsInfants) {
       // Typically infants don't count towards maxGuests in Airbnb, usually max 5
       if (infants < 5) {
         setValue(type, infants + 1, { shouldValidate: true });
@@ -75,7 +82,14 @@ export function GuestSelector({ maxGuests, allowsPets, setValue, watch }: GuestS
   }[] = [
     { type: 'adults', title: '성인', hint: '13세 이상', value: adults, decDisabled: adults <= 1, incDisabled: totalGuests >= maxGuests },
     { type: 'children', title: '어린이', hint: '2~12세', value: children, decDisabled: children <= 0, incDisabled: totalGuests >= maxGuests },
-    { type: 'infants', title: '유아', hint: '2세 미만', value: infants, decDisabled: infants <= 0, incDisabled: infants >= 5 },
+    {
+      type: 'infants',
+      title: '유아',
+      hint: allowsInfants ? '2세 미만' : '유아 동반 불가',
+      value: infants,
+      decDisabled: infants <= 0,
+      incDisabled: !allowsInfants || infants >= 5,
+    },
     {
       type: 'pets',
       title: '반려동물',

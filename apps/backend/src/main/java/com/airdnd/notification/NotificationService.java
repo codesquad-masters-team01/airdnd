@@ -37,7 +37,7 @@ public class NotificationService {
         notificationRepository.markAllAsReadByMemberId(memberId);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void notify(Long memberId, NotificationType type, String content, String redirectUrl) {
         notificationRepository.save(Notification.create(memberId, type, content, redirectUrl));
     }

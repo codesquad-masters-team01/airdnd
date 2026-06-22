@@ -233,6 +233,7 @@ export function ReservationForm({ room }: { room: RoomDetail }) {
           <GuestSelector
             maxGuests={room.maxGuests}
             allowsPets={room.allowsPets}
+            allowsInfants={room.allowsInfants}
             setValue={setValue}
             watch={watch}
           />

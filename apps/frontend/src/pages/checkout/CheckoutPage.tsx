@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check } from 'lucide-react';
+import { BadgeCheck, Check, Clock, ShieldCheck } from 'lucide-react';
 import { env } from '../../shared/config/env';
 import { getStayNights } from '../../shared/lib/date';
 import { formatCurrency, formatDate } from '../../shared/lib/format';
@@ -25,6 +25,14 @@ export function CheckoutPage() {
   // URL 파라미터 → 서버에서 예약을 다시 불러온다 (router state 대신). 새로고침·새 탭·재방문 OK.
   const { data: reservation, isLoading, isError, error } = useReservationQuery(id);
   const [payError, setPayError] = useState<unknown>(null);
+  // 카운트다운이 0에 도달하면 서버 재요청 없이 로컬에서 곧장 만료 화면으로 전환한다.
+  // (서버는 아직 PENDING 을 반환할 수 있고, 동일 데이터면 React Query 가 리렌더하지 않아
+  //  invalidate 만으로는 새로고침 전까지 화면이 안 바뀐다 — ReservationDetailPage 와 동일한 방식.)
+  const [holdExpired, setHoldExpired] = useState(false);
+  useEffect(() => {
+    setHoldExpired(false); // 다른 예약으로 이동하면 초기화
+  }, [id]);
+  const handleHoldExpired = useCallback(() => setHoldExpired(true), []);
 
   if (!Number.isFinite(id)) return <Navigate to="/" replace />;
   if (isLoading) return <Loading message="예약 정보를 불러오는 중입니다." />;
@@ -42,7 +50,7 @@ export function CheckoutPage() {
   }
 
   const expiresAt = reservation.expiresAt ? new Date(reservation.expiresAt) : null;
-  const isExpired = expiresAt ? expiresAt.getTime() <= Date.now() : false;
+  const isExpired = holdExpired || (expiresAt ? expiresAt.getTime() <= Date.now() : false);
 
   // 상태로 분기 — 이 페이지는 이제 어떤 상태로든 진입 가능하다.
   if (reservation.status === 'CONFIRMED') return <AlreadyPaid reservation={reservation} />;
@@ -55,18 +63,16 @@ export function CheckoutPage() {
   return (
     <div className="checkout-page">
       <div className="checkout-page__inner">
-        <button type="button" className="checkout-back" onClick={() => navigate(-1)}>
-          ← 돌아가기
-        </button>
-        <h1 className="checkout-title">결제하기</h1>
-        {expiresAt ? (
-          <Countdown
-            target={expiresAt}
-            onExpire={() =>
-              queryClient.invalidateQueries({ queryKey: reservationQueryKeys.detail(id) })
-            }
-          />
-        ) : null}
+        <header className="checkout-header">
+          <div className="page-heading">
+            <p className="eyebrow">Checkout</p>
+            <h1>결제하기</h1>
+            <p className="reservation-intro">
+              남은 시간 안에 결제를 완료하면 예약이 바로 확정돼요.
+            </p>
+          </div>
+          {expiresAt ? <Countdown target={expiresAt} onExpire={handleHoldExpired} /> : null}
+        </header>
 
         <div className="checkout-layout">
           {/* 좌측: 결제 수단 */}
@@ -133,6 +139,11 @@ export function CheckoutPage() {
           {/* 우측: 예약 요약 — 전부 reservation 에서 온다 (room 스냅샷·router state 불필요) */}
           <aside className="checkout-summary">
             <div className="checkout-summary__card">
+              <span className="checkout-summary__badge">
+                <Clock size={14} strokeWidth={2.4} />
+                결제 대기중
+              </span>
+
               <div className="checkout-summary__room">
                 {reservation.roomUrl ? (
                   <img
@@ -168,6 +179,25 @@ export function CheckoutPage() {
                 <span>{formatCurrency(reservation.totalPrice)}</span>
               </div>
             </div>
+
+            {/* 예약 안내 — 이 PENDING 홀드 흐름에서 실제로 참인 내용만 담는다 */}
+            <div className="checkout-reassure">
+              <h3 className="checkout-reassure__title">예약 안내</h3>
+              <ul className="checkout-reassure__list">
+                <li className="checkout-reassure__item">
+                  <ShieldCheck className="checkout-reassure__icon" size={20} strokeWidth={1.8} />
+                  <span>결제는 PayPal 보안 결제로 안전하게 처리돼요.</span>
+                </li>
+                <li className="checkout-reassure__item">
+                  <Clock className="checkout-reassure__icon" size={20} strokeWidth={1.8} />
+                  <span>대기 시간 안에 결제하지 않으면 예약이 자동으로 취소돼요.</span>
+                </li>
+                <li className="checkout-reassure__item">
+                  <BadgeCheck className="checkout-reassure__icon" size={20} strokeWidth={1.8} />
+                  <span>결제가 완료되면 예약이 즉시 확정되고 알림으로 안내해 드려요.</span>
+                </li>
+              </ul>
+            </div>
           </aside>
         </div>
       </div>
@@ -175,7 +205,7 @@ export function CheckoutPage() {
   );
 }
 
-// 만료 카운트다운. 0 이 되면 onExpire 로 예약을 다시 불러와 상태 분기를 갱신.
+// 만료 카운트다운. 0 이 되면 onExpire 로 상위에 만료를 알려 즉시 만료 화면으로 전환한다.
 function Countdown({ target, onExpire }: { target: Date; onExpire: () => void }) {
   const [remaining, setRemaining] = useState(target.getTime() - Date.now());
 
@@ -193,10 +223,14 @@ function Countdown({ target, onExpire }: { target: Date; onExpire: () => void })
   if (remaining <= 0) return null;
   const m = Math.floor(remaining / 60000);
   const s = Math.floor((remaining % 60000) / 1000);
+  const urgent = remaining < 60000;
   return (
-    <p className="checkout-countdown">
-      결제까지 {m}:{String(s).padStart(2, '0')} 남음
-    </p>
+    <div className={`reservation-countdown${urgent ? ' reservation-countdown--urgent' : ''}`}>
+      <span className="reservation-countdown__label">결제 마감까지</span>
+      <span className="reservation-countdown__time">
+        {m}:{String(s).padStart(2, '0')}
+      </span>
+    </div>
   );
 }
 

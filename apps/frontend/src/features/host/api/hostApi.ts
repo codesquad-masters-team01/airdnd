@@ -26,7 +26,7 @@ export async function createHostRoom(input: HostRoomFormInput) {
 
 export async function updateHostRoom(roomId: number, input: HostRoomFormInput) {
   const data = await request<HostRoom>(`/api/host/rooms/${roomId}`, {
-    method: 'PUT',
+    method: 'PATCH',
     body: normalizeHostRoomPayload(input),
   });
   return hostRoomSchema.parse(data);

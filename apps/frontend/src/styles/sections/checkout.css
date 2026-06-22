@@ -2,32 +2,29 @@
    결제 페이지 (CheckoutPage)
    좌: 결제 수단(PayPal) / 우: 예약 요약
    ──────────────────────────────────────────────────────────── */
+/* 폭·좌우 여백은 전역 .page-container 를 그대로 따른다 (다른 페이지와 좌측 정렬 일치) */
 .checkout-page {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 32px 24px 64px;
+  width: 100%;
 }
 
 .checkout-page__inner {
   width: 100%;
 }
 
-.checkout-back {
-  margin-bottom: 16px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #222;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
+/* 상단 헤더 — 좌: 공용 page-heading / 우: 결제 마감 카운트다운 (우측 상단 빈 공간 채움) */
+.checkout-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.checkout-title {
-  margin: 0 0 28px;
-  font-size: 30px;
-  font-weight: 700;
-  color: #222;
+.checkout-header .reservation-countdown {
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 .checkout-layout {
@@ -93,6 +90,19 @@
   background: #fff;
 }
 
+.checkout-summary__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fff1f3;
+  color: #d6336c;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
 .checkout-summary__room {
   display: flex;
   gap: 16px;
@@ -144,7 +154,52 @@
   color: #222;
 }
 
+/* 요약 카드 아래 예약 안내 — 우측 컬럼의 빈 공간을 채운다 */
+.checkout-reassure {
+  margin-top: 20px;
+  padding: 22px 24px;
+  border: 1px solid #eee;
+  border-radius: 16px;
+  background: #fafafa;
+}
+
+.checkout-reassure__title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+}
+
+.checkout-reassure__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.checkout-reassure__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: #4a4a4a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.checkout-reassure__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #d6336c;
+}
+
 @media (max-width: 860px) {
+  .checkout-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
   .checkout-layout {
     grid-template-columns: 1fr;
     gap: 32px;
