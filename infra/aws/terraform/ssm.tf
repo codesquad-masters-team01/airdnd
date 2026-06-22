@@ -28,6 +28,10 @@ locals {
     "SPRING_PROFILES_ACTIVE"        = var.environment
     "SPRING_JPA_HIBERNATE_DDL_AUTO" = "validate"
     "APP_FRONTEND_BASE_URL"         = local.frontend_base_url
+    # S3 image uploads (uploads.tf). publicBaseUrl is the bucket REST endpoint;
+    # S3PresignService builds <publicBaseUrl>/<objectKey> for rendering.
+    "AWS_S3_BUCKET"          = aws_s3_bucket.uploads.bucket
+    "AWS_S3_PUBLIC_BASE_URL" = "https://${aws_s3_bucket.uploads.bucket_regional_domain_name}"
   }
 
   # Secrets → SecureString parameters.
@@ -39,6 +43,10 @@ locals {
     "OAUTH2_GOOGLE_CLIENT_SECRET" = var.oauth_google_client_secret
     "PAYPAL_CLIENT_ID"            = var.paypal_client_id
     "PAYPAL_CLIENT_SECRET"        = var.paypal_client_secret
+    # Keys the backend uses to SIGN presigned S3 uploads (S3Config), mapped to
+    # aws.credentials.* in application.yml; from .env AWS_ACCESS_KEY / AWS_ACCESS_SECRET_KEY.
+    "AWS_ACCESS_KEY_ID"     = var.aws_access_key_id
+    "AWS_SECRET_ACCESS_KEY" = var.aws_secret_access_key
   }
 }
 

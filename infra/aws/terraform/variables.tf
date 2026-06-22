@@ -99,3 +99,16 @@ variable "paypal_client_secret" {
   sensitive = true
   default   = "REPLACE_ME"
 }
+
+# AWS keys the backend uses to sign presigned S3 uploads (uploads.tf / S3Config).
+# From your .env: AWS_ACCESS_KEY / AWS_ACCESS_SECRET_KEY.
+variable "aws_access_key_id" {
+  type      = string
+  sensitive = true
+  default   = "REPLACE_ME"
+}
+variable "aws_secret_access_key" {
+  type      = string
+  sensitive = true
+  default   = "REPLACE_ME"
+}

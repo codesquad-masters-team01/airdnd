@@ -29,6 +29,9 @@ export TF_VAR_oauth_google_client_id="$(_val OAUTH2_GOOGLE_CLIENT_ID)"
 export TF_VAR_oauth_google_client_secret="$(_val OAUTH2_GOOGLE_CLIENT_SECRET)"
 export TF_VAR_paypal_client_id="$(_val PAYPAL_CLIENT_ID)"
 export TF_VAR_paypal_client_secret="$(_val PAYPAL_CLIENT_SECRET)"
+# S3 upload signing keys (note: .env names differ from the AWS_* SSM names).
+export TF_VAR_aws_access_key_id="$(_val AWS_ACCESS_KEY)"
+export TF_VAR_aws_secret_access_key="$(_val AWS_ACCESS_SECRET_KEY)"
 
 # Confirm they loaded WITHOUT printing the secret values (just lengths).
 echo "Loaded TF_VAR_* from $ENV_FILE:"
@@ -36,3 +39,5 @@ echo "  oauth_google_client_id     (${#TF_VAR_oauth_google_client_id} chars)"
 echo "  oauth_google_client_secret (${#TF_VAR_oauth_google_client_secret} chars)"
 echo "  paypal_client_id           (${#TF_VAR_paypal_client_id} chars)"
 echo "  paypal_client_secret       (${#TF_VAR_paypal_client_secret} chars)"
+echo "  aws_access_key_id          (${#TF_VAR_aws_access_key_id} chars)"
+echo "  aws_secret_access_key      (${#TF_VAR_aws_secret_access_key} chars)"
