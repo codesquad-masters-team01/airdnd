@@ -9,8 +9,11 @@ const input: HostRoomFormInput = {
   description: '바다가 보이는 숙소',
   pricePerNight: 220000,
   maxGuests: 6,
-  imageUrl: 'https://example.com/room.jpg',
-  imageUrlsText: 'https://example.com/room-2.jpg, , https://example.com/room-3.jpg',
+  imageUrls: [
+    'https://example.com/room.jpg',
+    'https://example.com/room-2.jpg',
+    'https://example.com/room-3.jpg',
+  ],
   amenities: ['와이파이'],
   allowsInfants: true,
   allowsPets: false,
@@ -24,7 +27,7 @@ afterEach(() => {
 });
 
 describe('createHostRoom location payload', () => {
-  it('sends the selected location and excludes form-only text fields', async () => {
+  it('maps the first image to imageUrl and the rest to imageUrls', async () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json(321, { status: 201 }));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -40,6 +43,7 @@ describe('createHostRoom location payload', () => {
       longitude: input.longitude,
       allowsInfants: true,
       allowsPets: false,
+      imageUrl: 'https://example.com/room.jpg',
       imageUrls: ['https://example.com/room-2.jpg', 'https://example.com/room-3.jpg'],
       amenities: ['와이파이'],
     });

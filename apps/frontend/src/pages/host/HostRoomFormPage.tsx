@@ -33,8 +33,6 @@ export function HostRoomFormPage() {
 
   function handleUpdate(input: HostRoomUpdateFormInput) {
     const amenities = input.amenities ?? [];
-    const additionalImages = input.imageUrlsText?.split(',').map((url) => url.trim()).filter(Boolean) || [];
-    const imageUrls = [input.imageUrl, ...additionalImages];
 
     updateMutation.mutate(
       {
@@ -45,7 +43,8 @@ export function HostRoomFormPage() {
         allowsInfants: input.allowsInfants ?? false,
         allowsPets: input.allowsPets ?? false,
         amenities,
-        imageUrls,
+        // imageUrls[0] 이 대표 이미지(백엔드 수정 계약과 일치).
+        imageUrls: input.imageUrls,
       },
       {
         onSuccess: () => navigate('/host/rooms'),

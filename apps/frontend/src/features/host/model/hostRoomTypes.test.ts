@@ -10,7 +10,7 @@ const validForm = {
   longitude: 127.0557,
   pricePerNight: 145000,
   maxGuests: 4,
-  imageUrl: 'https://example.com/room.jpg',
+  imageUrls: ['https://example.com/room.jpg'],
 };
 
 describe('hostRoomFormSchema location contract', () => {
@@ -25,7 +25,7 @@ describe('hostRoomFormSchema location contract', () => {
       address: validForm.address,
       pricePerNight: validForm.pricePerNight,
       maxGuests: validForm.maxGuests,
-      imageUrl: validForm.imageUrl,
+      imageUrls: validForm.imageUrls,
     };
 
     expect(hostRoomFormSchema.safeParse(missingLocation).success).toBe(false);
@@ -64,7 +64,7 @@ describe('hostRoomFormSchema location contract', () => {
       name: validForm.name,
       pricePerNight: validForm.pricePerNight,
       maxGuests: validForm.maxGuests,
-      imageUrl: validForm.imageUrl,
+      imageUrls: validForm.imageUrls,
     };
 
     expect(hostRoomUpdateFormSchema.safeParse(editableFields).success).toBe(true);

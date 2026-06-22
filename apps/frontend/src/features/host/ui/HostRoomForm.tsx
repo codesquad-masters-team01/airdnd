@@ -12,6 +12,7 @@ import {
   HostRoomUpdateFormValues,
   hostRoomUpdateFormSchema,
 } from '../model/hostRoomTypes';
+import { RoomImageUploader } from './RoomImageUploader';
 
 type HostRoomFormProps =
   | {
@@ -32,8 +33,7 @@ const defaultValues: HostRoomUpdateFormValues = {
   description: '',
   pricePerNight: 100000,
   maxGuests: 2,
-  imageUrl: '',
-  imageUrlsText: '',
+  imageUrls: [],
   allowsInfants: false,
   allowsPets: false,
   amenities: [],
@@ -47,11 +47,19 @@ export function HostRoomForm(props: HostRoomFormProps) {
     register,
     reset,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<HostRoomUpdateFormValues, unknown, HostRoomUpdateFormInput>({
     resolver: zodResolver(hostRoomUpdateFormSchema),
     defaultValues,
   });
+
+  const imageUrls = watch('imageUrls') ?? [];
+
+  function handleImagesChange(urls: string[]) {
+    setValue('imageUrls', urls, { shouldValidate: true, shouldDirty: true });
+  }
 
   useEffect(() => {
     if (initialValue) {
@@ -60,9 +68,11 @@ export function HostRoomForm(props: HostRoomFormProps) {
         description: initialValue.description,
         pricePerNight: initialValue.pricePerNight,
         maxGuests: initialValue.maxGuests,
-        imageUrl: initialValue.imageUrl,
-        imageUrlsText:
-          initialValue.imageUrls?.filter((url) => url !== initialValue.imageUrl).join(', ') || '',
+        // 대표 이미지를 맨 앞에 두고 나머지를 이어붙인다(중복 제거).
+        imageUrls: [
+          initialValue.imageUrl,
+          ...(initialValue.imageUrls ?? []).filter((url) => url && url !== initialValue.imageUrl),
+        ].filter(Boolean),
         amenities: initialValue.amenities ?? [],
         allowsInfants: initialValue.allowsInfants,
         allowsPets: initialValue.allowsPets,
@@ -135,15 +145,19 @@ export function HostRoomForm(props: HostRoomFormProps) {
         <input type="number" min={1} {...register('maxGuests')} />
         {errors.maxGuests ? <span className="field-error">{errors.maxGuests.message}</span> : null}
       </label>
-      <label className="full-row">
-        대표 이미지 URL
-        <input {...register('imageUrl')} />
-        {errors.imageUrl ? <span className="field-error">{errors.imageUrl.message}</span> : null}
-      </label>
-      <label className="full-row">
-        추가 이미지 URL 목록 (쉼표로 구분)
-        <textarea rows={3} placeholder="https://..., https://..." {...register('imageUrlsText')} />
-      </label>
+      <div className="full-row">
+        <strong>숙소 이미지</strong>
+        <RoomImageUploader
+          value={imageUrls}
+          onChange={handleImagesChange}
+          disabled={isSubmitting}
+        />
+        {errors.imageUrls ? (
+          <span className="field-error">
+            {errors.imageUrls.message ?? errors.imageUrls.root?.message}
+          </span>
+        ) : null}
+      </div>
       <fieldset className="amenities-fieldset full-row">
         <legend>편의시설</legend>
         <div className="amenities-check-grid">

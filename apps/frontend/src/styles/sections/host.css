@@ -183,3 +183,74 @@
   background: var(--color-brand-soft);
 }
 
+/* 숙소 이미지 업로더 */
+.room-image-uploader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.room-image-upload-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.room-image-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room-image-preview {
+  position: relative;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-12);
+  overflow: hidden;
+  background: var(--surface-subtle);
+}
+
+.room-image-preview img {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+
+.room-image-badge {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  color: var(--color-white);
+  font-size: var(--font-size-12);
+  font-weight: 800;
+}
+
+.room-image-preview-actions {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+
+.room-image-preview-actions button {
+  flex: 1;
+  padding: var(--space-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-8);
+  background: var(--color-white);
+  font-size: var(--font-size-12);
+  cursor: pointer;
+}
+
+.room-image-preview-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

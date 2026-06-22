@@ -4,6 +4,10 @@ import { SelectedLocation } from '../../maps/model/locationTypes';
 import { RoomDetail } from '../../rooms/model/roomTypes';
 import { HostRoomForm } from './HostRoomForm';
 
+vi.mock('../api/hostApi', () => ({
+  uploadRoomImage: vi.fn().mockResolvedValue('https://cdn.example.com/rooms/1/uploaded.jpg'),
+}));
+
 const selectedLocation: SelectedLocation = {
   address: '서울특별시 성동구 성수동',
   region: '서울특별시',
@@ -58,9 +62,13 @@ describe('HostRoomForm location integration', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: '최대 인원' }), {
       target: { value: '4' },
     });
-    fireEvent.change(screen.getByRole('textbox', { name: '대표 이미지 URL' }), {
-      target: { value: 'https://example.com/room.jpg' },
+
+    const imageFile = new File(['image-bytes'], 'room.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByLabelText('숙소 이미지 업로드'), {
+      target: { files: [imageFile] },
     });
+    await waitFor(() => expect(screen.getByAltText('숙소 이미지 1')).toBeInTheDocument());
+
     fireEvent.click(screen.getByRole('button', { name: '테스트 위치 선택' }));
     fireEvent.click(screen.getByRole('button', { name: '숙소 저장' }));
 

@@ -25,8 +25,8 @@ export const hostRoomUpdateFormSchema = z.object({
     .number()
     .int('최대 인원은 정수로 입력하세요.')
     .min(1, '최대 인원은 1명 이상이어야 합니다.'),
-  imageUrl: z.string().url('올바른 대표 이미지 URL을 입력하세요.'),
-  imageUrlsText: z.string().optional(),
+  // 업로드된 이미지의 publicUrl 목록. 첫 번째 항목이 대표 이미지다.
+  imageUrls: z.array(z.string().url()).min(1, '이미지를 최소 한 장 이상 업로드하세요.'),
   allowsInfants: z.boolean().optional(),
   allowsPets: z.boolean().optional(),
   amenities: z.array(z.string()).default([]),

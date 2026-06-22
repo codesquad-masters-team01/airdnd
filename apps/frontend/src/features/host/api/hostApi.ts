@@ -6,6 +6,35 @@ import {
   hostRoomSchema,
 } from '../model/hostRoomTypes';
 
+interface PresignResponse {
+  uploadUrl: string;
+  objectKey: string;
+  publicUrl: string;
+}
+
+// 파일 한 장을 S3에 업로드하고, DB/화면에서 쓸 publicUrl 을 돌려준다.
+// 1) 백엔드에서 presigned PUT URL 발급(세션 인증) → 2) S3 로 직접 PUT(쿠키 없이, Content-Type 일치 필수).
+export async function uploadRoomImage(file: File): Promise<string> {
+  const presigned = await request<PresignResponse>('/api/host/rooms/images/presign', {
+    method: 'POST',
+    body: { fileName: file.name, contentType: file.type },
+  });
+
+  const uploadResponse = await fetch(presigned.uploadUrl, {
+    method: 'PUT',
+    body: file,
+    // presign 에 박힌 Content-Type 과 반드시 동일해야 S3 가 서명을 검증한다.
+    headers: { 'Content-Type': file.type },
+    // 우리 세션 쿠키를 S3 로 보내면 안 된다(서명으로 인증되며, credentials 동반 시 CORS 거부).
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error(`이미지 업로드에 실패했습니다 (${uploadResponse.status})`);
+  }
+
+  return presigned.publicUrl;
+}
+
 export async function getHostRooms() {
   const data = await request<HostRoom[]>('/api/host/rooms');
   return hostRoomSchema.array().parse(data);
@@ -48,8 +77,9 @@ function normalizeHostRoomPayload(input: HostRoomFormInput) {
     description: input.description,
     pricePerNight: input.pricePerNight,
     maxGuests: input.maxGuests,
-    imageUrl: input.imageUrl,
-    imageUrls: splitCommaSeparatedValues(input.imageUrlsText),
+    // imageUrls[0] 이 대표 이미지, 나머지가 추가 이미지(백엔드 등록 계약과 일치).
+    imageUrl: input.imageUrls[0],
+    imageUrls: input.imageUrls.slice(1),
     amenities: input.amenities,
     allowsInfants: input.allowsInfants ?? false,
     allowsPets: input.allowsPets ?? false,
@@ -57,11 +87,4 @@ function normalizeHostRoomPayload(input: HostRoomFormInput) {
     latitude: input.latitude,
     longitude: input.longitude,
   };
-}
-
-function splitCommaSeparatedValues(value?: string) {
-  return value
-    ?.split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
