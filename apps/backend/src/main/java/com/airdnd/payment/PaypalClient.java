@@ -67,6 +67,23 @@ public class PaypalClient {
         return order.id();
     }
 
+
+    public String getOrderStatus(String orderId) {
+        OrderResponse order = paypalRestClient.get()
+                .uri("/v2/checkout/orders/{orderId}", orderId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                    throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+                })
+                .body(OrderResponse.class);
+
+        if (order == null || order.status() == null) {
+            throw new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+        }
+        return order.status();
+    }
+
     public void captureOrder(String orderId) {
         OrderResponse result = paypalRestClient.post()
                 .uri("/v2/checkout/orders/{orderId}/capture", orderId)

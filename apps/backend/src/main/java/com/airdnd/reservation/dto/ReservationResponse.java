@@ -21,5 +21,5 @@ public record ReservationResponse (
         LocalDateTime createdAt,
         boolean hasReview
 )
-{}
-
+{
+}

@@ -8,6 +8,7 @@ import com.airdnd.payment.dto.PaymentOrderRequest;
 import com.airdnd.reservation.Reservation;
 import com.airdnd.reservation.ReservationService;
 import com.airdnd.reservation.ReservationStatus;
+import com.airdnd.room.RoomRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -25,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -37,6 +41,12 @@ class PaymentServiceTest {
     private PaypalClient paypalClient;
     @Mock
     private ReservationService reservationService;
+    @Mock
+    private RoomRepository roomRepository;
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
+    @Mock
+    private PaymentCaptureMarker paymentCaptureMarker;
 
     private PaymentService paymentService;
 
@@ -47,11 +57,12 @@ class PaymentServiceTest {
 
     // KRW 1550 = 1 USD → 310,000원 = 200.00 USD
     private final PaypalProperties props =
-            new PaypalProperties("client", "secret", "https://sandbox", "USD", new BigDecimal("1550"));
+            new PaypalProperties("client", "secret", "https://sandbox", "USD", new BigDecimal("1550"),
+                    java.time.Duration.ofSeconds(5), java.time.Duration.ofSeconds(10));
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentService(paymentRepository, paypalClient, props, reservationService);
+        paymentService = new PaymentService(paymentRepository, paypalClient, props, reservationService, roomRepository, applicationEventPublisher, paymentCaptureMarker);
     }
 
     private Reservation reservation(Long guestId, ReservationStatus status, long totalPrice) {
@@ -184,5 +195,44 @@ class PaymentServiceTest {
                 .isEqualTo(ErrorCode.PAYMENT_ALREADY_CAPTURED);
 
         verify(paypalClient, never()).captureOrder(any());
+    }
+
+    @Test
+    @DisplayName("capture: 결제 직전 재검증에서 방이 이미 점유됐으면 PayPal capture·확정 없이 막아 과금을 막는다.")
+    void capture_rejectedWhenRoomTakenByOthers() {
+        Payment payment = payment(PaymentStatus.CREATED);
+        Reservation reservation = reservation(GUEST_ID, ReservationStatus.PENDING, 310_000L);
+        given(paymentRepository.findByPaypalOrderId(ORDER_ID)).willReturn(Optional.of(payment));
+        given(reservationService.findReservationById(RESERVATION_ID)).willReturn(reservation);
+        willThrow(new BusinessException(ErrorCode.ROOM_ALREADY_BOOKED))
+                .given(reservationService).lockAndPrepareForCapture(reservation);
+
+        assertThatThrownBy(() -> paymentService.capture(ORDER_ID, GUEST_ID))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getCode())
+                .isEqualTo(ErrorCode.ROOM_ALREADY_BOOKED);
+
+        verify(paypalClient, never()).captureOrder(any());
+        verify(paymentCaptureMarker, never()).markCapturing(any());
+        verify(paymentRepository, never()).save(any());
+        verify(reservationService, never()).saveReservation(any());
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CREATED);
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("capture: 재검증 → CAPTURING 내구 기록 → PayPal capture 순서로 수행된다.")
+    void capture_validatesAndMarksCapturingBeforeCharging() {
+        Payment payment = payment(PaymentStatus.CREATED);
+        Reservation reservation = reservation(GUEST_ID, ReservationStatus.PENDING, 310_000L);
+        given(paymentRepository.findByPaypalOrderId(ORDER_ID)).willReturn(Optional.of(payment));
+        given(reservationService.findReservationById(RESERVATION_ID)).willReturn(reservation);
+
+        paymentService.capture(ORDER_ID, GUEST_ID);
+
+        var order = inOrder(reservationService, paymentCaptureMarker, paypalClient);
+        order.verify(reservationService).lockAndPrepareForCapture(reservation);
+        order.verify(paymentCaptureMarker).markCapturing(payment.getId());
+        order.verify(paypalClient).captureOrder(ORDER_ID);
     }
 }
