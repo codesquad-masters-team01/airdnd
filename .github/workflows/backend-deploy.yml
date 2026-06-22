@@ -118,6 +118,10 @@ jobs:
           context: apps/backend/docker
           platforms: linux/arm64
           push: true
+          # Disable provenance attestation: it makes buildx push a multi-manifest
+          # image index whose child-manifest HEAD needs ecr:BatchGetImage (which
+          # the push-only deploy role lacks) → 403. We don't need SBOM/provenance.
+          provenance: false
           tags: |
             ${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
             ${{ vars.ECR_REPOSITORY }}:latest
