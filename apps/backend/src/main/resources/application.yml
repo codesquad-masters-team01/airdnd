@@ -33,4 +33,14 @@ paypal:
   currency: USD
   exchange-rate: 1550      # KRW → USD 변환용 (Sandbox는 상수로 충분)
   connect-timeout: 5s      # PayPal 연결 타임아웃
-  read-timeout: 10s        # PayPal 읽기 타임아웃 (capture 시 방 락 보유 시간 상한)
+  read-timeout: 10s      # PayPal 읽기 타임아웃 (capture 시 방 락 보유 시간 상한)
+
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  credentials:
+    access-key: ${AWS_ACCESS_KEY_ID}
+    secret-key: ${AWS_SECRET_ACCESS_KEY}
+  s3:
+    bucket: ${AWS_S3_BUCKET}
+    public-base-url: ${AWS_S3_PUBLIC_BASE_URL}
+    presign-expiry-seconds: ${AWS_S3_PRESIGN_EXPIRY:300}

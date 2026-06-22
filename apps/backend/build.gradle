@@ -28,6 +28,10 @@ dependencies {
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-mysql'
 
+	// AWS S3 (presigned URL 발급용)
+	implementation platform('software.amazon.awssdk:bom:2.31.6')
+	implementation 'software.amazon.awssdk:s3'
+
 	compileOnly("org.projectlombok:lombok:1.18.46")
 	annotationProcessor("org.projectlombok:lombok:1.18.46")
 

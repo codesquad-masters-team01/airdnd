@@ -2,10 +2,7 @@ package com.airdnd.room;
 
 
 import com.airdnd.auth.AuthMemberPrincipal;
-import com.airdnd.room.dto.HostRoomRequest;
-import com.airdnd.room.dto.HostRoomResponse;
-import com.airdnd.room.dto.RoomDetailResponse;
-import com.airdnd.room.dto.RoomUpdateRequest;
+import com.airdnd.room.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +18,7 @@ import java.util.List;
 public class HostRoomController {
 
     private final RoomService roomService;
+    private final S3PresignService s3PresignService;
 
 
     @PostMapping
@@ -50,6 +48,13 @@ public class HostRoomController {
 
         HostRoomResponse room = roomService.getRoomForUpdateById(principal.getMemberId(),roomId);
         return ResponseEntity.status(HttpStatus.OK).body(room);
+    }
+
+    @PostMapping("/images/presign")
+    public ResponseEntity<PresignResponse> presignImageUpload(@AuthenticationPrincipal AuthMemberPrincipal principal,
+                                                              @RequestBody @Valid PresignRequest request) {
+        PresignResponse response = s3PresignService.createUploadUrl(principal.getMemberId(), request);
+        return ResponseEntity.ok(response);
     }
 
 }
