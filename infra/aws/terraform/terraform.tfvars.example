@@ -1,0 +1,19 @@
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored — it must never be committed.
+
+project           = "airdnd"
+environment       = "prod"
+aws_region        = "ap-northeast-2"
+ssh_ingress_cidr  = "1.2.3.4/32" # `curl -s ifconfig.me` then append /32
+
+# Custom domain is OPTIONAL. Leave these out entirely to launch on the free
+# CloudFront-generated https://dxxxx.cloudfront.net URL. Fill them in only once
+# you own a domain with a Route 53 hosted zone:
+# domain_name       = "airdnd.example.com"
+# route53_zone_name = "example.com"
+
+# From the Google Cloud / PayPal developer consoles:
+oauth_google_client_id     = "..."
+oauth_google_client_secret = "..."
+paypal_client_id           = "..."
+paypal_client_secret       = "..."
