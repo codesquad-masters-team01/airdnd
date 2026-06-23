@@ -45,9 +45,11 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   # Origin 2: the EC2 box on plain HTTP:8080.
+  # Use the ELASTIC IP's DNS, not the instance's ephemeral public_dns — the EIP
+  # survives stop/start so this origin never goes stale (see aws_eip in ec2.tf).
   origin {
     origin_id   = "ec2-backend"
-    domain_name = aws_instance.backend.public_dns
+    domain_name = aws_eip.backend.public_dns
 
     custom_origin_config {
       http_port              = 8080

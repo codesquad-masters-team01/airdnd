@@ -98,3 +98,15 @@ resource "aws_instance" "backend" {
 
   tags = { Name = "${var.project}-backend" }
 }
+
+# --- Stable public address -------------------------------------------------
+# A plain public IP is RELEASED on every stop/start, so the box comes back on a
+# new IP/DNS and CloudFront's origin (set at apply time) goes stale → 504. An
+# Elastic IP is a fixed address that stays attached across stop/start, so the
+# origin hostname never changes. CloudFront points at THIS DNS, not the
+# instance's ephemeral one. (An EIP attached to a running instance is free.)
+resource "aws_eip" "backend" {
+  instance = aws_instance.backend.id
+  domain   = "vpc"
+  tags     = { Name = "${var.project}-backend-eip" }
+}

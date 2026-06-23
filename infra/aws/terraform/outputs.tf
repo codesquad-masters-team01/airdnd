@@ -42,6 +42,11 @@ output "gha_deploy_role_arn" {
   value       = aws_iam_role.gha_deploy.arn
 }
 
+output "backend_public_ip" {
+  description = "Stable Elastic IP of the backend box (CloudFront origin). Survives stop/start."
+  value       = aws_eip.backend.public_ip
+}
+
 output "mysql_private_ip" {
   description = "Private IP of the self-managed MySQL box (app connects here)."
   value       = aws_instance.mysql.private_ip
