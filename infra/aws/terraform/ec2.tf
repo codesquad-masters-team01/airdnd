@@ -97,6 +97,15 @@ resource "aws_instance" "backend" {
   }
 
   tags = { Name = "${var.project}-backend" }
+
+  # The AMI data source uses most_recent=true, so it re-resolves to a NEWER
+  # AL2023 image whenever AWS publishes one — which would force-replace this
+  # box (new instance id) on an unrelated apply. Ignore ami drift so the box is
+  # only replaced when WE deliberately change it; the deploy then never breaks
+  # from a surprise id rotation.
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 # --- Stable public address -------------------------------------------------

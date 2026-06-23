@@ -129,10 +129,22 @@ jobs:
       # and region. AWS-RunShellScript joins the commands array into one shell,
       # so the exports are visible to the script.
       - name: Deploy to EC2 via SSM
-        env:
-          INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
         run: |
           set -euo pipefail
+          # Resolve the box by its Name tag at runtime instead of a stored
+          # instance id. Terraform may replace the instance (new id) on an
+          # apply; looking it up by tag means the deploy never targets a stale,
+          # terminated id (which fails with InvalidInstanceId).
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters Name=tag:Name,Values=airdnd-backend \
+                      Name=instance-state-name,Values=running \
+            --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+            echo "No running instance tagged Name=airdnd-backend found" >&2
+            exit 1
+          fi
+          echo "target instance: $INSTANCE_ID"
+
           PRELUDE="export IMAGE='${{ vars.ECR_REPOSITORY }}:${{ github.sha }}'; export REGION='${{ vars.AWS_REGION }}'"
           BODY="$(cat apps/backend/docker/remote-deploy.sh)"
           PARAMS="$(jq -Rn --arg p "$PRELUDE" --arg b "$BODY" '{commands: [$p, $b]}')"

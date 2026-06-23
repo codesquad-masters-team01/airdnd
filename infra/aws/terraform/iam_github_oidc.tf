@@ -76,6 +76,14 @@ data "aws_iam_policy_document" "gha_perms" {
     resources = ["*"]
   }
   statement {
+    # The deploy step resolves the target box by its Name tag at runtime
+    # (so a replaced instance id never breaks the deploy). DescribeInstances
+    # does not support resource-level scoping, hence "*".
+    sid       = "Ec2Lookup"
+    actions   = ["ec2:DescribeInstances"]
+    resources = ["*"]
+  }
+  statement {
     sid       = "S3Sync"
     actions   = ["s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
     resources = [aws_s3_bucket.frontend.arn, "${aws_s3_bucket.frontend.arn}/*"]
