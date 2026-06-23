@@ -27,4 +27,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> , RoomQueryRep
     @Query("SELECT r FROM Room r WHERE r.id = :id")
     Optional<Room> findByIdForUpdate(@Param("id") Long id);
 
+    @Query("SELECT DISTINCT r FROM Room r LEFT JOIN FETCH r.images WHERE r.id IN :ids")
+    List<Room> findAllWithImagesByIdIn(@Param("ids") List<Long> ids);
+
 }

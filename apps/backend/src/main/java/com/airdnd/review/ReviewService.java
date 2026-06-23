@@ -35,15 +35,9 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<ReviewResponse> getReviewsRoomId(Long roomId) {
-        List<Reservation> reservations = reservationRepository.findByRoomId(roomId);
-        List<ReviewResponse> reviews = new ArrayList<>();
-        for (Reservation reservation : reservations) {
-            List<Review> reservationReviews = reviewRepository.findByReservationId(reservation.getId());
-            for (Review review : reservationReviews) {
-                reviews.add(ReviewResponse.from(review));
-            }
-        }
-        return reviews;
+        return reviewRepository.findWithMemberByRoomId(roomId).stream()
+                .map(ReviewResponse::from)
+                .toList();
     }
 
     @Transactional

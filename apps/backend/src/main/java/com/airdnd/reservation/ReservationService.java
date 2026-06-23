@@ -18,10 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -31,7 +29,7 @@ public class ReservationService {
     private static final List<ReservationStatus> BLOCKING_STATUSES =
             List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING);
 
-    private static final int HOLD_MINUTES = 1;
+    private static final int HOLD_MINUTES = 10;
 
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
@@ -98,11 +96,18 @@ public class ReservationService {
                 ? Set.of()
                 : new HashSet<>(reviewRepository.findReservationIdsByReservationIdIn(reservationIds));
 
-        List<ReservationResponse> responses = new ArrayList<>();
-        for(Reservation reservation : reservations) {
-            Room room = roomRepository.findById(reservation.getRoomId()).orElseThrow(
-                    () -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        List<Long> roomIds = reservations.stream()
+                        .map(Reservation::getRoomId).distinct().toList();
 
+        Map<Long, Room> roomMap = roomRepository.findAllWithImagesByIdIn(roomIds).stream()
+                        .collect(Collectors.toMap(Room::getId, room -> room));
+
+        List<ReservationResponse> responses = new ArrayList<>();
+        for (Reservation reservation : reservations) {
+            Room room = roomMap.get(reservation.getRoomId());
+            if (room == null) {
+                throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+            }
             responses.add(new ReservationResponse(
                     reservation.getId(),
                     room.getId(),
@@ -241,7 +246,7 @@ public class ReservationService {
                 targetRoom.getRegion(),
                 reservation.getCheckInDate(),
                 reservation.getCheckOutDate(),
-                targetRoom.getMaxCapacity(),
+                reservation.getAdultCount() + reservation.getChildCount(),
                 targetRoom.getPricePerNight(),
                 reservation.getTotalPrice(),
                 reservation.getStatus(),
@@ -250,7 +255,6 @@ public class ReservationService {
                 reviewRepository.existsByReservationId(reservationId)
         );
     }
-
     public Reservation findReservationById(Long reservationId){
         Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
         return reservation;
