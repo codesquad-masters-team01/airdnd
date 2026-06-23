@@ -8,9 +8,12 @@ import {
 } from '../../features/auth/api/authQueries';
 import { canAccessAdmin, canAccessHost, getRoleLabel } from '../../features/auth/lib/authAccess';
 import { NotificationBell } from '../../features/notifications/ui/NotificationBell';
+import { useNotificationStream } from '../../features/notifications/api/notificationStream';
 
 export function AppLayout() {
   const { data: user } = useCurrentUserQuery();
+  // 로그인 상태에서만 SSE 연결을 유지한다(로그아웃 시 자동 해제).
+  useNotificationStream(Boolean(user));
   const logoutMutation = useLogoutMutation();
   const hostActivationMutation = useHostActivationMutation();
   const navigate = useNavigate();
