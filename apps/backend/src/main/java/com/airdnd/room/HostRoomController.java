@@ -57,4 +57,12 @@ public class HostRoomController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{roomId}/status")
+    public ResponseEntity<HostRoomResponse> changeStatus(@PathVariable Long roomId,
+                                                         @AuthenticationPrincipal AuthMemberPrincipal principal,
+                                                         @RequestBody @Valid RoomStatusUpdateRequest request) {
+        return ResponseEntity.ok(
+                roomService.changeRoomStatus(principal.getMemberId(), roomId, request.isActive()));
+    }
+
 }

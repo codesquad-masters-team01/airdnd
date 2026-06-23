@@ -151,4 +151,8 @@ public class Room {
             this.addRoomImage(roomImage);
         }
     }
+
+    public void changeActiveStatus(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

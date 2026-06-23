@@ -63,7 +63,8 @@ export function useUpdateHostRoomStatusMutation() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: hostQueryKeys.list });
       queryClient.invalidateQueries({ queryKey: hostQueryKeys.detail(variables.roomId) });
-      queryClient.invalidateQueries({ queryKey: roomQueryKeys.detail(variables.roomId) });
+      // 비활성/활성 전환 시 공개 검색 목록·지도·상세(['rooms', ...])도 갱신해 캐시에 남지 않게 한다.
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
     },
   });
 }

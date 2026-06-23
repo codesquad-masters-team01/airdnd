@@ -133,4 +133,14 @@ public class RoomService {
         return HostRoomResponse.from(room);
     }
 
+    @Transactional
+    public HostRoomResponse changeRoomStatus(Long hostId, Long roomId, Boolean isActive) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()-> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        if(!room.getHostId().equals(hostId)){
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
+        }
+        room.changeActiveStatus(isActive);
+        return HostRoomResponse.from(room);
+    }
+
 }
