@@ -8,8 +8,6 @@ import com.airdnd.payment.dto.PaymentOrderRequest;
 import com.airdnd.reservation.Reservation;
 import com.airdnd.reservation.ReservationService;
 import com.airdnd.reservation.ReservationStatus;
-import com.airdnd.room.Room;
-import com.airdnd.room.RoomRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -43,11 +40,9 @@ class PaymentServiceTest {
     @Mock
     private ReservationService reservationService;
     @Mock
-    private RoomRepository roomRepository;
-    @Mock
-    private ApplicationEventPublisher applicationEventPublisher;
-    @Mock
     private PaymentCaptureMarker paymentCaptureMarker;
+    @Mock
+    private PaymentCaptureFinalizer paymentCaptureFinalizer;
 
     private PaymentService paymentService;
 
@@ -63,7 +58,7 @@ class PaymentServiceTest {
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentService(paymentRepository, paypalClient, props, reservationService, roomRepository, applicationEventPublisher, paymentCaptureMarker);
+        paymentService = new PaymentService(paymentRepository, paypalClient, props, reservationService, paymentCaptureMarker, paymentCaptureFinalizer);
     }
 
     private Reservation reservation(Long guestId, ReservationStatus status, long totalPrice) {
@@ -86,13 +81,6 @@ class PaymentServiceTest {
                 .currency("USD")
                 .status(status)
                 .createdAt(LocalDateTime.now())
-                .build();
-    }
-
-    private Room room() {
-        return Room.builder()
-                .hostId(123L)
-                .name("성수 루프탑 스테이")
                 .build();
     }
 
@@ -139,22 +127,19 @@ class PaymentServiceTest {
     // ---------- capture ----------
 
     @Test
-    @DisplayName("capture: 본인 예약이면 PayPal capture 후 Payment 는 CAPTURED, 예약은 CONFIRMED 로 확정된다.")
+    @DisplayName("capture: 본인 예약이면 1단계 재검증 → PayPal capture → 3단계 마감(finalizer) 순으로 수행하고 reservationId 를 돌려준다.")
     void capture_success() {
         Payment payment = payment(PaymentStatus.CREATED);
         Reservation reservation = reservation(GUEST_ID, ReservationStatus.PENDING, 310_000L);
         given(paymentRepository.findByPaypalOrderId(ORDER_ID)).willReturn(Optional.of(payment));
         given(reservationService.findReservationById(RESERVATION_ID)).willReturn(reservation);
-        given(roomRepository.findById(reservation.getRoomId())).willReturn(Optional.of(room()));
 
         CaptureResponse response = paymentService.capture(ORDER_ID, GUEST_ID);
 
         assertThat(response.reservationId()).isEqualTo(RESERVATION_ID);
+        verify(reservationService).lockAndPrepareForCapture(RESERVATION_ID);
         verify(paypalClient).captureOrder(ORDER_ID);
-        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CAPTURED);
-        verify(paymentRepository).save(payment);
-        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
-        verify(reservationService).saveReservation(reservation);
+        verify(paymentCaptureFinalizer).finalizeCapture(payment.getId());
     }
 
     @Test
@@ -184,8 +169,8 @@ class PaymentServiceTest {
                 .isEqualTo(ErrorCode.UNAUTHORIZED_ACTION);
 
         verify(paypalClient, never()).captureOrder(any());
-        verify(paymentRepository, never()).save(any());
-        verify(reservationService, never()).saveReservation(any());
+        verify(paymentCaptureMarker, never()).markCapturing(any());
+        verify(paymentCaptureFinalizer, never()).finalizeCapture(any());
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CREATED);
         assertThat(othersReservation.getStatus()).isEqualTo(ReservationStatus.PENDING);
     }
@@ -214,7 +199,7 @@ class PaymentServiceTest {
         given(paymentRepository.findByPaypalOrderId(ORDER_ID)).willReturn(Optional.of(payment));
         given(reservationService.findReservationById(RESERVATION_ID)).willReturn(reservation);
         willThrow(new BusinessException(ErrorCode.ROOM_ALREADY_BOOKED))
-                .given(reservationService).lockAndPrepareForCapture(reservation);
+                .given(reservationService).lockAndPrepareForCapture(RESERVATION_ID);
 
         assertThatThrownBy(() -> paymentService.capture(ORDER_ID, GUEST_ID))
                 .isInstanceOf(BusinessException.class)
@@ -223,26 +208,25 @@ class PaymentServiceTest {
 
         verify(paypalClient, never()).captureOrder(any());
         verify(paymentCaptureMarker, never()).markCapturing(any());
-        verify(paymentRepository, never()).save(any());
-        verify(reservationService, never()).saveReservation(any());
+        verify(paymentCaptureFinalizer, never()).finalizeCapture(any());
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CREATED);
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.PENDING);
     }
 
     @Test
-    @DisplayName("capture: 재검증 → CAPTURING 내구 기록 → PayPal capture 순서로 수행된다.")
+    @DisplayName("capture: 재검증 → CAPTURING 내구 기록 → PayPal capture → 마감 순서로 수행된다(PayPal 은 락 밖).")
     void capture_validatesAndMarksCapturingBeforeCharging() {
         Payment payment = payment(PaymentStatus.CREATED);
         Reservation reservation = reservation(GUEST_ID, ReservationStatus.PENDING, 310_000L);
         given(paymentRepository.findByPaypalOrderId(ORDER_ID)).willReturn(Optional.of(payment));
         given(reservationService.findReservationById(RESERVATION_ID)).willReturn(reservation);
-        given(roomRepository.findById(reservation.getRoomId())).willReturn(Optional.of(room()));
 
         paymentService.capture(ORDER_ID, GUEST_ID);
 
-        var order = inOrder(reservationService, paymentCaptureMarker, paypalClient);
-        order.verify(reservationService).lockAndPrepareForCapture(reservation);
+        var order = inOrder(reservationService, paymentCaptureMarker, paypalClient, paymentCaptureFinalizer);
+        order.verify(reservationService).lockAndPrepareForCapture(RESERVATION_ID);
         order.verify(paymentCaptureMarker).markCapturing(payment.getId());
         order.verify(paypalClient).captureOrder(ORDER_ID);
+        order.verify(paymentCaptureFinalizer).finalizeCapture(payment.getId());
     }
 }

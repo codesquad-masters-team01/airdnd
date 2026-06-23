@@ -31,7 +31,7 @@ public class ReservationService {
     private static final List<ReservationStatus> BLOCKING_STATUSES =
             List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING);
 
-    private static final int HOLD_MINUTES = 1;
+    private static final int HOLD_MINUTES = 15;
 
     private final ReservationRepository reservationRepository;
     private final RoomRepository roomRepository;
@@ -130,6 +130,17 @@ public class ReservationService {
      * - 자신의 홀드가 만료/취소됐더라도 방이 비어 있으면 홀드를 재획득해 결제를 이어간다.
      * 호출자(@Transactional)의 트랜잭션에 합류하므로 락은 결제 확정 커밋까지 유지된다.
      */
+    /**
+     * 결제 capture 1단계: 자기 트랜잭션 안에서 예약을 읽어 Room 락으로 점유를 재검증/홀드 재획득한다.
+     * 이 메서드가 커밋되면 Room 락이 즉시 풀리므로, 호출자는 락을 쥐지 않은 채 PayPal 을 호출할 수 있다.
+     */
+    @Transactional
+    public void lockAndPrepareForCapture(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESERVATION_NOT_FOUND));
+        lockAndPrepareForCapture(reservation);
+    }
+
     @Transactional
     public void lockAndPrepareForCapture(Reservation reservation) {
         switch (prepareForCaptureUnderLock(reservation)) {

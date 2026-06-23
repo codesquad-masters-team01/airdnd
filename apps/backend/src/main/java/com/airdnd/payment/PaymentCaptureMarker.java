@@ -19,4 +19,12 @@ public class PaymentCaptureMarker {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
         payment.markCapturing();
     }
+
+    // 과금됐지만 방을 확정할 수 없는 경우, 마감 트랜잭션이 롤백되더라도 환불 필요 표시는 남겨야 한다.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markRefundRequired(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+        payment.markRefundRequired();
+    }
 }
