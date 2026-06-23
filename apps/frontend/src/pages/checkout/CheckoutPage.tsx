@@ -29,9 +29,17 @@ export function CheckoutPage() {
   // (서버는 아직 PENDING 을 반환할 수 있고, 동일 데이터면 React Query 가 리렌더하지 않아
   //  invalidate 만으로는 새로고침 전까지 화면이 안 바뀐다 — ReservationDetailPage 와 동일한 방식.)
   const [holdExpired, setHoldExpired] = useState(false);
-  useEffect(() => {
-    setHoldExpired(false); // 다른 예약으로 이동하면 초기화
-  }, [id]);
+  // 다른 예약으로 이동하면(같은 컴포넌트, id 만 변경) 만료 플래그를 초기화한다.
+  // effect 대신 React 권장 "렌더 중 prop 변경 감지" 패턴 — 추가 렌더 없이 즉시 반영.
+  const [trackedId, setTrackedId] = useState(id);
+  if (trackedId !== id) {
+    setTrackedId(id);
+    setHoldExpired(false);
+  }
+  // 진입 시점의 "현재 시각"을 한 번만 고정(lazy init) — 렌더 본문에서 Date.now() 를
+  // 직접 부르면 비순수로 간주되므로, 최초 만료 판정은 이 값으로 한다.
+  // 이후 진행 중 만료는 아래 Countdown 이 onExpire 로 처리한다.
+  const [mountNow] = useState(() => Date.now());
   const handleHoldExpired = useCallback(() => setHoldExpired(true), []);
 
   if (!Number.isFinite(id)) return <Navigate to="/" replace />;
@@ -50,7 +58,7 @@ export function CheckoutPage() {
   }
 
   const expiresAt = reservation.expiresAt ? new Date(reservation.expiresAt) : null;
-  const isExpired = holdExpired || (expiresAt ? expiresAt.getTime() <= Date.now() : false);
+  const isExpired = holdExpired || (expiresAt ? expiresAt.getTime() <= mountNow : false);
 
   // 상태로 분기 — 이 페이지는 이제 어떤 상태로든 진입 가능하다.
   if (reservation.status === 'CONFIRMED') return <AlreadyPaid reservation={reservation} />;
@@ -207,7 +215,7 @@ export function CheckoutPage() {
 
 // 만료 카운트다운. 0 이 되면 onExpire 로 상위에 만료를 알려 즉시 만료 화면으로 전환한다.
 function Countdown({ target, onExpire }: { target: Date; onExpire: () => void }) {
-  const [remaining, setRemaining] = useState(target.getTime() - Date.now());
+  const [remaining, setRemaining] = useState(() => target.getTime() - Date.now());
 
   useEffect(() => {
     const tick = () => {

@@ -23,9 +23,16 @@ export function ReservationDetailPage() {
   const [confirmCancel, setConfirmCancel] = useState(false);
   // 카운트다운이 0에 도달하면 서버를 다시 부르지 않고 로컬에서만 만료 화면으로 전환한다.
   const [holdExpired, setHoldExpired] = useState(false);
-  useEffect(() => {
-    setHoldExpired(false); // 다른 예약으로 이동하면 초기화
-  }, [id]);
+  // 다른 예약으로 이동하면(같은 컴포넌트, id 만 변경) 만료 플래그를 초기화한다.
+  // effect 대신 React 권장 "렌더 중 prop 변경 감지" 패턴.
+  const [trackedId, setTrackedId] = useState(id);
+  if (trackedId !== id) {
+    setTrackedId(id);
+    setHoldExpired(false);
+  }
+  // 진입 시점의 현재 시각을 한 번만 고정(lazy init) — 렌더 본문의 Date.now() 비순수 호출 회피.
+  // 진행 중 만료는 아래 Countdown 이 onExpire 로 처리한다.
+  const [mountNow] = useState(() => Date.now());
   const handleHoldExpired = useCallback(() => setHoldExpired(true), []);
 
   if (reservationQuery.isLoading) {
@@ -41,7 +48,7 @@ export function ReservationDetailPage() {
 
   const nights = getStayNights(reservation.checkIn, reservation.checkOut);
   const expiresAt = reservation.expiresAt ? new Date(reservation.expiresAt) : null;
-  const isExpired = holdExpired || (expiresAt ? expiresAt.getTime() <= Date.now() : false);
+  const isExpired = holdExpired || (expiresAt ? expiresAt.getTime() <= mountNow : false);
   const isCancelled = reservation.status === 'CANCELLED';
   const isConfirmed = reservation.status === 'CONFIRMED';
   const isPendingActive = reservation.status === 'PENDING' && !isExpired;

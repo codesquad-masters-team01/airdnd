@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createElement, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { RoomDetail } from '../model/roomTypes';
 import { getAmenityIcon } from '../model/amenities';
@@ -8,11 +8,14 @@ import { Modal } from '../../../shared/ui/Modal';
 const INITIAL_VISIBLE_COUNT = 8;
 
 function AmenityItem({ amenity }: { amenity: string }) {
-  const Icon = getAmenityIcon(amenity);
+  // getAmenityIcon returns a stable lucide component from a lookup table.
+  // Render it via createElement (not a render-scoped <Icon/>) so the React
+  // Compiler lint doesn't flag it as a component created during render.
+  const icon = getAmenityIcon(amenity);
   return (
     <div className="amenity-tile">
       <span className="amenity-tile__icon">
-        <Icon size={20} strokeWidth={1.8} />
+        {createElement(icon, { size: 20, strokeWidth: 1.8 })}
       </span>
       {amenity}
     </div>

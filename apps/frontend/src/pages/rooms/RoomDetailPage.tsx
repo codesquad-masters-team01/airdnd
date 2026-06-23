@@ -30,11 +30,6 @@ export function RoomDetailPage() {
 
   const room = roomQuery.data;
 
-  // 첫 번째 이미지를 대표로, 나머지를 사이드(최대 4개)로 사용합니다.
-  const allImages = room.imageUrls && room.imageUrls.length > 0 ? room.imageUrls : [room.imageUrl];
-  const heroImage = allImages[0];
-  const sideImages = allImages.slice(1, 5);
-
   return (
     <div className="room-detail-page">
       <div className="room-detail-page__inner">
