@@ -37,8 +37,6 @@ jobs:
     defaults:
       run:
         working-directory: apps/frontend
-    env:
-      VITE_ENABLE_MOCKS: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,11 +57,12 @@ jobs:
       - name: Unit tests
         run: npm run test
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: End-to-end tests
-        run: npm run e2e
+      # NOTE: the Playwright e2e suite is intentionally NOT run here. It requires
+      # a real backend at :8080 (see playwright.config.ts) which CI doesn't
+      # provide — the MSW mock layer was scaffolded (src/mocks/) but never
+      # implemented, so VITE_ENABLE_MOCKS has no effect. Run `npm run e2e`
+      # locally against a running backend. Re-add a job here once mocks exist
+      # or a backend is provisioned in CI.
 
       # Job-level env keeps VITE_ENABLE_MOCKS=true for the test steps above
       # (e2e has no real backend in CI). The PROD build must NOT ship mocks and
