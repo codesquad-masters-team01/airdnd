@@ -149,7 +149,7 @@ export function MapSearchPage() {
         <div className="list-stack">
           {bounds && totalCount != null ? (
             <p className="map-results-count">
-              이 지역에 <strong>{totalCount.toLocaleString()}</strong>곳
+              이 지역에 <strong>{totalCount.toLocaleString()}{totalCount >= 1000 ? '+' : ''}</strong>곳
               {pinsCapped ? ` · 지도에는 ${MAP_PIN_CAP}곳까지만 표시됩니다. 더 좁혀보세요` : ''}
             </p>
           ) : null}
