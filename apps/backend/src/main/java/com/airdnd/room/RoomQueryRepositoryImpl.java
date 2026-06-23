@@ -69,13 +69,22 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
         };
     }
 
+    // A bounding box typically matches a large share of rows (non-selective range
+    // on lat+lng), so an exact COUNT(*) is a full table scan — ~2s on 1M rows.
+    // Cursor pagination doesn't need an exact total, so we cap it: fetch at most
+    // COUNT_CAP matching ids and return that size. MySQL stops scanning once the
+    // LIMIT is filled, which is near-instant for dense boxes. A returned value of
+    // COUNT_CAP therefore means "at least COUNT_CAP" — the UI renders it as "1000+".
+    private static final long COUNT_CAP = 1000L;
+
     @Override
     public long countInArea(RoomSearchRequestDto conditions, LocalDateTime now) {
-        Long count = factory.select(room.count())
+        return factory.select(room.id)
                 .from(room)
                 .where(sharedFilters(conditions, now))
-                .fetchOne();
-        return count == null ? 0L : count;
+                .limit(COUNT_CAP)
+                .fetch()
+                .size();
     }
 
     @Override
