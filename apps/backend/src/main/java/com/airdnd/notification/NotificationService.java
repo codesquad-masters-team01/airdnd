@@ -16,6 +16,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationEmitterRegistry emitterRegistry;
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getNotifications(Long memberId) {
@@ -37,9 +38,10 @@ public class NotificationService {
         notificationRepository.markAllAsReadByMemberId(memberId);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notify(Long memberId, NotificationType type, String content, String redirectUrl) {
         notificationRepository.save(Notification.create(memberId, type, content, redirectUrl));
+        emitterRegistry.send(memberId, "new");
     }
 
     @Transactional(readOnly = true)

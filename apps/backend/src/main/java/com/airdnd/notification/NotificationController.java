@@ -7,16 +7,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/notifications")
+
 public class NotificationController {
     private final NotificationService service;
-
+    private final NotificationEmitterRegistry emitterRegistry;
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getNotifications(@AuthenticationPrincipal
                                                                            AuthMemberPrincipal principal) {
@@ -39,6 +39,11 @@ public class NotificationController {
     public ResponseEntity<UnreadCountResponse> getUnreadCount(
             @AuthenticationPrincipal AuthMemberPrincipal principal) {
         return ResponseEntity.ok(new UnreadCountResponse(service.getUnreadCount(principal.getMemberId())));
+    }
+
+    @GetMapping("/stream")
+    public SseEmitter getStream(@AuthenticationPrincipal AuthMemberPrincipal principal) {
+        return emitterRegistry.subscribe(principal.getMemberId());
     }
 
 }
