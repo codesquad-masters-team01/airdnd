@@ -8,6 +8,7 @@ import com.airdnd.payment.dto.PaymentOrderRequest;
 import com.airdnd.reservation.Reservation;
 import com.airdnd.reservation.ReservationService;
 import com.airdnd.reservation.ReservationStatus;
+import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -88,6 +89,13 @@ class PaymentServiceTest {
                 .build();
     }
 
+    private Room room() {
+        return Room.builder()
+                .hostId(123L)
+                .name("성수 루프탑 스테이")
+                .build();
+    }
+
     // ---------- createOrder ----------
 
     @Test
@@ -137,6 +145,7 @@ class PaymentServiceTest {
         Reservation reservation = reservation(GUEST_ID, ReservationStatus.PENDING, 310_000L);
         given(paymentRepository.findByPaypalOrderId(ORDER_ID)).willReturn(Optional.of(payment));
         given(reservationService.findReservationById(RESERVATION_ID)).willReturn(reservation);
+        given(roomRepository.findById(reservation.getRoomId())).willReturn(Optional.of(room()));
 
         CaptureResponse response = paymentService.capture(ORDER_ID, GUEST_ID);
 
@@ -227,6 +236,7 @@ class PaymentServiceTest {
         Reservation reservation = reservation(GUEST_ID, ReservationStatus.PENDING, 310_000L);
         given(paymentRepository.findByPaypalOrderId(ORDER_ID)).willReturn(Optional.of(payment));
         given(reservationService.findReservationById(RESERVATION_ID)).willReturn(reservation);
+        given(roomRepository.findById(reservation.getRoomId())).willReturn(Optional.of(room()));
 
         paymentService.capture(ORDER_ID, GUEST_ID);
 

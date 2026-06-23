@@ -72,6 +72,7 @@ public class Reservation {
         this.infantCount = infantCount;
         this.hasPets = hasPets;
         this.status = status;
+        this.expiresAt = expiresAt;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
