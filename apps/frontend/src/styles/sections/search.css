@@ -507,6 +507,33 @@
   border-radius: 0;
 }
 
+/* 헤더(지도 페이지)에 들어가는 축소형 검색바: 80px 헤더 안에 들어가도록 높이/폰트를 줄인다 */
+.search-bar--compact {
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+
+.search-bar--compact .search-field {
+  min-height: 52px;
+  padding: 8px 16px;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.search-bar--compact .search-field input,
+.search-bar--compact .search-select {
+  font-size: var(--font-size-13);
+}
+
+.search-bar--compact .search-button {
+  gap: 6px;
+  min-height: 40px;
+  margin: 6px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-14);
+}
+
 label {
   display: grid;
   gap: var(--space-2);

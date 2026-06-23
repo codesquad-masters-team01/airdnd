@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { Link, useOutletContext, useSearchParams } from 'react-router-dom';
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
+import { AppLayoutContext } from '../../app/router/AppLayout';
 import { useRoomListQuery } from '../../features/rooms/api/roomsQueries';
 import { SearchBar } from '../../features/rooms/ui/SearchBar';
 import { RoomReviewBadge } from '../../features/reviews/ui/RoomReviewBadge';
+import { AddToWishlistButton } from '../../features/wishlist/ui/AddToWishlistButton';
 import { RoomResultsMap } from '../../features/maps/ui/RoomResultsMap';
 import { MapBounds } from '../../features/maps/model/locationTypes';
 import { RoomSearchParams } from '../../features/rooms/model/roomTypes';
@@ -32,6 +35,17 @@ interface GeocoderResult {
 }
 
 export function MapSearchPage() {
+  const { headerSearchSlot } = useOutletContext<AppLayoutContext>();
+  // 데스크톱(2단 레이아웃)에서만 검색바를 헤더로 올린다. 모바일에서는 헤더가 세로로 접히므로 본문에 둔다.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window === 'undefined' || window.matchMedia('(min-width: 981px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 981px)');
+    const handleChange = (event: MediaQueryListEvent) => setIsDesktop(event.matches);
+    mq.addEventListener('change', handleChange);
+    return () => mq.removeEventListener('change', handleChange);
+  }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
@@ -139,12 +153,16 @@ export function MapSearchPage() {
 
   return (
     <section className="stack map-search-page">
-      <div className="page-heading">
-        <p className="eyebrow">Map Search</p>
-        <h1>지도에서 숙소 찾기</h1>
-        <p className="muted">지도를 움직이면 그 지역의 숙소를 보여드립니다.</p>
-      </div>
-      <SearchBar defaultValue={searchBarDefault} onSearch={handleSearch} />
+      {/* 데스크톱: 검색바를 헤더 중앙 슬롯으로 포털(세로 공간 절약). 모바일: 본문 상단에 일반 검색바.
+          지오코딩 등 검색 로직은 어느 쪽이든 이 페이지가 그대로 소유한다. */}
+      {isDesktop && headerSearchSlot ? (
+        createPortal(
+          <SearchBar defaultValue={searchBarDefault} onSearch={handleSearch} compact />,
+          headerSearchSlot,
+        )
+      ) : (
+        <SearchBar defaultValue={searchBarDefault} onSearch={handleSearch} />
+      )}
       <div className="map-layout">
         <div className="list-stack">
           {bounds && totalCount != null ? (
@@ -155,27 +173,40 @@ export function MapSearchPage() {
           ) : null}
           {areaQuery.isLoading ? <Loading message="지도 검색 결과를 불러오는 중입니다." /> : null}
           {areaQuery.error ? <ErrorMessage error={areaQuery.error} /> : null}
-          {rooms.map((room) => (
-            <Link
-              className={`map-result-card ${
-                selectedId === room.id || hoveredId === room.id ? 'is-active' : ''
-              }`}
-              to={`/rooms/${room.id}`}
-              key={room.id}
-              onMouseEnter={() => setHoveredId(room.id)}
-              onMouseLeave={() => setHoveredId(null)}
-            >
-              <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
-              <div>
-                <h2>{room.name}</h2>
-                <p className="muted">{room.address}</p>
-                <p className="card-meta">
-                  <RoomReviewBadge rating={room.rating} reviewCount={room.reviewCount} showReviewCount={false} /> ·{' '}
-                  {formatCurrency(room.pricePerNight)} / 박
-                </p>
-              </div>
-            </Link>
-          ))}
+          <div className="map-result-grid">
+            {rooms.map((room) => (
+              <article
+                className="map-result-card-wrap"
+                key={room.id}
+                onMouseEnter={() => setHoveredId(room.id)}
+                onMouseLeave={() => setHoveredId(null)}
+              >
+                {/* 메인 화면 카드와 동일한 위시리스트 하트(사진 우상단). Link 바깥의 형제로 둬 앵커 중첩을 피한다. */}
+                <AddToWishlistButton roomId={room.id} className="room-card-save" />
+                <Link
+                  className={`map-result-card ${
+                    selectedId === room.id || hoveredId === room.id ? 'is-active' : ''
+                  }`}
+                  to={`/rooms/${room.id}`}
+                >
+                  <div className="map-result-card-media">
+                    <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
+                  </div>
+                  <div className="map-result-card-body">
+                    <div className="room-card-title-row">
+                      <h2>{room.name}</h2>
+                      <RoomReviewBadge rating={room.rating} reviewCount={room.reviewCount} showReviewCount={false} />
+                    </div>
+                    <p className="room-card-location muted">{room.address}</p>
+                    <p className="room-price">
+                      <strong>{formatCurrency(room.pricePerNight)}</strong>
+                      <span>/ 박</span>
+                    </p>
+                  </div>
+                </Link>
+              </article>
+            ))}
+          </div>
           {areaQuery.data && rooms.length === 0 ? (
             <p className="map-results-empty">현재 지도 영역에 검색 결과가 없습니다.</p>
           ) : null}

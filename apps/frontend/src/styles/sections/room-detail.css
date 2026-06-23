@@ -85,6 +85,17 @@
   background: var(--color-white);
 }
 
+/* 위시리스트에 담긴 방: 하트를 브랜드 색으로 채운다(채워진 빨간 하트). */
+.wishlist-save-icon.is-saved,
+.wishlist-save-text.is-saved {
+  color: var(--color-brand);
+}
+
+.wishlist-save-icon.is-saved svg,
+.wishlist-save-text.is-saved svg {
+  fill: var(--color-brand);
+}
+
 .wishlist-save-text {
   display: inline-flex;
   align-items: center;
@@ -175,6 +186,12 @@
 .wishlist-pop-list button svg {
   flex-shrink: 0;
   color: var(--color-brand);
+}
+
+/* 이 방이 이미 담긴 폴더: '담김' 라벨을 브랜드 색으로 강조해 상태를 분명히 한다. */
+.wishlist-pop-list button.is-in-folder .pop-count {
+  color: var(--color-brand);
+  font-weight: 800;
 }
 
 .wishlist-pop-list .pop-name {

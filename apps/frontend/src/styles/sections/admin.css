@@ -82,7 +82,8 @@
 
 .map-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 0.88fr) minmax(420px, 1.12fr);
+  /* 목록 / 지도를 화면 절반씩 차지하도록 균등 분할(지도를 크게) */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-6);
   align-items: start;
 }

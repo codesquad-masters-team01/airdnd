@@ -6,6 +6,8 @@ import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
 import com.airdnd.room.dto.RoomRatingDto;
 import com.airdnd.user.Member;
+import com.airdnd.wishlist.dto.RoomWishlistIdsResponse;
+import com.airdnd.wishlist.dto.SavedRoomIdsResponse;
 import com.airdnd.wishlist.dto.WishlistListResponse;
 import com.airdnd.wishlist.dto.WishlistRequest;
 import com.airdnd.wishlist.dto.WishlistResponse;
@@ -22,6 +24,7 @@ public class WishlistService {
 
     private final WishlistRepository wishlistRepository;
     private final RoomRepository roomRepository;
+    private final WishlistRoomRepository wishlistRoomRepository;
 
     @Transactional
     public Member createDefaultWishlist(Member member) {
@@ -68,5 +71,31 @@ public class WishlistService {
         }
         targetWishlist.addRoom(targetRoom);
         wishlistRepository.save(targetWishlist);
+    }
+
+    @Transactional(readOnly = true)
+    public SavedRoomIdsResponse getSavedRoomIds(Long memberId) {
+        return new SavedRoomIdsResponse(wishlistRoomRepository.findRoomIdsByMemberId(memberId));
+    }
+
+    @Transactional
+    public void removeRoomFromWishlists(Long memberId, Long roomId) {
+        wishlistRoomRepository.deleteByRoomIdAndMemberId(roomId, memberId);
+    }
+
+    @Transactional(readOnly = true)
+    public RoomWishlistIdsResponse getWishlistIdsForRoom(Long memberId, Long roomId) {
+        return new RoomWishlistIdsResponse(wishlistRoomRepository.findWishlistIdsByRoomIdAndMemberId(roomId, memberId));
+    }
+
+    @Transactional
+    public void removeRoomFromFolder(Long memberId, Long wishlistId, Long roomId) {
+        Wishlist targetWishlist = wishlistRepository.findById(wishlistId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.WISHLIST_NOT_FOUND));
+        if (!targetWishlist.getMemberId().equals(memberId)) {
+            throw new BusinessException(ErrorCode.WISHLIST_BELONG_TO_OTHERS);
+        }
+        // 멱등: 해당 폴더에 그 방이 없으면 0건 삭제.
+        wishlistRoomRepository.deleteByWishlistIdAndRoomId(wishlistId, roomId);
     }
 }

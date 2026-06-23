@@ -8,6 +8,8 @@ import { RoomSearchParams } from '../model/roomTypes';
 type SearchBarProps = {
   defaultValue: RoomSearchParams;
   onSearch: (params: RoomSearchParams) => void;
+  // 헤더 등 좁은 영역에 들어가는 축소형 검색바(높이/폰트 축소). 지도 페이지 헤더에서 사용.
+  compact?: boolean;
 };
 
 type OccupancyKey = 'adults' | 'children' | 'infants';
@@ -47,7 +49,7 @@ function clampOccupancyValue(key: OccupancyKey, value: number) {
   return Math.min(rule.max ?? Number.POSITIVE_INFINITY, Math.max(rule.min, value));
 }
 
-export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
+export function SearchBar({ defaultValue, onSearch, compact = false }: SearchBarProps) {
   const [region, setRegion] = useState(defaultValue.region ?? '');
   const [checkIn, setCheckIn] = useState(defaultValue.checkIn ?? '');
   const [checkOut, setCheckOut] = useState(defaultValue.checkOut ?? '');
@@ -246,7 +248,7 @@ export function SearchBar({ defaultValue, onSearch }: SearchBarProps) {
   }
 
   return (
-    <form className="search-bar" onSubmit={handleSubmit} ref={formRef}>
+    <form className={`search-bar${compact ? ' search-bar--compact' : ''}`} onSubmit={handleSubmit} ref={formRef}>
       <label className="search-field">
         지역
         <input value={region} onChange={(event) => setRegion(event.target.value)} placeholder="서울" />

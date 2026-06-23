@@ -191,6 +191,8 @@ function RoomResultsMapView({
   suppressInitialSearch = false,
 }: RoomResultsMapProps) {
   const status = useApiLoadingStatus();
+  // reuseMaps 로 재사용되는 지도 인스턴스(재진입 시에도 동일 인스턴스를 가리킴).
+  const map = useMap();
   const [zoom, setZoom] = useState(DEFAULT_KOREA_ZOOM);
   const [autoSearch, setAutoSearch] = useState(true);
   const [hasMoved, setHasMoved] = useState(false);
@@ -242,6 +244,26 @@ function RoomResultsMapView({
       runSearch();
     }
   }
+
+  // 지도 재사용(reuseMaps)으로 재진입하면 카메라가 그대로라 onCameraChanged/onIdle 가 다시
+  // 발생하지 않아, 위 이벤트 기반 초기 검색(handleIdle)이 한 번도 실행되지 않을 수 있다
+  // (목록이 빈 채 지도만 보이는 증상). 지도가 준비되면 현재 영역을 직접 읽어 초기 검색을 보장한다.
+  useEffect(() => {
+    if (!map || suppressInitialSearch || lastSearched.current) return;
+    const bounds = map.getBounds();
+    const center = map.getCenter();
+    // 신규 생성 직후엔 아직 영역이 잡히지 않을 수 있다 — 그 경우는 onIdle 가 첫 검색을 처리한다.
+    if (!bounds || !center) return;
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+    latestBounds.current = { north: ne.lat(), east: ne.lng(), south: sw.lat(), west: sw.lng() };
+    latestCenter.current = { lat: center.lat(), lng: center.lng() };
+    latestZoom.current = map.getZoom() ?? latestZoom.current;
+    cameraInitialized.current = true;
+    runSearch();
+    // map 이 준비되는 시점에 한 번만 시도한다(이후는 카메라 이벤트가 처리).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
 
   if (status === APILoadingStatus.FAILED || status === APILoadingStatus.AUTH_FAILURE) {
     return (

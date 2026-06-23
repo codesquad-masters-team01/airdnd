@@ -1,10 +1,7 @@
 package com.airdnd.wishlist;
 
 import com.airdnd.auth.AuthMemberPrincipal;
-import com.airdnd.wishlist.dto.WishlistAddRoomRequest;
-import com.airdnd.wishlist.dto.WishlistListResponse;
-import com.airdnd.wishlist.dto.WishlistRequest;
-import com.airdnd.wishlist.dto.WishlistResponse;
+import com.airdnd.wishlist.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,4 +40,34 @@ public class WishlistController {
         service.addRoomToWishlist(principal.getMemberId(), wishlistId, request.roomId());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/saved-room-ids")
+    public ResponseEntity<SavedRoomIdsResponse> getSavedRoomIds(@AuthenticationPrincipal AuthMemberPrincipal principal){
+        return ResponseEntity.ok(service.getSavedRoomIds(principal.getMemberId()));
+    }
+
+    @DeleteMapping("/rooms/{roomId}")
+    public ResponseEntity<Void> removeRoomFromWishlist(
+            @AuthenticationPrincipal AuthMemberPrincipal principal,
+            @PathVariable Long roomId) {
+        service.removeRoomFromWishlists(principal.getMemberId(), roomId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/rooms/{roomId}/wishlist-ids")
+    public ResponseEntity<RoomWishlistIdsResponse> getWishlistIdsForRoom(
+            @AuthenticationPrincipal AuthMemberPrincipal principal,
+            @PathVariable Long roomId) {
+        return ResponseEntity.ok(service.getWishlistIdsForRoom(principal.getMemberId(), roomId));
+    }
+
+    @DeleteMapping("/{wishlistId}/rooms/{roomId}")
+    public ResponseEntity<Void> removeRoomFromFolder(
+            @AuthenticationPrincipal AuthMemberPrincipal principal,
+            @PathVariable Long wishlistId,
+            @PathVariable Long roomId) {
+        service.removeRoomFromFolder(principal.getMemberId(), wishlistId, roomId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

@@ -155,6 +155,10 @@
     grid-template-columns: 1fr;
   }
 
+  .map-result-grid {
+    grid-template-columns: 1fr;
+  }
+
   /* 게스트 예약 목록 카드 그리드는 한 열로 */
   .res-grid {
     grid-template-columns: 1fr;
