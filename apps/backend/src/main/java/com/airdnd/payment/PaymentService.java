@@ -7,11 +7,7 @@ import com.airdnd.payment.dto.CaptureResponse;
 import com.airdnd.payment.dto.PaymentOrderRequest;
 import com.airdnd.reservation.Reservation;
 import com.airdnd.reservation.ReservationService;
-import com.airdnd.reservation.event.ReservationConfirmedEvent;
-import com.airdnd.room.Room;
-import com.airdnd.room.RoomRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -25,9 +21,8 @@ public class PaymentService {
     private final PaypalClient paypalClient;
     private final PaypalProperties paypalProperties;
     private final ReservationService reservationService;
-    private final RoomRepository roomRepository;
-    private final ApplicationEventPublisher applicationEventPublisher;
     private final PaymentCaptureMarker paymentCaptureMarker;
+    private final PaymentCaptureFinalizer paymentCaptureFinalizer;
 
 
     @Transactional
@@ -52,7 +47,19 @@ public class PaymentService {
         return orderId;
     }
 
-    @Transactional
+    /**
+     * 결제 capture 를 세 단계로 분해한다. 핵심은 <b>Room 락을 PayPal 호출 동안 쥐지 않는 것</b>이다.
+     * 오케스트레이터 자신은 트랜잭션이 아니며, 각 단계가 독립된 짧은 트랜잭션이다.
+     *
+     * <ol>
+     *   <li>사전 검증(읽기): 결제 존재·소유자·중복 capture</li>
+     *   <li>1단계(짧은 트랜잭션): Room 락으로 점유 재검증 + CAPTURING 마킹 → 커밋과 함께 락 해제.
+     *       PENDING 홀드가 슬롯을 선점하므로 락 없이도 다른 예약/결제가 같은 날짜를 못 가져간다.</li>
+     *   <li>2단계(락 없음): 외부 PayPal capture. 더 이상 Room 락을 쥐지 않으므로 같은 방의 동시 요청을 막지 않는다.</li>
+     *   <li>3단계(짧은 트랜잭션): 예약 확정 + 결제 CAPTURED + 확정 이벤트.</li>
+     * </ol>
+     * 2단계 직후 프로세스가 죽어도 결제는 CAPTURING(REQUIRES_NEW)으로 남아 스위퍼가 복구한다.
+     */
     public CaptureResponse capture(String orderId, Long guestId) {
         Payment payment = paymentRepository.findByPaypalOrderId(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
@@ -61,34 +68,19 @@ public class PaymentService {
         if (!reservation.getGuestId().equals(guestId)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION);
         }
-
         if (payment.getStatus().equals(PaymentStatus.CAPTURED)) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_CAPTURED);
         }
 
-        // 결제 전에 방 점유를 다시 검증한다
-        // 충돌 시 여기서 결제 방지함ㅇ
-        reservationService.lockAndPrepareForCapture(reservation);
-
+        // 1단계: 방 점유 재검증 + CAPTURING 마킹(락은 이 단계 커밋과 함께 풀린다).
+        reservationService.lockAndPrepareForCapture(reservation.getId());
         paymentCaptureMarker.markCapturing(payment.getId());
 
-
-        // TODO: API 요청이 온갖 트랜잭션이랑 같이 묶여있음 + 룸이 위에서 락 된 이후 몇초가량 잠길 가능성이 높다
-        // 동시 요청이 더 많아질 경우 현재 트랜잭션을 분해하거나 락 방식에 변경 필요함
-        // 아직 얼마나 락이 오래 걸릴지 동시 요청으로 테스트 못해봄 감안
+        // 2단계: 외부 PayPal capture — Room 락 밖에서 수행한다.
         paypalClient.captureOrder(orderId);
-        payment.markCaptured();
-        paymentRepository.save(payment);
 
-        reservation.confirm();
-        reservationService.saveReservation(reservation);
-
-        Room room = roomRepository.findById(reservation.getRoomId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
-
-        applicationEventPublisher.publishEvent(new ReservationConfirmedEvent(
-                reservation.getId(),room.getHostId(),room.getName(),reservation.getCheckInDate(),reservation.getCheckOutDate()
-        ));
+        // 3단계: 짧은 락으로 확정 + 결제 마감 + 이벤트.
+        paymentCaptureFinalizer.finalizeCapture(payment.getId());
 
         return new CaptureResponse(payment.getReservationId());
     }
