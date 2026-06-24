@@ -161,12 +161,13 @@
 
 .host-room-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
   align-self: end;
 }
 
 .host-room-actions .secondary-button {
-  flex: 1;
+  flex: 1 1 30%;
   gap: var(--space-1);
   min-height: 40px;
   padding: 0 var(--space-3);
@@ -252,5 +253,177 @@
 .room-image-preview-actions button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ───────── 호스트 숙소 예약 현황 ───────── */
+.host-res {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.host-res__summary {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-14);
+  font-weight: 600;
+}
+
+.host-res__summary strong {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.host-res__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 한 건의 예약 = 날짜 칩 + 정보 + 상태/금액 의 3열 카드.
+   왼쪽 테두리 색으로 예약 상태(확정/대기/취소)를 한눈에 구분한다. */
+.host-res-card {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--border-strong);
+  border-radius: var(--radius-16);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.host-res-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.host-res-card--success {
+  border-left-color: var(--color-success);
+}
+
+.host-res-card--warning {
+  border-left-color: var(--color-warning);
+}
+
+.host-res-card--danger {
+  border-left-color: var(--color-danger);
+}
+
+.host-res-card--neutral {
+  border-left-color: var(--border-strong);
+}
+
+/* 취소 예약은 금액에 취소선 */
+.host-res-card--danger .host-res-card__price {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+
+/* 체크인 날짜 칩 */
+.host-res-card__chip {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-12);
+  background: var(--surface-subtle);
+  line-height: 1.1;
+}
+
+.host-res-card__chip-month {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-12);
+  font-weight: 700;
+}
+
+.host-res-card__chip-day {
+  color: var(--text-primary);
+  font-size: var(--font-size-24);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.host-res-card__info {
+  min-width: 0;
+}
+
+.host-res-card__range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-16);
+  font-weight: 700;
+}
+
+.host-res-card__range svg {
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.host-res-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 4px 0 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-13);
+  font-weight: 600;
+}
+
+.host-res-card__guests {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.host-res-card__dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+
+.host-res-card__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  text-align: right;
+}
+
+.host-res-card__price {
+  font-size: var(--font-size-16);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .host-res-card {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .host-res-card__chip {
+    width: 52px;
+    height: 52px;
+  }
+
+  /* 좁은 화면에선 상태/금액을 정보 열 아래로 내려 가로폭을 확보 */
+  .host-res-card__side {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
 }
 

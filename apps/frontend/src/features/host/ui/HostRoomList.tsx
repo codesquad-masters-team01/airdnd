@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Users, Pencil, Eye, EyeOff } from 'lucide-react';
+import { MapPin, Users, Pencil, Eye, EyeOff, CalendarCheck } from 'lucide-react';
 import { formatCurrency } from '../../../shared/lib/format';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { HostRoom, HostRoomStatus } from '../model/hostRoomTypes';
@@ -58,6 +58,10 @@ export function HostRoomList({ rooms, pendingRoomId, onStatusChange }: HostRoomL
               <p className="host-room-price">{formatCurrency(room.pricePerNight)}</p>
             </div>
             <div className="host-room-actions">
+              <Link className="secondary-button" to={`/host/rooms/${room.id}/reservations`}>
+                <CalendarCheck size={16} strokeWidth={1.9} aria-hidden />
+                예약 현황
+              </Link>
               <Link className="secondary-button" to={`/host/rooms/${room.id}/edit`}>
                 <Pencil size={16} strokeWidth={1.9} aria-hidden />
                 수정

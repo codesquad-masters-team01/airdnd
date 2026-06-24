@@ -1,5 +1,12 @@
 import { request } from '../../../shared/api/httpClient';
 import {
+  ReservationCounts,
+  ReservationPage,
+  ReservationStatusFilter,
+  reservationCountsSchema,
+  reservationPageSchema,
+} from '../../reservations/model/reservationTypes';
+import {
   HostRoom,
   HostRoomFormInput,
   HostRoomStatus,
@@ -43,6 +50,34 @@ export async function getHostRooms() {
 export async function getHostRoom(roomId: number) {
   const data = await request<HostRoom>(`/api/host/rooms/${roomId}`);
   return hostRoomSchema.parse(data);
+}
+
+interface HostReservationsPageParams {
+  roomId: number;
+  // 'ALL' 이면 status 파라미터를 생략해 전체를 받는다.
+  status: ReservationStatusFilter;
+  cursor?: string;
+}
+
+// 호스트가 자기 숙소의 예약 현황을 커서 페이지로 조회한다. 서버가 status 필터링·정렬을 담당한다.
+export async function getHostRoomReservations({
+  roomId,
+  status,
+  cursor,
+}: HostReservationsPageParams): Promise<ReservationPage> {
+  const query = new URLSearchParams();
+  if (status !== 'ALL') query.set('status', status);
+  if (cursor) query.set('cursor', cursor);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+
+  const data = await request<unknown>(`/api/host/rooms/${roomId}/reservations${suffix}`);
+  return reservationPageSchema.parse(data);
+}
+
+// 상태 탭 배지에 표시할 전체/확정/대기/취소 카운트 요약(필터와 무관한 전체 집계).
+export async function getHostRoomReservationCounts(roomId: number): Promise<ReservationCounts> {
+  const data = await request<unknown>(`/api/host/rooms/${roomId}/reservations/summary`);
+  return reservationCountsSchema.parse(data);
 }
 
 export async function createHostRoom(input: HostRoomFormInput) {

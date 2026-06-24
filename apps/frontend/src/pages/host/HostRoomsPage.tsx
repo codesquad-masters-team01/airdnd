@@ -1,20 +1,47 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Home, CheckCircle2, PauseCircle, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
   useHostRoomsQuery,
   useUpdateHostRoomStatusMutation,
 } from '../../features/host/api/hostQueries';
 import { HostRoomList } from '../../features/host/ui/HostRoomList';
+import { EmptyState } from '../../shared/ui/EmptyState';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Loading } from '../../shared/ui/Loading';
+
+// 상단 세그먼트 필터의 탭 키 — 전체 / 운영 중 / 비활성·대기(INACTIVE+승인 대기)
+type FilterKey = 'all' | 'active' | 'inactive';
+
+const filterMeta: { key: FilterKey; label: string }[] = [
+  { key: 'all', label: '전체' },
+  { key: 'active', label: '운영 중' },
+  { key: 'inactive', label: '비활성 · 대기' },
+];
 
 export function HostRoomsPage() {
   const hostRoomsQuery = useHostRoomsQuery();
   const statusMutation = useUpdateHostRoomStatusMutation();
+  // 현재 보고 있는 필터 탭 (기본: 전체)
+  const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
 
   const rooms = hostRoomsQuery.data ?? [];
   const activeCount = rooms.filter((room) => room.status === 'ACTIVE').length;
   const inactiveCount = rooms.length - activeCount;
+
+  // 탭별 카운트 — 세그먼트 배지에 표시
+  const counts: Record<FilterKey, number> = {
+    all: rooms.length,
+    active: activeCount,
+    inactive: inactiveCount,
+  };
+
+  // 선택된 탭에 맞게 거른 목록 ('비활성·대기'는 운영 중이 아닌 모든 상태)
+  const filteredRooms = rooms.filter((room) => {
+    if (activeFilter === 'active') return room.status === 'ACTIVE';
+    if (activeFilter === 'inactive') return room.status !== 'ACTIVE';
+    return true;
+  });
 
   return (
     <section className="stack">
@@ -30,34 +57,23 @@ export function HostRoomsPage() {
       </div>
 
       {rooms.length > 0 ? (
-        <div className="host-metric-grid">
-          <div className="host-metric">
-            <span className="host-metric-icon">
-              <Home size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <div>
-              <p className="host-metric-label">전체 숙소</p>
-              <strong className="host-metric-value">{rooms.length}</strong>
-            </div>
-          </div>
-          <div className="host-metric">
-            <span className="host-metric-icon is-active">
-              <CheckCircle2 size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <div>
-              <p className="host-metric-label">운영 중</p>
-              <strong className="host-metric-value">{activeCount}</strong>
-            </div>
-          </div>
-          <div className="host-metric">
-            <span className="host-metric-icon is-muted">
-              <PauseCircle size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <div>
-              <p className="host-metric-label">비활성 · 대기</p>
-              <strong className="host-metric-value">{inactiveCount}</strong>
-            </div>
-          </div>
+        <div className="segmented" role="tablist" aria-label="숙소 상태 필터">
+          {filterMeta.map(({ key, label }) => {
+            const active = activeFilter === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`seg-tab${active ? ' active' : ''}`}
+                onClick={() => setActiveFilter(key)}
+              >
+                {label}
+                <span className="seg-tab__count">{counts[key]}</span>
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -65,11 +81,18 @@ export function HostRoomsPage() {
       {hostRoomsQuery.error ? <ErrorMessage error={hostRoomsQuery.error} /> : null}
       {statusMutation.error ? <ErrorMessage error={statusMutation.error} /> : null}
       {hostRoomsQuery.data ? (
-        <HostRoomList
-          rooms={hostRoomsQuery.data}
-          pendingRoomId={statusMutation.isPending ? statusMutation.variables?.roomId : undefined}
-          onStatusChange={(roomId, status) => statusMutation.mutate({ roomId, status })}
-        />
+        rooms.length > 0 && filteredRooms.length === 0 ? (
+          <EmptyState
+            title="해당 상태의 숙소가 없습니다."
+            description="다른 필터를 선택해 보세요."
+          />
+        ) : (
+          <HostRoomList
+            rooms={filteredRooms}
+            pendingRoomId={statusMutation.isPending ? statusMutation.variables?.roomId : undefined}
+            onStatusChange={(roomId, status) => statusMutation.mutate({ roomId, status })}
+          />
+        )
       ) : null}
     </section>
   );

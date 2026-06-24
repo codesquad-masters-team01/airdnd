@@ -11,6 +11,7 @@ import { CheckoutPage } from '../../pages/checkout/CheckoutPage';
 import { LoginPage } from '../../pages/auth/LoginPage';
 import { ForbiddenPage } from '../../pages/ForbiddenPage';
 import { HostRoomFormPage } from '../../pages/host/HostRoomFormPage';
+import { HostRoomReservationsPage } from '../../pages/host/HostRoomReservationsPage';
 import { HostRoomsPage } from '../../pages/host/HostRoomsPage';
 import { MyPage } from '../../pages/my/MyPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
           { path: '/host/rooms', element: <HostRoomsPage /> },
           { path: '/host/rooms/new', element: <HostRoomFormPage /> },
           { path: '/host/rooms/:roomId/edit', element: <HostRoomFormPage /> },
+          { path: '/host/rooms/:roomId/reservations', element: <HostRoomReservationsPage /> },
         ],
       },
       {
