@@ -102,7 +102,9 @@ export function NotificationsPage() {
               const message = rest.join('\n').trim();
               return (
                 <article
-                  className={`notif-item notif-item--clickable ${notification.read ? 'is-read' : ''}`}
+                  className={`notif-card notif-card--${notification.type.toLowerCase()} notif-card--clickable ${
+                    notification.read ? 'is-read' : 'is-unread'
+                  }`}
                   role="listitem"
                   key={notification.id}
                   tabIndex={0}
@@ -114,23 +116,23 @@ export function NotificationsPage() {
                     }
                   }}
                 >
-                  <div className="notif-item-inner">
+                  <div
+                    className={`notif-icon notif-icon--${notification.type.toLowerCase()}`}
+                    aria-hidden="true"
+                  >
+                    <Icon size={22} />
+                  </div>
+                  <div className="notif-card__info">
+                    <p className="notif-card__title">{title}</p>
+                    {message ? <p className="notif-card__message">{message}</p> : null}
+                  </div>
+                  <div className="notif-card__side">
                     {!notification.read ? (
-                      <span className="notif-unread-dot" aria-hidden="true" />
+                      <span className="notif-card__dot" aria-hidden="true" />
                     ) : null}
-                    <div
-                      className={`notif-icon notif-icon--${notification.type.toLowerCase()}`}
-                      aria-hidden="true"
-                    >
-                      <Icon size={22} />
-                    </div>
-                    <div className="notif-content">
-                      <p className="notif-title">{title}</p>
-                      {message ? <p className="notif-message">{message}</p> : null}
-                      <time className="notif-time">
-                        {formatRelativeTime(notification.createdAt)}
-                      </time>
-                    </div>
+                    <time className="notif-card__time">
+                      {formatRelativeTime(notification.createdAt)}
+                    </time>
                   </div>
                 </article>
               );

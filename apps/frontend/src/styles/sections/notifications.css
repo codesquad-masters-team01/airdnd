@@ -41,10 +41,11 @@
 }
 
 /* ---------- 알림 드롭다운 ---------- */
-.notif-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
+/* 벨 버튼 + 드롭다운 래퍼 — 바깥 클릭 감지용 컨테이너.
+   display:inline-flex 로 기존 버튼과 동일한 헤더 레이아웃을 유지한다. */
+.notif-bell {
+  display: inline-flex;
+  align-items: center;
 }
 .notif-dropdown {
   position: fixed;
@@ -266,40 +267,69 @@
   line-height: 1;
 }
 
-/* ---------- 목록 ---------- */
+/* ---------- 목록 (호스트 예약 현황 카드와 동일한 결) ---------- */
 .notif-list {
-  display: flex;
-  flex-direction: column;
-  /* 탭 밑줄과 길이를 맞추기 위해 전체 폭 사용 */
+  display: grid;
+  gap: var(--space-3);
   width: 100%;
 }
-.notif-item {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-6) 0;
-  border-bottom: 1px solid var(--border-subtle);
-}
-/* 테두리는 전체 폭, 내용 묶음만 가운데로 모은다 */
-.notif-item-inner {
-  position: relative;
+
+/* 한 건 = 아이콘 칩 + 본문 + 우측(안읽음 점/시간) 3열 카드.
+   왼쪽 테두리 색으로 알림 타입을 한눈에 구분한다. */
+.notif-card {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: var(--space-5);
-  align-items: flex-start;
-  width: min(640px, 100%);
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--border-strong);
+  border-radius: var(--radius-16);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
-.notif-item:last-child {
-  border-bottom: none;
-}
-.notif-item--clickable {
+.notif-card--clickable {
   cursor: pointer;
-  transition: background 130ms ease;
 }
-.notif-item--clickable:hover {
-  background: var(--surface-subtle);
+.notif-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.notif-card:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }
 
-/* 타입 아이콘 */
+/* 타입별 좌측 컬러바 — 아이콘 칩 색과 같은 계열 */
+.notif-card--reservation {
+  border-left-color: var(--color-brand);
+}
+.notif-card--host,
+.notif-card--system {
+  border-left-color: #22968a;
+}
+.notif-card--review {
+  border-left-color: #d99412;
+}
+
+/* 안 읽은 알림은 빨강으로 또렷하게 강조 — 좌측바·배경을 danger 톤으로 덮는다(타입색보다 우선). */
+.notif-card.is-unread {
+  border-left-color: var(--color-danger);
+}
+
+/* 읽은 알림은 차분하게 가라앉힌다 */
+.notif-card.is-read {
+  background: var(--surface-subtle);
+  box-shadow: none;
+}
+.notif-card.is-read .notif-card__title {
+  color: var(--text-secondary);
+}
+
+/* 타입 아이콘 칩 */
 .notif-icon {
   width: 56px;
   height: 56px;
@@ -322,48 +352,65 @@
   color: #d99412;
 }
 
-/* 안읽음 점 */
-.notif-unread-dot {
-  position: absolute;
-  left: -16px;
-  top: 24px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-brand);
-}
-
 /* 본문 */
-.notif-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 3px;
+.notif-card__info {
+  min-width: 0;
 }
-/* 첫 줄: 방 이름·날짜(또는 평점) 등 제목 */
-.notif-title {
+.notif-card__title {
+  margin: 0;
   font-size: var(--font-size-15);
   font-weight: 700;
   line-height: 1.4;
   color: var(--text-primary);
 }
-/* 둘째 줄: 안내 메시지 */
-.notif-message {
+.notif-card__message {
+  margin: 2px 0 0;
   font-size: var(--font-size-14);
   font-weight: 400;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--text-secondary);
+  /* 길면 두 줄까지만 보여주고 말줄임 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
-/* 아직 읽지 않은(클릭 안 한) 알림은 메시지도 진하게 강조 */
-.notif-item:not(.is-read) .notif-message {
+/* 아직 안 읽은 알림은 메시지도 진하게 강조 */
+.notif-card.is-unread .notif-card__message {
   font-weight: 600;
   color: var(--text-primary);
 }
-.notif-time {
-  margin-top: 4px;
+
+/* 우측: 안읽음 점 + 상대 시간 */
+.notif-card__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  text-align: right;
+}
+.notif-card__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+}
+.notif-card__time {
   font-size: var(--font-size-13);
   font-weight: 500;
   color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .notif-card {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: var(--space-3);
+  }
+  .notif-icon {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 /* ---------- 빈 상태 ---------- */
