@@ -21,8 +21,12 @@ public final class RoomPredicates {
         return room.isActive.isTrue().and(room.isDeleted.isFalse());
     }
 
-    public static BooleanExpression regionContains(String region) {
-        return hasText(region) ? room.region.containsIgnoreCase(region) : null;
+    // Prefix match (region LIKE 'term%') so it can use idx_rooms_region. A leading
+    // wildcard (containsIgnoreCase -> '%term%') or lower(region) would be non-sargable
+    // and force a full table scan. The column's utf8mb4_unicode_ci collation keeps the
+    // comparison case-insensitive without lower().
+    public static BooleanExpression regionStartsWith(String region) {
+        return hasText(region) ? room.region.startsWith(region) : null;
     }
 
     public static BooleanExpression priceBetween(Integer min, Integer max) {

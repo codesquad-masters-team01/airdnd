@@ -57,7 +57,7 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
 
     private BooleanExpression[] sharedFilters(RoomSearchRequestDto c, LocalDateTime now) {
         return new BooleanExpression[]{
-                RoomPredicates.regionContains(c.region()),
+                RoomPredicates.regionStartsWith(c.region()),
                 RoomPredicates.priceBetween(c.minPrice(), c.maxPrice()),
                 RoomPredicates.isPetAllowed(c.allowsPets()),
                 RoomPredicates.withinMaxCapacity(c.guests()),

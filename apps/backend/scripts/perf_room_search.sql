@@ -109,8 +109,7 @@ WHERE longitude BETWEEN 126.76 AND 127.18
 EXPLAIN ANALYZE
 SELECT COUNT(*) FROM rooms
 WHERE allows_infants = TRUE
-  AND is_active = TRUE AND is_deleted = FALSE;
-
+  AND is_active = TRUE AND is_deleted = FALS
 
 -- ===== C) BBOX (the main thing the index change targets) =====================
 -- Both lat & lng together, as the map sends them.
