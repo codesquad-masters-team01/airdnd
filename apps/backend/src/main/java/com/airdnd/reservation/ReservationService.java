@@ -3,15 +3,22 @@ package com.airdnd.reservation;
 import com.airdnd.common.error.ErrorCode;
 import com.airdnd.common.exception.BusinessException;
 import com.airdnd.reservation.dto.BookedDateRange;
+import com.airdnd.reservation.dto.GuestReservationCountsResponse;
+import com.airdnd.reservation.dto.ReservationCountsResponse;
 import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
+import com.airdnd.reservation.dto.ReservationStatusCount;
 import com.airdnd.reservation.event.ReservationCancelledEvent;
 import com.airdnd.review.ReviewRepository;
+import com.airdnd.room.Cursors;
 import com.airdnd.room.Room;
 import com.airdnd.room.RoomRepository;
+import com.airdnd.room.dto.CursorPage;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +36,7 @@ public class ReservationService {
     private static final List<ReservationStatus> BLOCKING_STATUSES =
             List.of(ReservationStatus.CONFIRMED, ReservationStatus.PENDING);
 
+    private static final int MAX_PAGE_SIZE = 100;
     private static final int HOLD_MINUTES = 15;
 
     private final ReservationRepository reservationRepository;
@@ -88,19 +96,61 @@ public class ReservationService {
     }
 
     @Transactional(readOnly = true)
-    public List<ReservationResponse> getGuestReservations(Long guestId) {
-        List<Reservation> reservations = reservationRepository.findByGuestId(guestId);
+    public CursorPage<ReservationResponse> getGuestReservations(
+            Long guestId, GuestReservationTab tab, String cursor, int size) {
 
+        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);
+        LocalDate today = LocalDate.now();
+        ReservationCursors.DateIdCursor last = ReservationCursors.decode(cursor);
+        LocalDate lastDate = last == null ? null : last.date();
+        Long lastId = last == null ? null : last.id();
+        Pageable limit = PageRequest.of(0, pageSize + 1);
+
+        // 다음 페이지 존재 여부 판단을 위해 size + 1 개까지 조회한다.
+        List<Reservation> fetched = switch (tab) {
+            case UPCOMING -> reservationRepository.findGuestUpcomingPage(guestId, today, lastDate, lastId, limit);
+            case PAST -> reservationRepository.findGuestPastPage(guestId, today, lastDate, lastId, limit);
+            case CANCELLED -> reservationRepository.findGuestCancelledPage(guestId, lastDate, lastId, limit);
+        };
+
+        boolean hasNext = fetched.size() > pageSize;
+        List<Reservation> pageItems = hasNext ? fetched.subList(0, pageSize) : fetched;
+
+        List<ReservationResponse> items = toResponses(pageItems);
+
+        String nextCursor = null;
+        if (hasNext) {
+            Reservation lastItem = pageItems.get(pageItems.size() - 1);
+            // 다가오는 탭은 checkIn, 지난/취소 탭은 checkOut 으로 정렬하므로 커서 날짜도 그에 맞춘다.
+            LocalDate cursorDate = tab == GuestReservationTab.UPCOMING
+                    ? lastItem.getCheckInDate()
+                    : lastItem.getCheckOutDate();
+            nextCursor = ReservationCursors.encode(cursorDate, lastItem.getId());
+        }
+        // 카운트는 별도 summary 엔드포인트에서 내려주므로 totalCount 는 사용하지 않는다.
+        return new CursorPage<>(items, nextCursor, hasNext, null);
+    }
+
+    @Transactional(readOnly = true)
+    public GuestReservationCountsResponse getGuestReservationCounts(Long guestId) {
+        LocalDate today = LocalDate.now();
+        long upcoming = reservationRepository.countGuestUpcoming(guestId, today);
+        long past = reservationRepository.countGuestPast(guestId, today);
+        long cancelled = reservationRepository.countByGuestIdAndStatus(guestId, ReservationStatus.CANCELLED);
+        return new GuestReservationCountsResponse(upcoming, past, cancelled);
+    }
+
+    // 예약 엔티티 묶음을 응답으로 변환한다. 리뷰 작성 여부·룸 정보를 배치 조회해 N+1 을 피한다.
+    private List<ReservationResponse> toResponses(List<Reservation> reservations) {
+        if (reservations.isEmpty()) {
+            return List.of();
+        }
         List<Long> reservationIds = reservations.stream().map(Reservation::getId).toList();
-        Set<Long> reviewedIds = reservationIds.isEmpty()
-                ? Set.of()
-                : new HashSet<>(reviewRepository.findReservationIdsByReservationIdIn(reservationIds));
+        Set<Long> reviewedIds = new HashSet<>(reviewRepository.findReservationIdsByReservationIdIn(reservationIds));
 
-        List<Long> roomIds = reservations.stream()
-                        .map(Reservation::getRoomId).distinct().toList();
-
+        List<Long> roomIds = reservations.stream().map(Reservation::getRoomId).distinct().toList();
         Map<Long, Room> roomMap = roomRepository.findAllWithImagesByIdIn(roomIds).stream()
-                        .collect(Collectors.toMap(Room::getId, room -> room));
+                .collect(Collectors.toMap(Room::getId, room -> room));
 
         List<ReservationResponse> responses = new ArrayList<>();
         for (Reservation reservation : reservations) {
@@ -126,6 +176,58 @@ public class ReservationService {
             ));
         }
         return responses;
+    }
+
+    @Transactional(readOnly = true)
+    public CursorPage<ReservationResponse> getHostRoomReservations(
+            Long hostId, Long roomId, ReservationStatus status, String cursor, int size) {
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        if (!room.getHostId().equals(hostId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION, "본인 숙소의 예약만 확인 가능합니다.");
+        }
+
+        int pageSize = Math.clamp(size, 1, MAX_PAGE_SIZE);
+        Long lastId = Cursors.decode(cursor);
+
+        // 다음 페이지 존재 여부 판단을 위해 size + 1 개까지 조회한다.
+        List<Reservation> fetched = reservationRepository.findHostRoomReservationPage(
+                roomId, status, lastId, PageRequest.of(0, pageSize + 1));
+        boolean hasNext = fetched.size() > pageSize;
+        List<Reservation> pageItems = hasNext ? fetched.subList(0, pageSize) : fetched;
+
+        List<ReservationResponse> items = pageItems.stream()
+                .map(r -> new ReservationResponse(
+                        r.getId(), room.getId(), room.getName(),
+                        room.getRepresentativeImageUrl(), room.getRegion(),
+                        r.getCheckInDate(), r.getCheckOutDate(),
+                        r.getAdultCount() + r.getChildCount(),
+                        room.getPricePerNight(), r.getTotalPrice(),
+                        r.getStatus(), r.getExpiresAt(), r.getCreatedAt(),
+                        false))
+                .toList();
+
+        String nextCursor = hasNext ? Cursors.encode(pageItems.get(pageItems.size() - 1).getId()) : null;
+        // 카운트는 별도 summary 엔드포인트에서 내려주므로 totalCount 는 사용하지 않는다.
+        return new CursorPage<>(items, nextCursor, hasNext, null);
+    }
+
+    @Transactional(readOnly = true)
+    public ReservationCountsResponse getHostRoomReservationCounts(Long hostId, Long roomId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        if (!room.getHostId().equals(hostId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACTION, "본인 숙소의 예약만 확인 가능합니다.");
+        }
+
+        Map<ReservationStatus, Long> byStatus = reservationRepository.countByStatusForRoom(roomId).stream()
+                .collect(Collectors.toMap(ReservationStatusCount::status, ReservationStatusCount::count));
+
+        long confirmed = byStatus.getOrDefault(ReservationStatus.CONFIRMED, 0L);
+        long pending = byStatus.getOrDefault(ReservationStatus.PENDING, 0L);
+        long cancelled = byStatus.getOrDefault(ReservationStatus.CANCELLED, 0L);
+        return new ReservationCountsResponse(confirmed + pending + cancelled, confirmed, pending, cancelled);
     }
 
     /**
@@ -219,7 +321,7 @@ public class ReservationService {
             Room room = roomRepository.findById(reservation.getRoomId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
             applicationEventPublisher.publishEvent(new ReservationCancelledEvent(
-                    reservation.getId(), room.getHostId(), room.getName(),reservation.getCheckInDate(),
+                    reservation.getId(), room.getHostId(),room.getId(), room.getName(),reservation.getCheckInDate(),
                     reservation.getCheckOutDate()
             ));
         }

@@ -2,8 +2,10 @@ package com.airdnd.reservation;
 
 import com.airdnd.auth.AuthMemberPrincipal;
 import com.airdnd.reservation.dto.BookedDateRange;
+import com.airdnd.reservation.dto.GuestReservationCountsResponse;
 import com.airdnd.reservation.dto.ReservationRequest;
 import com.airdnd.reservation.dto.ReservationResponse;
+import com.airdnd.room.dto.CursorPage;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,9 +35,19 @@ public class ReservationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ReservationResponse>> reservationRoomsList(@AuthenticationPrincipal AuthMemberPrincipal principal) {
-        List<ReservationResponse> reservation = reservationService.getGuestReservations(principal.getMemberId());
-        return ResponseEntity.status(HttpStatus.OK).body(reservation);
+    public ResponseEntity<CursorPage<ReservationResponse>> reservationRoomsList(
+            @AuthenticationPrincipal AuthMemberPrincipal principal,
+            @RequestParam(defaultValue = "UPCOMING") GuestReservationTab tab,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(
+                reservationService.getGuestReservations(principal.getMemberId(), tab, cursor, size));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<GuestReservationCountsResponse> reservationCounts(
+            @AuthenticationPrincipal AuthMemberPrincipal principal) {
+        return ResponseEntity.ok(reservationService.getGuestReservationCounts(principal.getMemberId()));
     }
 
     @GetMapping("{reservationId}")

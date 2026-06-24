@@ -2,6 +2,10 @@ package com.airdnd.room;
 
 
 import com.airdnd.auth.AuthMemberPrincipal;
+import com.airdnd.reservation.ReservationService;
+import com.airdnd.reservation.ReservationStatus;
+import com.airdnd.reservation.dto.ReservationCountsResponse;
+import com.airdnd.reservation.dto.ReservationResponse;
 import com.airdnd.room.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,7 @@ public class HostRoomController {
 
     private final RoomService roomService;
     private final S3PresignService s3PresignService;
+    private final ReservationService reservationService;
 
 
     @PostMapping
@@ -63,6 +68,25 @@ public class HostRoomController {
                                                          @RequestBody @Valid RoomStatusUpdateRequest request) {
         return ResponseEntity.ok(
                 roomService.changeRoomStatus(principal.getMemberId(), roomId, request.isActive()));
+    }
+
+    @GetMapping("/{roomId}/reservations")
+    public ResponseEntity<CursorPage<ReservationResponse>> getRoomReservations(
+            @AuthenticationPrincipal AuthMemberPrincipal principal,
+            @PathVariable Long roomId,
+            @RequestParam(required = false) ReservationStatus status,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(
+                reservationService.getHostRoomReservations(principal.getMemberId(), roomId, status, cursor, size));
+    }
+
+    @GetMapping("/{roomId}/reservations/summary")
+    public ResponseEntity<ReservationCountsResponse> getRoomReservationCounts(
+            @AuthenticationPrincipal AuthMemberPrincipal principal,
+            @PathVariable Long roomId) {
+        return ResponseEntity.ok(
+                reservationService.getHostRoomReservationCounts(principal.getMemberId(), roomId));
     }
 
 }

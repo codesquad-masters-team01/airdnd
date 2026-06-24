@@ -48,7 +48,7 @@ public class PaymentCaptureFinalizer {
                 Room room = roomRepository.findById(reservation.getRoomId())
                         .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
                 applicationEventPublisher.publishEvent(new ReservationConfirmedEvent(
-                        reservation.getId(), room.getHostId(), room.getName(),
+                        reservation.getId(), reservation.getGuestId(), room.getHostId(),room.getId(), room.getName(),
                         reservation.getCheckInDate(), reservation.getCheckOutDate()));
             }
             case UNFULFILLABLE -> {
