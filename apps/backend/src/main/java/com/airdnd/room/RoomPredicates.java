@@ -67,9 +67,13 @@ public final class RoomPredicates {
                 "POLYGON((%1$s %2$s, %3$s %2$s, %3$s %4$s, %1$s %4$s, %1$s %2$s))",
                 west,south,east,north);
 
-        return Expressions.numberTemplate(Integer.class,
-                "MBRContains(ST_GeomFromText({0},0), {1})", envelopeWkt, room.location
-        ).eq(1);
+        // Bare mbrcontains(...) — registered as a boolean function by
+        // SpatialFunctionContributor — so MySQL recognizes the spatial predicate and uses
+        // idx_rooms_location. Wrapping it as "... = 1" would hide it from the optimizer and
+        // force a full table scan.
+        return Expressions.booleanTemplate(
+                "mbrcontains(ST_GeomFromText({0}, 0), {1})", envelopeWkt, room.location
+        );
     }
 
 
