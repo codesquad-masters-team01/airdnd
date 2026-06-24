@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
+import org.springframework.data.geo.Point;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -48,6 +49,9 @@ public class Room {
 
     @Column(nullable = false, precision = 15, scale = 12)
     private BigDecimal longitude;
+
+    @Column(name="location", insertable = false, updatable = false)
+    private Point location;
 
     @Column(nullable = false)
     private Integer pricePerNight;

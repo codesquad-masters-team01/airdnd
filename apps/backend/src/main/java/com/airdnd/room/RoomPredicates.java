@@ -2,6 +2,7 @@ package com.airdnd.room;
 
 import com.airdnd.reservation.ReservationStatus;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 
 import java.math.BigDecimal;
@@ -50,13 +51,27 @@ public final class RoomPredicates {
         return guests == null ? null : room.maxCapacity.goe(guests);
     }
 
-    public static BooleanExpression withinLatitude(BigDecimal south, BigDecimal north) {
-        return (south == null || north == null) ? null : room.latitude.between(south, north);
+//    public static BooleanExpression withinLatitude(BigDecimal south, BigDecimal north) {
+//        return (south == null || north == null) ? null : room.latitude.between(south, north);
+//    }
+//
+//    public static BooleanExpression withinLongitude(BigDecimal west, BigDecimal east) {
+//        return (west == null || east == null) ? null : room.longitude.between(west, east);
+//    }
+
+    public static BooleanExpression withinBounds(BigDecimal south, BigDecimal west, BigDecimal north, BigDecimal east){
+        if(south == null || west == null || north == null || east == null){
+            return null;
+        }
+        String envelopeWkt = String.format(
+                "POLYGON((%1$s %2$s, %3$s %2$s, %3$s %4$s, %1$s %4$s, %1$s %2$s))",
+                west,south,east,north);
+
+        return Expressions.numberTemplate(Integer.class,
+                "MBRContains(ST_GeomFromText({0},0), {1})", envelopeWkt, room.location
+        ).eq(1);
     }
 
-    public static BooleanExpression withinLongitude(BigDecimal west, BigDecimal east) {
-        return (west == null || east == null) ? null : room.longitude.between(west, east);
-    }
 
     public static BooleanExpression isInfantAllowed(Integer infants) {
         return (infants == null || infants == 0) ? null : room.allowsInfants.isTrue();

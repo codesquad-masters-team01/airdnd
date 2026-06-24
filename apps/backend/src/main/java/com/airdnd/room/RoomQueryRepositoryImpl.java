@@ -61,8 +61,9 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
                 RoomPredicates.priceBetween(c.minPrice(), c.maxPrice()),
                 RoomPredicates.isPetAllowed(c.allowsPets()),
                 RoomPredicates.withinMaxCapacity(c.guests()),
-                RoomPredicates.withinLatitude(c.south(), c.north()),
-                RoomPredicates.withinLongitude(c.west(), c.east()),
+//                RoomPredicates.withinLatitude(c.south(), c.north()),
+//                RoomPredicates.withinLongitude(c.west(), c.east()),
+                RoomPredicates.withinBounds(c.south(),c.west(),c.north(),c.east()),
                 RoomPredicates.isInfantAllowed(c.infants()),
                 RoomPredicates.available(c.checkIn(), c.checkOut(), now),
                 RoomPredicates.visible()
