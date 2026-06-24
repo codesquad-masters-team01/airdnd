@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { cursorPageSchema } from '../../../shared/api/cursorPage';
 
 export const reservationStatusSchema = z.enum(['PENDING', 'CONFIRMED', 'CANCELLED']);
 
@@ -57,6 +58,33 @@ export type CreateReservationPayload = {
   infantCount: number;
   hasPets: boolean;
 };
+
+// 호스트 예약 현황의 커서 페이지(서버가 status 로 필터링·정렬해 한 페이지씩 내려준다).
+export const reservationPageSchema = cursorPageSchema(reservationSchema);
+export type ReservationPage = z.infer<typeof reservationPageSchema>;
+
+// 상태 탭 카운트 요약. 페이지 응답과 분리된 별도 엔드포인트에서 내려온다.
+export const reservationCountsSchema = z.object({
+  all: z.number().int().nonnegative(),
+  confirmed: z.number().int().nonnegative(),
+  pending: z.number().int().nonnegative(),
+  cancelled: z.number().int().nonnegative(),
+});
+export type ReservationCounts = z.infer<typeof reservationCountsSchema>;
+
+// 호스트 예약 목록 상태 필터. 'ALL' 은 status 파라미터를 생략(전체)한다는 의미.
+export type ReservationStatusFilter = 'ALL' | ReservationStatus;
+
+// 게스트 예약 목록 탭. 날짜 기반 파생 그룹이라 status 와 1:1이 아니다(서버가 오늘 기준으로 가른다).
+export type GuestReservationTab = 'upcoming' | 'past' | 'cancelled';
+
+// 게스트 탭 배지 카운트 요약. 페이지 응답과 분리된 별도 엔드포인트에서 내려온다.
+export const guestReservationCountsSchema = z.object({
+  upcoming: z.number().int().nonnegative(),
+  past: z.number().int().nonnegative(),
+  cancelled: z.number().int().nonnegative(),
+});
+export type GuestReservationCounts = z.infer<typeof guestReservationCountsSchema>;
 
 export type Reservation = z.infer<typeof reservationSchema>;
 export type ReservationStatus = z.infer<typeof reservationStatusSchema>;

@@ -4,21 +4,31 @@ import { Link, useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../../../shared/lib/format';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { ErrorMessage } from '../../../shared/ui/ErrorMessage';
+import { Loading } from '../../../shared/ui/Loading';
 import { Modal } from '../../../shared/ui/Modal';
 import { useCreateReviewMutation } from '../../reviews/api/reviewsQueries';
 import { ReviewForm } from '../../reviews/ui/ReviewForm';
 import type { CreateReviewFormValues } from '../../reviews/model/reviewTypes';
-import { Reservation, ReservationStatus } from '../model/reservationTypes';
+import {
+  GuestReservationCounts,
+  GuestReservationTab,
+  Reservation,
+  ReservationStatus,
+} from '../model/reservationTypes';
 
 type ReservationListProps = {
+  // 서버가 activeTab 으로 이미 필터링·정렬한 한 묶음(여러 페이지를 평탄화한 결과).
   reservations: Reservation[];
+  // 탭 배지에 표시할 전체 카운트(로딩 중이면 undefined).
+  counts: GuestReservationCounts | undefined;
+  activeTab: GuestReservationTab;
+  onTabChange: (tab: GuestReservationTab) => void;
+  // 현재 탭 첫 페이지 로딩 여부.
+  isLoading: boolean;
   onCancel: (reservationId: number) => void;
   /** 현재 취소 요청이 진행 중인 예약 id (해당 카드에만 로딩 표시) */
   cancelingId?: number | null;
 };
-
-// 세그먼트 필터의 탭 키 — 다가오는 / 지난 / 취소
-type TabKey = 'upcoming' | 'past' | 'cancelled';
 
 // 상태 배지: 색 톤 + lucide 아이콘 + 한글 라벨
 const statusConfig: Record<
@@ -30,21 +40,19 @@ const statusConfig: Record<
   CANCELLED: { tone: 'neutral', Icon: X, label: '취소' },
 };
 
-const tabMeta: { key: TabKey; label: string }[] = [
+const tabMeta: { key: GuestReservationTab; label: string }[] = [
   { key: 'upcoming', label: '다가오는' },
   { key: 'past', label: '지난' },
   { key: 'cancelled', label: '취소' },
 ];
 
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-// 'YYYY-MM-DD' 문자열은 사전식 비교가 곧 날짜 비교 — 로컬 자정 기준 오늘 날짜를 같은 형식으로 생성
-function localToday() {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
+// 탭 키 → 카운트 요약의 해당 숫자.
+function countFor(counts: GuestReservationCounts | undefined, key: GuestReservationTab): number | undefined {
+  if (!counts) return undefined;
+  return counts[key];
 }
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 function nightsBetween(checkIn: string, checkOut: string) {
   const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
@@ -61,9 +69,15 @@ const FALLBACK_IMAGE =
       'text-anchor="middle" dominant-baseline="middle">이미지 없음</text></svg>',
   );
 
-export function ReservationList({ reservations, onCancel, cancelingId = null }: ReservationListProps) {
-  // 현재 보고 있는 필터 탭 (기본: 다가오는)
-  const [activeTab, setActiveTab] = useState<TabKey>('upcoming');
+export function ReservationList({
+  reservations,
+  counts,
+  activeTab,
+  onTabChange,
+  isLoading,
+  onCancel,
+  cancelingId = null,
+}: ReservationListProps) {
   // 취소 확인 모달 대상 (null이면 닫힘)
   const [confirmTarget, setConfirmTarget] = useState<Reservation | null>(null);
   // 후기 작성 모달 대상 (null이면 닫힘)
@@ -88,7 +102,9 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
     );
   };
 
-  if (reservations.length === 0) {
+  // 한 건도 없으면(전체 카운트 0) 탭 없이 첫 예약 유도 화면을 보여준다.
+  const totalCount = counts ? counts.upcoming + counts.past + counts.cancelled : undefined;
+  if (totalCount === 0) {
     return (
       <EmptyState
         title="예약 내역이 없습니다."
@@ -102,25 +118,7 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
     );
   }
 
-  const today = localToday();
-
-  // 다가오는 예약: 취소되지 않았고 체크아웃이 아직 지나지 않은 것 → 체크인 임박순
-  const upcoming = reservations
-    .filter((r) => r.status !== 'CANCELLED' && r.checkOut >= today)
-    .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
-  // 지난 예약: 취소되지 않았고 체크아웃이 지난 것 → 최근 체크아웃순
-  const past = reservations
-    .filter((r) => r.status !== 'CANCELLED' && r.checkOut < today)
-    .sort((a, b) => b.checkOut.localeCompare(a.checkOut));
-  // 취소 예약 → 최근 체크아웃순
-  const cancelled = reservations
-    .filter((r) => r.status === 'CANCELLED')
-    .sort((a, b) => b.checkOut.localeCompare(a.checkOut));
-
-  const groups: Record<TabKey, Reservation[]> = { upcoming, past, cancelled };
-  const activeItems = groups[activeTab];
-
-  const renderAction = (reservation: Reservation, tab: TabKey) => {
+  const renderAction = (reservation: Reservation, tab: GuestReservationTab) => {
     // 지난 예약: 후기 작성(미작성 시) 또는 작성 완료 표시
     // 백엔드가 CONFIRMED 예약에만 리뷰를 허용하므로, 그 외(예: 결제 대기)에는 액션을 숨긴다
     if (tab === 'past') {
@@ -170,7 +168,7 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
     return null;
   };
 
-  const renderCard = (reservation: Reservation, tab: TabKey) => {
+  const renderCard = (reservation: Reservation, tab: GuestReservationTab) => {
     const nights = nightsBetween(reservation.checkIn, reservation.checkOut);
     const status = statusConfig[reservation.status];
     const StatusIcon = status.Icon;
@@ -251,6 +249,7 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
       <div className="segmented" role="tablist" aria-label="예약 상태 필터">
         {tabMeta.map(({ key, label }) => {
           const active = activeTab === key;
+          const count = countFor(counts, key);
           return (
             <button
               key={key}
@@ -258,17 +257,19 @@ export function ReservationList({ reservations, onCancel, cancelingId = null }: 
               role="tab"
               aria-selected={active}
               className={`seg-tab${active ? ' active' : ''}`}
-              onClick={() => setActiveTab(key)}
+              onClick={() => onTabChange(key)}
             >
               {label}
-              <span className="seg-tab__count">{groups[key].length}</span>
+              {count !== undefined ? <span className="seg-tab__count">{count}</span> : null}
             </button>
           );
         })}
       </div>
 
-      {activeItems.length > 0 ? (
-        <div className="res-grid">{activeItems.map((reservation) => renderCard(reservation, activeTab))}</div>
+      {isLoading ? (
+        <Loading message="예약 목록을 불러오는 중입니다." />
+      ) : reservations.length > 0 ? (
+        <div className="res-grid">{reservations.map((reservation) => renderCard(reservation, activeTab))}</div>
       ) : (
         renderEmptyPanel()
       )}
