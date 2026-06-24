@@ -19,7 +19,11 @@ public class NotificationEventListener {
         notificationService.notify(e.hostId(), NotificationType.HOST,
                 e.roomName() + " " + e.checkInDate() + " ~ " + e.checkOutDate()
                         + "\n새로운 예약이 들어왔습니다",
-                "/host/rooms");
+                "/host/rooms/" + e.roomId() + "/reservations");
+        notificationService.notify(e.guestId(), NotificationType.RESERVATION,
+                e.roomName() + " " + e.checkInDate() + " ~ " + e.checkOutDate()
+                        + "\n예약이 확정되었습니다.",
+                "/reservations/" + e.reservationId());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -27,7 +31,7 @@ public class NotificationEventListener {
         notificationService.notify(e.hostId(), NotificationType.HOST,
                 e.roomName() + " " + e.checkInDate() + " ~ " + e.checkOutDate()
                         + "\n예약이 취소되었습니다",
-                "/host/rooms");
+                "/host/rooms/"  + e.roomId() + "/reservations");
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -37,4 +41,5 @@ public class NotificationEventListener {
                         + "\n내 숙소에 새 후기가 등록되었습니다",
                 "/rooms/" + e.roomId());
     }
+
 }
