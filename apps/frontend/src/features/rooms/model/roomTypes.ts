@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { cursorPageSchema } from '../../../shared/api/cursorPage';
 
 export const roomSummarySchema = z.object({
   id: z.number(),
@@ -54,16 +55,9 @@ export type RoomSummary = z.infer<typeof roomSummarySchema>;
 export type RoomDetail = z.infer<typeof roomDetailSchema>;
 export type RoomSearchParams = z.infer<typeof roomSearchParamsSchema>;
 
-// 커서 기반 페이지. items 한 페이지 + 다음 커서. hasNext=false 면 nextCursor=null.
-// totalCount: 현재 조건(영역+필터)에 매칭되는 전체 수. 첫 페이지에서만 채워지고 이후엔 null
-// ("이 지역에 N곳 — 더 좁혀보세요" 안내용).
-export const cursorPageSchema = <T extends z.ZodTypeAny>(item: T) =>
-  z.object({
-    items: z.array(item),
-    nextCursor: z.string().nullable(),
-    hasNext: z.boolean(),
-    totalCount: z.number().int().nonnegative().nullish(),
-  });
+// 커서 페이지 스키마 팩토리는 shared/api/cursorPage 로 옮겼다(여러 도메인 공용).
+// 기존 import 호환을 위해 여기서도 re-export 한다.
+export { cursorPageSchema };
 
 export const roomSummaryPageSchema = cursorPageSchema(roomSummarySchema);
 export type RoomSummaryPage = z.infer<typeof roomSummaryPageSchema>;
