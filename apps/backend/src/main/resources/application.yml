@@ -22,6 +22,11 @@ spring:
 
 server:
   forward-headers-strategy: framework
+  tomcat:
+    # Required for Micrometer's tomcat_threads_* metrics (busy/current/max). Without
+    # this the MBeans aren't registered and only tomcat_sessions_* show up.
+    mbeanregistry:
+      enabled: true
 
 # Actuator runs on its OWN port (8081), separate from the app's 8080. CloudFront only
 # points at 8080, so /actuator/* is never reachable from the internet — Prometheus
