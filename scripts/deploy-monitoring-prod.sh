@@ -129,7 +129,9 @@ run_remote "$MYSQL_IID" "$MYSQL_REMOTE" || { echo "ERROR: mysql-box step failed.
 # --------------------------- backend box ------------------------------------
 # Ship the monitoring/ tree (minus any local secrets), render configs with the
 # generated passwords + DB IP, ensure the compose plugin exists, then bring it up.
-BUNDLE="$(tar czf - --exclude='.env' --exclude='mysqld-exporter/.my.cnf' -C "$ROOT" monitoring | base64 | tr -d '\n')"
+# COPYFILE_DISABLE + --exclude='._*' keep macOS AppleDouble files out of the tar;
+# Grafana's provisioner crashes if it finds a ._provider.yml beside the real config.
+BUNDLE="$(COPYFILE_DISABLE=1 tar czf - --exclude='._*' --exclude='.env' --exclude='mysqld-exporter/.my.cnf' -C "$ROOT" monitoring | base64 | tr -d '\n')"
 
 BACKEND_REMOTE=$(cat <<EOF
 set -euo pipefail
@@ -153,9 +155,13 @@ password = $EXPORTER_PW
 host = $DB_HOST
 port = 3306
 CNF
-chmod 600 mysqld-exporter/.my.cnf
+# 644, not 600: the exporter container runs as a non-root user and must read it.
+# Safe here — the file lives only on this private, single-tenant box.
+chmod 644 mysqld-exporter/.my.cnf
 sed -i "s/__DB_HOST__/$DB_HOST/g" prometheus/prometheus.yml
-docker compose --env-file .env up -d
+# --force-recreate so re-ships pick up changed bind-mounted config (.my.cnf,
+# prometheus.yml) — compose otherwise leaves containers whose YAML didn't change.
+docker compose --env-file .env up -d --force-recreate
 docker compose ps
 EOF
 )
