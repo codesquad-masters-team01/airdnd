@@ -117,7 +117,7 @@ export function CheckoutPage() {
                       await queryClient.invalidateQueries({
                         queryKey: reservationQueryKeys.detail(id),
                       });
-                      queryClient.invalidateQueries({ queryKey: reservationQueryKeys.list });
+                      queryClient.invalidateQueries({ queryKey: reservationQueryKeys.listPrefix });
                       queryClient.invalidateQueries({
                         queryKey: roomQueryKeys.detail(reservation.roomId),
                       });

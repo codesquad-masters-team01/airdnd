@@ -16,6 +16,7 @@ import { GuestReservationTab } from '../model/reservationTypes';
 import { roomQueryKeys } from '../../rooms/api/roomsQueries';
 
 export const reservationQueryKeys = {
+  listPrefix: ['reservations', 'list'] as const,
   // 탭별로 별도 캐시 — 탭 전환 시 각각 무한 스크롤 상태를 유지한다.
   list: (tab: GuestReservationTab) => ['reservations', 'list', tab] as const,
   counts: ['reservations', 'counts'] as const,
@@ -64,7 +65,7 @@ export function useCreateReservationMutation(roomId: number) {
     mutationFn: createReservation,
     onSuccess: () => {
       // ['reservations','list'] 프리픽스로 모든 탭 무한쿼리를 한 번에 무효화한다.
-      queryClient.invalidateQueries({ queryKey: ['reservations', 'list'] });
+      queryClient.invalidateQueries({ queryKey: reservationQueryKeys.listPrefix });
       queryClient.invalidateQueries({ queryKey: reservationQueryKeys.counts });
       queryClient.invalidateQueries({ queryKey: reservationQueryKeys.bookedDates(roomId) });
       queryClient.invalidateQueries({ queryKey: roomQueryKeys.detail(roomId) });
@@ -79,7 +80,7 @@ export function useCancelReservationMutation() {
     mutationFn: cancelReservation,
     onSuccess: () => {
       // 취소 시 예약이 다가오는→취소 탭으로 이동하므로 모든 탭 목록과 카운트를 무효화한다.
-      queryClient.invalidateQueries({ queryKey: ['reservations', 'list'] });
+      queryClient.invalidateQueries({ queryKey: reservationQueryKeys.listPrefix });
       queryClient.invalidateQueries({ queryKey: reservationQueryKeys.counts });
       queryClient.invalidateQueries({ queryKey: ['reservations', 'booked-dates'] });
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
