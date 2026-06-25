@@ -1,7 +1,7 @@
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { Minus, PawPrint, Plus, Search } from 'lucide-react';
 import { formatCurrency } from '../../../shared/lib/format';
-import { formatDateSummary, getMonthStart, parseDateValue } from '../../../shared/lib/calendar';
+import { formatDateSummary, getMonthStart, parseDateValue, toDateValue } from '../../../shared/lib/calendar';
 import { CalendarPopover } from '../../../shared/ui/CalendarPopover';
 import { RoomSearchParams } from '../model/roomTypes';
 
@@ -69,6 +69,7 @@ export function SearchBar({ defaultValue, onSearch, compact = false }: SearchBar
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const todayValue = toDateValue(new Date());
   const stayGuests = adults + children;
   const hasPriceFilter = minPrice > PRICE_MIN || maxPrice < PRICE_MAX;
   const selectedCheckIn = parseDateValue(checkIn);
@@ -218,6 +219,9 @@ export function SearchBar({ defaultValue, onSearch, compact = false }: SearchBar
   }
 
   function isDateDisabled(value: string) {
+    // 지난 날짜는 항상 비활성화
+    if (value < todayValue) return true;
+
     return openPanel === 'checkOut' && Boolean(checkIn && value <= checkIn);
   }
 
