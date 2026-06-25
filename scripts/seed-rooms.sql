@@ -64,13 +64,26 @@ SELECT
 FROM gen g
 JOIN anchors a ON g.bucket >= a.lo AND g.bucket < a.hi;
 
--- 3) Give every seed room a representative image (idempotent: only if missing).
+-- 3) Give every seed room 4-5 images (idempotent: only if the room has none yet).
+--    Image #1 is the representative; the rest are gallery shots. The per-room count
+--    (4 or 5) is deterministic via (room_id % 2) so re-runs are stable, and each URL
+--    carries a distinct seed so the images actually differ.
 INSERT INTO room_images (room_id, image_url, is_representative)
-SELECT r.id, CONCAT('https://picsum.photos/seed/airdnd', r.id, '/800/600'), TRUE
+WITH nums (idx) AS (
+              SELECT 1
+    UNION ALL SELECT 2
+    UNION ALL SELECT 3
+    UNION ALL SELECT 4
+    UNION ALL SELECT 5
+)
+SELECT r.id,
+       CONCAT('https://picsum.photos/seed/airdnd', r.id, '-', n.idx, '/800/600'),
+       n.idx = 1
 FROM rooms r
+JOIN nums n ON n.idx <= 4 + (r.id % 2)   -- 4 images for even ids, 5 for odd
 WHERE r.host_id = @host_id
   AND NOT EXISTS (
-      SELECT 1 FROM room_images ri WHERE ri.room_id = r.id AND ri.is_representative = TRUE
+      SELECT 1 FROM room_images ri WHERE ri.room_id = r.id
   );
 
 SELECT CONCAT('Seeded. Total seed rooms now: ',
