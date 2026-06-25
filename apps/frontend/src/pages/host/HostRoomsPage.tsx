@@ -45,10 +45,11 @@ export function HostRoomsPage() {
 
   return (
     <section className="stack">
-      <div className="row-between">
+      <div className="page-head">
         <div className="page-heading">
           <p className="eyebrow">Host</p>
           <h1>호스트 숙소 관리</h1>
+          <p className="reservation-intro">등록한 숙소를 관리하고 예약 현황을 확인하세요.</p>
         </div>
         <Link className="primary-button inline-action" to="/host/rooms/new">
           <Plus size={18} strokeWidth={2.4} aria-hidden />

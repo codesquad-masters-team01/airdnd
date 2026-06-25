@@ -1,10 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   addRoomToWishlist,
   createWishlist,
   getSavedRoomIds,
   getWishlist,
   getWishlistIdsForRoom,
+  getWishlistRooms,
   getWishlists,
   removeRoomFromWishlistFolder,
 } from './wishlistApi';
@@ -12,6 +18,8 @@ import {
 export const wishlistQueryKeys = {
   list: ['wishlist', 'list'] as const,
   detail: (wishlistId: number) => ['wishlist', 'detail', wishlistId] as const,
+  // 폴더에 담긴 숙소 커서 무한 쿼리(메타와 분리). 담기/빼기 시 detail 과 함께 무효화한다.
+  detailRooms: (wishlistId: number) => ['wishlist', 'detail', wishlistId, 'rooms'] as const,
   savedRoomIds: ['wishlist', 'saved-room-ids'] as const,
   // 특정 방이 담긴 폴더 id 목록(팝오버 폴더별 체크 표시).
   roomFolders: (roomId: number) => ['wishlist', 'room-folders', roomId] as const,
@@ -47,6 +55,17 @@ export function useWishlistQuery(wishlistId?: number) {
   return useQuery({
     queryKey: wishlistQueryKeys.detail(wishlistId ?? 0),
     queryFn: () => getWishlist(wishlistId as number),
+    enabled: typeof wishlistId === 'number' && Number.isFinite(wishlistId),
+  });
+}
+
+// 폴더에 담긴 숙소를 커서 무한 스크롤로 불러온다(한 페이지씩 점진 로딩).
+export function useWishlistRoomsQuery(wishlistId?: number) {
+  return useInfiniteQuery({
+    queryKey: wishlistQueryKeys.detailRooms(wishlistId ?? 0),
+    queryFn: ({ pageParam }) => getWishlistRooms(wishlistId as number, pageParam ?? undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => (last.hasNext ? last.nextCursor ?? undefined : undefined),
     enabled: typeof wishlistId === 'number' && Number.isFinite(wishlistId),
   });
 }
@@ -96,6 +115,7 @@ export function useAddRoomToWishlistMutation() {
       queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.savedRoomIds });
       queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.list });
       queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.detail(wishlistId) });
+      queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.detailRooms(wishlistId) });
     },
   });
 }
@@ -133,6 +153,7 @@ export function useRemoveRoomFromWishlistFolderMutation() {
       queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.savedRoomIds });
       queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.list });
       queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.detail(wishlistId) });
+      queryClient.invalidateQueries({ queryKey: wishlistQueryKeys.detailRooms(wishlistId) });
     },
   });
 }

@@ -9,10 +9,12 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface WishlistRoomRepository extends JpaRepository<WishlistRoom, Long> {
+public interface WishlistRoomRepository extends JpaRepository<WishlistRoom, Long>, WishlistRoomQueryRepository {
 
     @Query("select distinct wr.room.id from WishlistRoom wr where wr.wishlist.memberId = :memberId")
     List<Long> findRoomIdsByMemberId(@Param("memberId") Long memberId);
+
+    long countByWishlistId(Long wishlistId);
 
     @Modifying
     @Query("delete from WishlistRoom wr where wr.room.id = :roomId and wr.wishlist.id in " +

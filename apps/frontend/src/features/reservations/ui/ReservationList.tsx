@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Clock, SquarePen, X } from 'lucide-react';
+import { Check, MapPin, SquarePen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate } from '../../../shared/lib/format';
 import { EmptyState } from '../../../shared/ui/EmptyState';
@@ -30,14 +30,11 @@ type ReservationListProps = {
   cancelingId?: number | null;
 };
 
-// 상태 배지: 색 톤 + lucide 아이콘 + 한글 라벨
-const statusConfig: Record<
-  ReservationStatus,
-  { tone: 'success' | 'warning' | 'neutral'; Icon: typeof Check; label: string }
-> = {
-  CONFIRMED: { tone: 'success', Icon: Check, label: '확정' },
-  PENDING: { tone: 'warning', Icon: Clock, label: '대기' },
-  CANCELLED: { tone: 'neutral', Icon: X, label: '취소' },
+// 상태 배지: 제목 행 오른쪽 끝. 호스트 숙소 카드와 동일한 솔리드 펠릿 색을 쓴다.
+const statusConfig: Record<ReservationStatus, { badgeClass: string; label: string }> = {
+  CONFIRMED: { badgeClass: 'is-active', label: '확정' },
+  PENDING: { badgeClass: 'is-pending', label: '대기' },
+  CANCELLED: { badgeClass: 'is-inactive', label: '취소' },
 };
 
 const tabMeta: { key: GuestReservationTab; label: string }[] = [
@@ -133,11 +130,11 @@ export function ReservationList({
       ) : (
         <button
           type="button"
-          className="ghost-button"
+          className="secondary-button"
           aria-label={`${reservation.roomName} 후기 작성`}
           onClick={() => setReviewTarget(reservation)}
         >
-          <SquarePen size={14} aria-hidden="true" />
+          <SquarePen size={16} strokeWidth={1.9} aria-hidden="true" />
           리뷰 작성
         </button>
       );
@@ -148,7 +145,7 @@ export function ReservationList({
       return (
         <button
           type="button"
-          className="ghost-button"
+          className="secondary-button"
           disabled={isCanceling}
           aria-label={`${reservation.roomName} 예약 취소`}
           onClick={() => setConfirmTarget(reservation)}
@@ -171,8 +168,8 @@ export function ReservationList({
   const renderCard = (reservation: Reservation, tab: GuestReservationTab) => {
     const nights = nightsBetween(reservation.checkIn, reservation.checkOut);
     const status = statusConfig[reservation.status];
-    const StatusIcon = status.Icon;
     const isCancelled = reservation.status === 'CANCELLED';
+    const action = renderAction(reservation, tab);
 
     return (
       <article className={`res-card${isCancelled ? ' is-cancelled' : ''}`} key={reservation.id}>
@@ -188,31 +185,31 @@ export function ReservationList({
         </div>
         <div className="res-card__body">
           <div className="res-card__top">
-            <div className="res-card__heading">
-              <Link to={`/reservations/${reservation.id}`}>
-                <h2 className="res-card__title">{reservation.roomName}</h2>
-              </Link>
-              {reservation.region ? <p className="res-card__region">{reservation.region}</p> : null}
-            </div>
-            <span className={`status status--${status.tone}`}>
-              <StatusIcon aria-hidden="true" />
-              {status.label}
+            <Link to={`/reservations/${reservation.id}`}>
+              <h2 className="res-card__title">{reservation.roomName}</h2>
+            </Link>
+            <span className={`res-card__badge ${status.badgeClass}`}>{status.label}</span>
+          </div>
+          {reservation.region ? (
+            <p className="res-card__loc">
+              <MapPin size={15} strokeWidth={1.8} aria-hidden />
+              {reservation.region}
+            </p>
+          ) : null}
+          <div className="res-card__meta">
+            <span>
+              {formatDate(reservation.checkIn)} – {formatDate(reservation.checkOut)}
+            </span>
+            <span>
+              {nights}박 · 게스트 {reservation.guests}명
             </span>
           </div>
-          <p className="res-card__dates">
-            {formatDate(reservation.checkIn)} – {formatDate(reservation.checkOut)}
+          <p className="res-card__price">
+            {formatCurrency(reservation.totalPrice)}
+            <span>{formatCurrency(reservation.pricePerNight)} / 박</span>
           </p>
-          <p className="res-card__meta">
-            {nights}박 · 게스트 {reservation.guests}명
-          </p>
-          <div className="res-card__foot">
-            <div className="res-card__price">
-              <strong>{formatCurrency(reservation.totalPrice)}</strong>
-              <span>{formatCurrency(reservation.pricePerNight)} / 박</span>
-            </div>
-            {renderAction(reservation, tab)}
-          </div>
         </div>
+        {action ? <div className="res-card__actions">{action}</div> : null}
       </article>
     );
   };

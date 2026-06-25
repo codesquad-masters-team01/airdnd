@@ -28,7 +28,7 @@ export function useCreateReviewMutation() {
     }) => createReview(reservationId, values),
     onSuccess: (_data, { roomId }) => {
       queryClient.invalidateQueries({ queryKey: reviewQueryKeys.list(roomId) });
-      // 예약 목록의 hasReview를 갱신해 작성 완료가 즉시 반영되도록
+      // 예약 목록의 hasReview를 갱신해 작성 완료가 즉시 반영되도록(모든 탭 무한쿼리 prefix 무효화)
       queryClient.invalidateQueries({ queryKey: reservationQueryKeys.listPrefix });
     },
   });

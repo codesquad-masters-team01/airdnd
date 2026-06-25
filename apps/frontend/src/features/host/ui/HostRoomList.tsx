@@ -38,12 +38,14 @@ export function HostRoomList({ rooms, pendingRoomId, onStatusChange }: HostRoomL
           <article className="host-room-card" key={room.id}>
             <div className="host-room-media">
               <img src={room.imageUrl} alt={`${room.name} 대표 이미지`} />
-              <span className={`host-status ${statusModifier[room.status]}`}>
-                {statusText[room.status]}
-              </span>
             </div>
             <div className="host-room-body">
-              <h2>{room.name}</h2>
+              <div className="host-room-top">
+                <h2>{room.name}</h2>
+                <span className={`host-status ${statusModifier[room.status]}`}>
+                  {statusText[room.status]}
+                </span>
+              </div>
               <p className="host-room-loc">
                 <MapPin size={15} strokeWidth={1.8} aria-hidden />
                 {room.region}

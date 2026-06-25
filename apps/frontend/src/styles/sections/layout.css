@@ -1,4 +1,6 @@
 .page-container {
+  /* 콘텐츠가 짧은 페이지에서도 남는 세로 공간을 채워 푸터를 항상 화면 맨 아래로 밀어낸다. */
+  flex: 1 0 auto;
   width: min(var(--container), calc(100% - 48px));
   margin: 0 auto;
   padding: var(--space-10) 0 var(--space-16);

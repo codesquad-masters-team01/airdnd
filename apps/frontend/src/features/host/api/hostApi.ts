@@ -22,21 +22,33 @@ interface PresignResponse {
 // 파일 한 장을 S3에 업로드하고, DB/화면에서 쓸 publicUrl 을 돌려준다.
 // 1) 백엔드에서 presigned PUT URL 발급(세션 인증) → 2) S3 로 직접 PUT(쿠키 없이, Content-Type 일치 필수).
 export async function uploadRoomImage(file: File): Promise<string> {
-  const presigned = await request<PresignResponse>('/api/host/rooms/images/presign', {
-    method: 'POST',
-    body: { fileName: file.name, contentType: file.type },
-  });
+  let presigned: PresignResponse;
+  try {
+    presigned = await request<PresignResponse>('/api/host/rooms/images/presign', {
+      method: 'POST',
+      body: { fileName: file.name, contentType: file.type },
+    });
+  } catch {
+    // presign 발급 실패(네트워크/인증/서버 오류) 시에도 동일한 친화적 문구로 노출한다.
+    throw new Error('사진 등록에 실패하였습니다.');
+  }
 
-  const uploadResponse = await fetch(presigned.uploadUrl, {
-    method: 'PUT',
-    body: file,
-    // presign 에 박힌 Content-Type 과 반드시 동일해야 S3 가 서명을 검증한다.
-    headers: { 'Content-Type': file.type },
-    // 우리 세션 쿠키를 S3 로 보내면 안 된다(서명으로 인증되며, credentials 동반 시 CORS 거부).
-  });
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(presigned.uploadUrl, {
+      method: 'PUT',
+      body: file,
+      // presign 에 박힌 Content-Type 과 반드시 동일해야 S3 가 서명을 검증한다.
+      headers: { 'Content-Type': file.type },
+      // 우리 세션 쿠키를 S3 로 보내면 안 된다(서명으로 인증되며, credentials 동반 시 CORS 거부).
+    });
+  } catch {
+    // 네트워크/CORS 실패 시 fetch 는 "Failed to fetch" TypeError 를 던진다. 사용자에겐 친화적인 문구로 노출한다.
+    throw new Error('사진 등록에 실패하였습니다.');
+  }
 
   if (!uploadResponse.ok) {
-    throw new Error(`이미지 업로드에 실패했습니다 (${uploadResponse.status})`);
+    throw new Error('사진 등록에 실패하였습니다.');
   }
 
   return presigned.publicUrl;

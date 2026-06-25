@@ -12,6 +12,7 @@ type RoomImageUploaderProps = {
 export function RoomImageUploader({ value, onChange, disabled }: RoomImageUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) {
@@ -47,26 +48,63 @@ export function RoomImageUploader({ value, onChange, disabled }: RoomImageUpload
     onChange(next);
   }
 
+  const isDisabled = disabled || isUploading;
+
   return (
     <div className="room-image-uploader">
-      <label className="room-image-upload-control">
-        숙소 이미지 업로드
+      <label
+        className={`room-image-dropzone${isDragging ? ' is-dragging' : ''}${isDisabled ? ' is-disabled' : ''}`}
+        onDragOver={(event) => {
+          if (isDisabled) {
+            return;
+          }
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(event) => {
+          if (isDisabled) {
+            return;
+          }
+          event.preventDefault();
+          setIsDragging(false);
+          void handleFiles(event.dataTransfer.files);
+        }}
+      >
         <input
           type="file"
+          className="room-image-dropzone__input"
           aria-label="숙소 이미지 업로드"
           accept="image/jpeg,image/png,image/webp"
           multiple
-          disabled={disabled || isUploading}
+          disabled={isDisabled}
           onChange={(event) => {
             void handleFiles(event.target.files);
             // 같은 파일을 다시 선택해도 onChange 가 발생하도록 초기화한다.
             event.target.value = '';
           }}
         />
-        <span className="muted">JPEG·PNG·WebP, 첫 번째 사진이 대표 이미지로 사용됩니다.</span>
+        <span className="room-image-dropzone__icon" aria-hidden="true">
+          {isUploading ? (
+            <svg viewBox="0 0 24 24" className="room-image-dropzone__spinner" width="28" height="28">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="40 16" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 16V4" />
+              <path d="m7 9 5-5 5 5" />
+              <path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+            </svg>
+          )}
+        </span>
+        <span className="room-image-dropzone__title">
+          {isUploading ? '업로드 중...' : '사진을 끌어다 놓거나 클릭해 업로드'}
+        </span>
+        <span className="room-image-dropzone__hint">
+          JPEG · PNG · WebP · 첫 번째 사진이 대표 이미지로 사용됩니다.
+        </span>
       </label>
 
-      {isUploading ? <p className="muted">업로드 중...</p> : null}
       {error ? <span className="field-error">{error}</span> : null}
 
       {value.length > 0 ? (

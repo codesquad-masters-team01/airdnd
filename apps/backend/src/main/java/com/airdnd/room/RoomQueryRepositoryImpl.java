@@ -38,7 +38,9 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
                 .fetch();
     }
 
-    private ConstructorExpression<RoomSummary> roomSummaryProjection() {
+    // 위시리스트 룸 목록 등 다른 도메인에서도 같은 카드 투영을 재사용할 수 있도록 정적 공개한다.
+    // (대표 이미지 상관 서브쿼리는 from 절에서 QRoom.room 을 조인/별칭으로 바인딩해야 한다.)
+    public static ConstructorExpression<RoomSummary> roomSummaryProjection() {
         return Projections.constructor(RoomSummary.class,
                 room.id,
                 room.name,

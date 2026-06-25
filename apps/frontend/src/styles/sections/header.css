@@ -1,5 +1,7 @@
 
 .app-shell {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   /* 지도 검색 페이지의 full-bleed(100vw)로 가로 스크롤바가 생기지 않도록 잘라낸다.
      clip 은 스크롤 컨테이너를 만들지 않아 sticky 헤더 동작에 영향이 없다. */

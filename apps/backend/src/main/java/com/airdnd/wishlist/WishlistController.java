@@ -1,14 +1,13 @@
 package com.airdnd.wishlist;
 
 import com.airdnd.auth.AuthMemberPrincipal;
+import com.airdnd.room.dto.CursorPage;
+import com.airdnd.room.dto.RoomSummary;
 import com.airdnd.wishlist.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +26,15 @@ public class WishlistController {
             @AuthenticationPrincipal AuthMemberPrincipal principal,
             @PathVariable Long wishlistId) {
         return ResponseEntity.ok(service.getWishListByWishListId(principal.getMemberId(), wishlistId));
+    }
+
+    @GetMapping("/{wishlistId}/rooms")
+    public ResponseEntity<CursorPage<RoomSummary>> getWishlistRooms(
+            @AuthenticationPrincipal AuthMemberPrincipal principal,
+            @PathVariable Long wishlistId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(service.getWishlistRooms(principal.getMemberId(), wishlistId, cursor, size));
     }
 
     @PostMapping
