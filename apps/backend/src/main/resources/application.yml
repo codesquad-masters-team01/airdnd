@@ -23,6 +23,23 @@ spring:
 server:
   forward-headers-strategy: framework
 
+# Actuator runs on its OWN port (8081), separate from the app's 8080. CloudFront only
+# points at 8080, so /actuator/* is never reachable from the internet — Prometheus
+# scrapes 8081 over the box's private network only. Keep 8081 off the public security group.
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: ${spring.application.name:AirDND}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true   # enables server-side p95/p99 in Grafana
+
 app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL:http://127.0.0.1:5173}
 

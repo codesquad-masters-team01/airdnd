@@ -4,7 +4,9 @@
 **/*.pkg
 # IDE
 .idea/
+**/.txt
 
+*.txt
 .vscode/
 
 # Claude Code 로컬 설정
