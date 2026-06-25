@@ -81,36 +81,34 @@ variable "github_repo" {
 }
 
 # --- Secrets that originate OUTSIDE AWS (Google, PayPal). ssm.tf stores them.
+# REQUIRED (no defaults): a previous apply with these unset fell back to a
+# "REPLACE_ME" default and OVERWROTE the live prod secrets in SSM, taking down
+# login + image uploads. Omitting them now fails the apply loudly instead.
+# Provide via terraform.tfvars (gitignored), -var, or TF_VAR_* env.
 variable "oauth_google_client_id" {
   type      = string
   sensitive = true
-  default   = "REPLACE_ME"
 }
 variable "oauth_google_client_secret" {
   type      = string
   sensitive = true
-  default   = "REPLACE_ME"
 }
 variable "paypal_client_id" {
   type      = string
   sensitive = true
-  default   = "REPLACE_ME"
 }
 variable "paypal_client_secret" {
   type      = string
   sensitive = true
-  default   = "REPLACE_ME"
 }
 
 # AWS keys the backend uses to sign presigned S3 uploads (uploads.tf / S3Config).
-# From your .env: AWS_ACCESS_KEY / AWS_ACCESS_SECRET_KEY.
+# From your .env: AWS_ACCESS_KEY / AWS_ACCESS_SECRET_KEY. Also REQUIRED.
 variable "aws_access_key_id" {
   type      = string
   sensitive = true
-  default   = "REPLACE_ME"
 }
 variable "aws_secret_access_key" {
   type      = string
   sensitive = true
-  default   = "REPLACE_ME"
 }
