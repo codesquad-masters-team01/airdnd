@@ -33,7 +33,17 @@ public class RoomQueryRepositoryImpl implements RoomQueryRepository{
                 .from(room)
                 .where(sharedFilters(conditions, now))
                 .where(RoomPredicates.cursorAfter(conditions.cursorId()))
-                .orderBy(room.id.asc())
+                // Defeat the MySQL "ORDER BY pk + LIMIT" PK-walk. With a bare `id`, the
+                // optimizer walks the PRIMARY key row-by-row applying MBRContains and stops
+                // at LIMIT — but for a sparse/empty box it never fills LIMIT, so it scans
+                // ~all 1M rows (5–20s; see room-search-performance-investigation.md).
+                // Ordering by (id + 0) is the SAME ascending id order (cursor pagination
+                // unchanged) but a non-indexed expression, so MySQL must filesort — which
+                // forces it to use idx_rooms_location to gather the few in-box rows first,
+                // then sort them. Sparse/empty boxes drop from seconds to ~ms. This is the
+                // effect FORCE INDEX would give; JPQL/QueryDSL can't emit FORCE INDEX.
+                // Trade-off: a fully-zoomed-out DENSE box now filesorts many rows (~1–2s).
+                .orderBy(room.id.add(0).asc())
                 .limit(conditions.resolvedSize() + 1L)
                 .fetch();
     }
