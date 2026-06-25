@@ -12,36 +12,49 @@ Everything stays **private**: Grafana binds to `127.0.0.1:3000` on the box and i
 through an SSM tunnel; the actuator port `8081` is not in the public security group; the
 exporters and Prometheus have no published ports at all.
 
-## One-time setup
+## Topology (two boxes — see infra/aws/terraform)
 
-1. **Deploy the app change** (adds the actuator deps + `:8081` management port). Confirm:
-   `curl -s localhost:8081/actuator/prometheus | head` on the box returns metrics.
-2. **Create the MySQL exporter user** (read-only):
-   ```bash
-   docker exec -i airdnd-mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < monitoring/sql/exporter-user.sql
-   ```
-   Use a real password in both that file and the .my.cnf below.
-3. **Fill in secrets** (gitignored):
-   ```bash
-   cp monitoring/.env.example monitoring/.env                      # set GF_ADMIN_PASSWORD
-   cp monitoring/mysqld-exporter/.my.cnf.example \
-      monitoring/mysqld-exporter/.my.cnf                           # set the exporter password
-   ```
-4. **Security group:** ensure inbound 8081 / 3000 / 9090 / 9100 / 9104 / 8080 are NOT open
-   to the internet. CloudFront should only target 8080 (the app).
+The repo is **not** checked out on the boxes; everything is shipped over SSM by
+`scripts/deploy-monitoring-prod.sh` (same transport as the seed-prod scripts).
 
-## Run it (on the box)
+```
+airdnd-backend box                         airdnd-mysql box
+  app :8081 (actuator)  ◄─ localhost ──┐     mysql :3306 ◄─ private, app-SG only
+  prometheus ─┬─ localhost:8081         │     node-exporter :9100 ◄─ db-SG :9100 rule
+              ├─ mysqld-exporter ──────────────► (private IP:3306)
+              ├─ node-exporter (backend box)
+              └─ cadvisor
+  grafana :3000 (loopback) ◄─ SSM tunnel
+```
+
+## One-time prerequisites
+
+1. **Redeploy the app** so the container publishes `8081` (already wired into
+   `apps/backend/docker/remote-deploy.sh`). Verify on the backend box:
+   `curl -s localhost:8081/actuator/prometheus | head`.
+2. **`terraform apply`** to add the db-SG `:9100` rule (only needed for DB-box
+   machine metrics; DB internals via mysqld-exporter work without it).
+
+No manual user/secret steps — the deploy script generates the exporter user,
+the `.my.cnf`, and the Grafana password for you.
+
+## Deploy (from your laptop)
 
 ```bash
-docker compose -f monitoring/docker-compose.yml --env-file monitoring/.env up -d
-docker compose -f monitoring/docker-compose.yml ps          # all healthy?
+scripts/deploy-monitoring-prod.sh                 # ships + starts on both boxes
+# GF_ADMIN_PASSWORD=mypw scripts/deploy-monitoring-prod.sh   # set Grafana admin pw
+scripts/deploy-monitoring-prod.sh --down          # tear it all down
 ```
+
+It prints the Grafana admin password at the end. (For a local trial instead,
+`docker compose -f monitoring/docker-compose.yml up -d` still works after
+`cp .env.example .env` and filling `mysqld-exporter/.my.cnf`.)
 
 ## View it (from your laptop)
 
 ```bash
 scripts/monitoring-tunnel.sh        # SSM port-forward 3000 -> localhost:3000
-# open http://localhost:3000  (admin / GF_ADMIN_PASSWORD)
+# open http://localhost:3000  (admin / printed password)
 ```
 
 ## Import dashboards

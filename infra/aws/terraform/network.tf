@@ -71,6 +71,18 @@ resource "aws_security_group" "db" {
     security_groups = [aws_security_group.ec2.id] # SG-to-SG, not a CIDR
   }
 
+  # node-exporter (machine metrics for this DB box) scraped by Prometheus, which
+  # runs on the backend box. Same SG-to-SG pattern, no internet exposure. Only
+  # needed for DB-box CPU/disk/IO graphs; DB *internal* metrics go via
+  # mysqld-exporter over 3306 above and need no rule here.
+  ingress {
+    description     = "node-exporter from the backend app box only"
+    from_port       = 9100
+    to_port         = 9100
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ec2.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

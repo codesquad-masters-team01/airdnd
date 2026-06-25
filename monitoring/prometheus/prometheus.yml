@@ -15,12 +15,19 @@ scrape_configs:
       - targets: ["mysqld-exporter:9104"]
 
   # Layer 3 — Machine: host CPU/mem/disk-IO/load, and per-container usage
-  - job_name: node
+  - job_name: node-backend
     static_configs:
       - targets: ["node-exporter:9100"]
+        labels: { box: backend }
   - job_name: cadvisor
     static_configs:
       - targets: ["cadvisor:8080"]
+  # DB box's machine metrics. __DB_HOST__ is replaced with the MySQL box's private
+  # IP by scripts/deploy-monitoring-prod.sh. Requires the db-SG :9100 rule (network.tf).
+  - job_name: node-mysql
+    static_configs:
+      - targets: ["__DB_HOST__:9100"]
+        labels: { box: mysql }
 
   - job_name: prometheus
     static_configs:

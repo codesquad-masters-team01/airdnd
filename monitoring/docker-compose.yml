@@ -67,13 +67,13 @@ services:
     image: prom/mysqld-exporter:latest
     container_name: airdnd-mysqld-exporter
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    # Connects to the SEPARATE MySQL box. Host/port/user/password all live in
+    # .my.cnf, which the deploy script writes with the DB's private IP. The app
+    # SG is already allowed in on 3306, so no extra SG rule is needed for this.
     volumes:
       - ./mysqld-exporter/.my.cnf:/cfg/.my.cnf:ro
     command:
       - "--config.my-cnf=/cfg/.my.cnf"
-      - "--mysqld.address=host.docker.internal:3306"
       - "--collect.global_status"
       - "--collect.info_schema.innodb_metrics"
       - "--collect.info_schema.processlist"

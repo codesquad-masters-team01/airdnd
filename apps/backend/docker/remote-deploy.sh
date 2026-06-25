@@ -32,9 +32,12 @@ aws ssm get-parameters-by-path \
     done > /tmp/airdnd.env
 
 # 4. Replace the single running container with the new image.
+#    8080 = app (CloudFront-facing). 8081 = actuator/metrics, bound to the box's
+#    private interface only (the ec2 SG never opens 8081 to the internet), so the
+#    monitoring stack on this box can scrape it but the world cannot.
 docker rm -f airdnd-backend 2>/dev/null || true
 docker run -d --name airdnd-backend --restart unless-stopped \
-  -p 8080:8080 --env-file /tmp/airdnd.env "$IMAGE"
+  -p 8080:8080 -p 8081:8081 --env-file /tmp/airdnd.env "$IMAGE"
 
 # 5. Reclaim disk from old image layers (keeps the 8 GiB root tidy).
 docker image prune -f

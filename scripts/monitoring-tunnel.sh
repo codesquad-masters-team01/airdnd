@@ -7,17 +7,17 @@
 set -euo pipefail
 
 REGION="${AWS_REGION:-ap-northeast-2}"
-MYSQL_TAG="${MYSQL_TAG:-airdnd-mysql}"   # Grafana runs on the same box as MySQL
+BACKEND_TAG="${BACKEND_TAG:-airdnd-backend}"   # Grafana runs on the backend box
 REMOTE_PORT="${REMOTE_PORT:-3000}"
 LOCAL_PORT="${LOCAL_PORT:-3000}"
 
 command -v aws >/dev/null || { echo "ERROR: aws CLI is required." >&2; exit 1; }
 
-echo ">> Resolving box (tag Name=$MYSQL_TAG) in $REGION..."
+echo ">> Resolving box (tag Name=$BACKEND_TAG) in $REGION..."
 IID=$(aws ec2 describe-instances --region "$REGION" \
-  --filters "Name=tag:Name,Values=$MYSQL_TAG" "Name=instance-state-name,Values=running" \
+  --filters "Name=tag:Name,Values=$BACKEND_TAG" "Name=instance-state-name,Values=running" \
   --query 'Reservations[0].Instances[0].InstanceId' --output text)
-[ -n "$IID" ] && [ "$IID" != "None" ] || { echo "ERROR: no running instance tagged Name=$MYSQL_TAG." >&2; exit 1; }
+[ -n "$IID" ] && [ "$IID" != "None" ] || { echo "ERROR: no running instance tagged Name=$BACKEND_TAG." >&2; exit 1; }
 
 echo ">> Forwarding ${IID}:${REMOTE_PORT} -> http://localhost:${LOCAL_PORT}  (Ctrl-C to stop)"
 exec aws ssm start-session --region "$REGION" --target "$IID" \
