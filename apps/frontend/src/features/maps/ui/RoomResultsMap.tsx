@@ -43,9 +43,12 @@ const PRICE_MARKER_ANCHOR: [string, string] = ['16px', 'calc(100% + 9px)'];
 // Keep the card arrow above the selected pin so the pin remains visible and clickable.
 const INFO_CARD_ANCHOR: [string, string] = ['50%', 'calc(100% + 64px)'];
 
-// 과도하게 줌아웃하지 못하도록 최소 줌만 제한합니다. (지역 이동 제한은 두지 않아
-// 해외 숙소도 지도를 이동해 탐색할 수 있습니다.)
+// 과도하게 줌아웃하지 못하도록 최소 줌을 제한하고, 카메라를 한반도로 묶습니다.
+// 해외의 빈 영역으로 패닝하면 백엔드 검색이 공간 인덱스 대신 PK 풀스캔으로 빠져
+// 수 초가 걸리므로(한국 전용 서비스), 그 쿼리 자체가 발생하지 않도록 지도를 제한합니다.
 const MAP_MIN_ZOOM = 5;
+// 제주·울릉도·독도와 주변 해역까지 포함하되 다른 대륙은 제외하는 한반도 경계.
+const KOREA_BOUNDS = { north: 39.0, south: 33.0, west: 124.0, east: 132.0 };
 const TILE_SIZE = 256;
 const CLUSTER_RADIUS_PX = 56;
 // 자동 검색을 다시 실행할 최소 이동량. 중심이 현재 뷰포트 가로/세로의 이 비율 이상 움직였을 때만
@@ -283,6 +286,7 @@ function RoomResultsMapView({
         clickableIcons={false}
         mapTypeControl={false}
         minZoom={MAP_MIN_ZOOM}
+        restriction={{ latLngBounds: KOREA_BOUNDS, strictBounds: false }}
         reuseMaps
         onCameraChanged={(event) => {
           latestBounds.current = event.detail.bounds;

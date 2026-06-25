@@ -49,9 +49,11 @@ variable "ec2_instance_type" {
 }
 
 variable "mysql_instance_type" {
+  # t4g.micro (1GB) OOM-kills mysqld under load — MySQL 8 resident set is ~700MB,
+  # leaving almost no headroom. t4g.small (2GB) is the realistic floor for the DB.
   description = "EC2 size for the self-managed MySQL box."
   type        = string
-  default     = "t4g.micro"
+  default     = "t4g.small"
 }
 
 variable "mysql_data_volume_size" {
