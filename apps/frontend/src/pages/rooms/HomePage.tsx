@@ -40,13 +40,6 @@ export function HomePage() {
         <div className="page-heading">
           <p className="eyebrow">AirDnD</p>
           <h1>원하는 숙소를 검색하고 예약하세요.</h1>
-          <p className="muted">검증 가능한 mock API와 실제 API 계약을 바탕으로 동작하는 숙소 예약 UI입니다.</p>
-        </div>
-        <div className="hero-meta" aria-label="서비스 강점">
-          <span>실시간 예약 흐름</span>
-          <span>호스트 관리</span>
-          <span>OAuth 준비</span>
-          <span>지도 탐색 확장 가능</span>
         </div>
         <SearchBar defaultValue={params} onSearch={handleSearch} />
       </div>
