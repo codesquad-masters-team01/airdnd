@@ -4,6 +4,7 @@ import com.airdnd.reservation.event.ReservationCancelledEvent;
 import com.airdnd.reservation.event.ReservationConfirmedEvent;
 import com.airdnd.review.event.ReviewCreatedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -14,6 +15,7 @@ public class NotificationEventListener {
 
     private final NotificationService notificationService;
 
+    @Async("notificationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onConfirmed(ReservationConfirmedEvent e) {
         notificationService.notify(e.hostId(), NotificationType.HOST,
@@ -26,6 +28,7 @@ public class NotificationEventListener {
                 "/reservations/" + e.reservationId());
     }
 
+    @Async("notificationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCancelled(ReservationCancelledEvent e) {
         notificationService.notify(e.hostId(), NotificationType.HOST,
@@ -34,6 +37,7 @@ public class NotificationEventListener {
                 "/host/rooms/"  + e.roomId() + "/reservations");
     }
 
+    @Async("notificationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onReviewCreated(ReviewCreatedEvent e) {
         notificationService.notify(e.hostId(), NotificationType.REVIEW,
