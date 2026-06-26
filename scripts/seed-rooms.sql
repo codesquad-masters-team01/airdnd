@@ -75,12 +75,13 @@ WITH nums (idx) AS (
     UNION ALL SELECT 3
     UNION ALL SELECT 4
     UNION ALL SELECT 5
+    UNION ALL SELECT 6
 )
 SELECT r.id,
        CONCAT('https://picsum.photos/seed/airdnd', r.id, '-', n.idx, '/800/600'),
        n.idx = 1
 FROM rooms r
-JOIN nums n ON n.idx <= 4 + (r.id % 2)   -- 4 images for even ids, 5 for odd
+JOIN nums n ON n.idx <= 5 + (r.id % 2)   -- 4 images for even ids, 5 for odd
 WHERE r.host_id = @host_id
   AND NOT EXISTS (
       SELECT 1 FROM room_images ri WHERE ri.room_id = r.id

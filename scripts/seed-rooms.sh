@@ -47,7 +47,15 @@ if [ "$RESET" -eq 1 ]; then
   echo ">> Removing previously-seeded rooms (host oauth_id='seed-host')..."
   run_sql <<'SQL'
 SET @host_id = (SELECT id FROM members WHERE oauth_id = 'seed-host');
-DELETE FROM room_images WHERE room_id IN (SELECT id FROM rooms WHERE host_id = @host_id);
+-- Delete in FK-dependency order: anything referencing a seed room's
+-- reservations first, then the reservations, then the rows that reference the
+-- rooms, then the rooms. (room_amenities is ON DELETE CASCADE, so it goes
+-- automatically with rooms; everything else has no cascade and would block.)
+DELETE p  FROM payments p       JOIN reservations rs ON rs.id = p.reservation_id JOIN rooms r ON r.id = rs.room_id WHERE r.host_id = @host_id;
+DELETE rv FROM reviews rv       JOIN reservations rs ON rs.id = rv.reservation_id JOIN rooms r ON r.id = rs.room_id WHERE r.host_id = @host_id;
+DELETE rs FROM reservations rs  JOIN rooms r ON r.id = rs.room_id WHERE r.host_id = @host_id;
+DELETE wr FROM wishlist_rooms wr JOIN rooms r ON r.id = wr.room_id WHERE r.host_id = @host_id;
+DELETE ri FROM room_images ri   JOIN rooms r ON r.id = ri.room_id WHERE r.host_id = @host_id;
 DELETE FROM rooms WHERE host_id = @host_id;
 SELECT CONCAT('Remaining seed rooms: ',
               (SELECT COUNT(*) FROM rooms WHERE host_id <=> @host_id)) AS result;

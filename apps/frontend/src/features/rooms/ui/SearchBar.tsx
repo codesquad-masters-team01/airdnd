@@ -219,9 +219,7 @@ export function SearchBar({ defaultValue, onSearch, compact = false }: SearchBar
   }
 
   function isDateDisabled(value: string) {
-    // 지난 날짜는 항상 비활성화
     if (value < todayValue) return true;
-
     return openPanel === 'checkOut' && Boolean(checkIn && value <= checkIn);
   }
 
