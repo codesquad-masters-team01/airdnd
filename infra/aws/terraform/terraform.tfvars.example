@@ -6,6 +6,11 @@ environment       = "prod"
 aws_region        = "ap-northeast-2"
 ssh_ingress_cidr  = "1.2.3.4/32" # `curl -s ifconfig.me` then append /32
 
+# WAF rate limiting on CloudFront (all OPTIONAL — sensible defaults in code):
+# enable_waf_rate_limit = true   # false = no WAF at all (off, no charges)
+# waf_rate_limit        = 2000   # requests / 5-min window / IP (floor 100)
+# waf_rate_limit_block  = false  # false = COUNT only; flip true to actually BLOCK
+
 # Custom domain is OPTIONAL. Leave these out entirely to launch on the free
 # CloudFront-generated https://dxxxx.cloudfront.net URL. Fill them in only once
 # you own a domain with a Route 53 hosted zone:

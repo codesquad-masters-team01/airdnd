@@ -37,6 +37,11 @@ resource "aws_cloudfront_distribution" "this" {
   # Custom domain only when provided; otherwise none (use the cloudfront.net URL).
   aliases = var.domain_name == "" ? [] : [var.domain_name]
 
+  # Optional WAF rate limiting (see aws_wafv2_web_acl.rate_limit below).
+  # one() yields null when the WebACL isn't created (count = 0), so toggling
+  # var.enable_waf_rate_limit off simply detaches it.
+  web_acl_id = var.enable_waf_rate_limit ? one(aws_wafv2_web_acl.rate_limit[*].arn) : null
+
   # Origin 1: the private S3 bucket (SPA), read via OAC.
   origin {
     origin_id                = "s3-frontend"
@@ -123,6 +128,69 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   price_class = "PriceClass_100" # US, Canada, Europe only — cheapest tier.
+}
+
+# --- WAF rate limiting (optional, gated by var.enable_waf_rate_limit) -------
+# WHAT: a WAF WebACL holding ONE rate-based rule, attached to the distribution
+#       above via web_acl_id. CloudFront has no native rate-limit toggle — rate
+#       limiting is a WAF feature.
+# WHY:  a runaway client / scraper / load test can pound the t4g.micro origin
+#       (1 GB, no swap). This caps requests-per-IP over WAF's 5-minute sliding
+#       window so one source can't monopolise the box.
+# HOW:  CLOUDFRONT-scoped WebACLs MUST live in us-east-1 (like the ACM cert),
+#       hence provider = aws.us_east_1. Default action is COUNT
+#       (var.waf_rate_limit_block = false): it METERS what WOULD be blocked
+#       without blocking, so you tune var.waf_rate_limit against real traffic
+#       first, then flip to block. count = 0 removes it entirely (fully off).
+resource "aws_wafv2_web_acl" "rate_limit" {
+  count    = var.enable_waf_rate_limit ? 1 : 0
+  provider = aws.us_east_1
+  name     = "${var.project}-cf-rate-limit"
+  scope    = "CLOUDFRONT"
+
+  # Anything the rule doesn't trip on is allowed through.
+  default_action {
+    allow {}
+  }
+
+  rule {
+    name     = "rate-limit-per-ip"
+    priority = 1
+
+    # block{} when waf_rate_limit_block is true, else count{} (monitor-only).
+    # Exactly one of these blocks renders, depending on the toggle.
+    dynamic "action" {
+      for_each = var.waf_rate_limit_block ? [1] : []
+      content {
+        block {}
+      }
+    }
+    dynamic "action" {
+      for_each = var.waf_rate_limit_block ? [] : [1]
+      content {
+        count {}
+      }
+    }
+
+    statement {
+      rate_based_statement {
+        limit              = var.waf_rate_limit
+        aggregate_key_type = "IP"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.project}-cf-rate-limit-rule"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "${var.project}-cf-rate-limit"
+    sampled_requests_enabled   = true
+  }
 }
 
 # --- Bucket policy: trust ONLY this distribution (closes the loop with s3.tf)

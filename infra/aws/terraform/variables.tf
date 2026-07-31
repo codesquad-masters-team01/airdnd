@@ -48,6 +48,27 @@ variable "ec2_instance_type" {
   default     = "t4g.small"
 }
 
+# --- WAF rate limiting on CloudFront (cloudfront.tf) -----------------------
+# CloudFront has no native rate-limit switch; it's a WAF feature. These three
+# vars are the on/off + tuning for it.
+variable "enable_waf_rate_limit" {
+  description = "Create + attach the WAF rate-based rule to the CloudFront distribution. false = no WAF at all (fully off, no charges)."
+  type        = bool
+  default     = true
+}
+
+variable "waf_rate_limit" {
+  description = "Max requests per client IP over WAF's 5-minute sliding window before the rule trips. AWS floor is 100."
+  type        = number
+  default     = 2000
+}
+
+variable "waf_rate_limit_block" {
+  description = "true = BLOCK over-limit IPs; false = COUNT only (meter without blocking). Start false, tune waf_rate_limit against real traffic, then flip true."
+  type        = bool
+  default     = false
+}
+
 variable "mysql_instance_type" {
   # t4g.micro (1GB) OOM-kills mysqld under load — MySQL 8 resident set is ~700MB,
   # leaving almost no headroom. t4g.small (2GB) is the realistic floor for the DB.
